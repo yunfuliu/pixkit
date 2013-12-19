@@ -32,12 +32,17 @@ namespace pixkit{
 		*/
 		bool	addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const double sd);
 
+		/**
+		* @brief		add white noise to each pixel
+		*
+		* @param		maxMag: the biggest mag of the noise
+		*/
 		bool	addWhiteNoise(const cv::Mat &src,cv::Mat &dst,const double maxMag);
 
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	/// Filtering related
+	/// filtering related
 	namespace filtering{
 
 		/**
@@ -96,7 +101,7 @@ namespace pixkit{
 			* 
 			* @param		src: input image (grayscale only)
 			* @param		dst: output image
-			* @param		ClassMatrixSize: ¥u¯à¤¹³\8x8 and 16x16
+			* @param		ClassMatrixSize: allow only 8x8 and 16x16
 			*
 			* @return		bool: true: successful, false: failure
 			*/ 

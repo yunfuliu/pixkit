@@ -1532,16 +1532,13 @@ float	pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions
 	if(src1.empty()||src2.empty()){
-		std::cout	<<	"[cvdip::qualityassessment::PSNR] empty."	<<	std::endl;
-		assert(false);
+		CV_Error(CV_HeaderIsNull,"[qualityassessment::PSNR] image is empty");
 	}
 	if(src1.type()!=src2.type()){
-		std::cout	<<	"[cvdip::qualityassessment::PSNR] type."	<<	std::endl;
-		assert(false);
+		CV_Error(CV_StsBadArg,"[qualityassessment::PSNR] both types of image do not match");
 	}
 	if(src1.type()!=CV_8U){
-		std::cout	<<	"[cvdip::qualityassessment::PSNR] CV_8U."	<<	std::endl;
-		assert(false);
+		CV_Error(CV_BadNumChannels,"[qualityassessment::PSNR] image should be grayscale");
 	}
 
 	//////////////////////////////////////////////////////////////////////////
