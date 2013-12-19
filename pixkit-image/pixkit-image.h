@@ -2,7 +2,7 @@
 // 
 // SOURCE CODE: 
 // 
-// BEIRF: pixkit-image contains image processing related methods which have published on either journal or conference papers. 
+// BEIRF: pixkit-image contains image processing related methods which have been published (on articles, e.g., journal or conference papers). 
 //	In addition, some frequently used related tools are also involved.
 // 
 // Yun-Fu Liu (yunfuliu@gmail.com)
