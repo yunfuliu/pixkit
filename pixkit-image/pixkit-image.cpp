@@ -157,7 +157,7 @@ bool pixkit::filtering::medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size bl
 						double temp=temp_img[n+1];
 						temp_img[n+1]=temp_img[n];
 						temp_img[n]=temp;
-					}										//將value陣列內數值由大至小排列
+					}	//將value陣列內數值由大至小排列
 				}
 			}
 			tdst.data[i*tdst.cols+j]	=	temp_img[(blocksize.height*blocksize.width-1)/2];

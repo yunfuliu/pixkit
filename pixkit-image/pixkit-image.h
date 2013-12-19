@@ -25,10 +25,10 @@ namespace pixkit{
 	namespace attack{
 
 		/**
-		* @brief		加入gaussian noise
-		* @bug			目前稍嫌不正確, 應將normal的cdf轉換, 以將輸入y取得x, 之公式取得, 才可進行正確運算. 
+		* @brief		add Gaussian noise to each pixel
+		* @bug			目前稍嫌不正確, 應將normal的cdf轉換, 以將輸入y取得x, 之公式取得, 才可進行正確運算.
 		*
-		* @param		sd:	標準差, 單位為grayscale value. range: 0~255
+		* @param		sd:	standard deviation, unit: grayscale. range: 0~255
 		*/
 		bool	addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const double sd);
 
@@ -129,7 +129,7 @@ namespace pixkit{
 			* @date			Sept. 3, 2013
 			* @version		1.0
 			*
-			* @param		N: number of blocks, 此數值被影像大小除, 則同block size之角色.
+			* @param		N: number of blocks. (due to this value will be divided by image size, so it can be regarded as 'block size')
 			*
 			* @return		bool: true: successful, false: failure
 			*/
@@ -140,9 +140,9 @@ namespace pixkit{
 			* @brief		paper: L. Jiao, Z. Sun, and A. Sha, "Improvement of image contrast with local adaptation,," Intl. Conf. Multimedia and Information Technology, 2010.
 			* @brief		nickname: Partially Overlapped Sub-block Logarithmic Trandformation (POSLT)
 			*
-			* @author		Yunfu Liu
-			* @date			Sept. 3, 2013 - present
-			* @bug			目前仍無法正確使用, 待完善2013/11/28
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
+			* @date			Sept. 3, 2013
+			* @bug			This function still has some bugs. Nov. 28, 2013.
 			* 
 			* @param		BlockSize: block size (blocksize >= step size)
 			* @param		StepSize: step size (the smaller step size, the better quality; when step size = block size: nonoverlapped strategy; when step size< block: overlapped strategy)
@@ -153,7 +153,7 @@ namespace pixkit{
 			bool JiaoSunSha2010(const cv::Mat &src,cv::Mat &dst,const cv::Size BlockSize,const cv::Size StepSize,const short mode);
 
 			/**
-			* @brief		local contrast enhancement, KimKimHwang2001's POSHE的改良版本
+			* @brief		local contrast enhancement, KimKimHwang2001 POSHE's improvement
 			* @brief		paper: F. Lamberti, B. Montrucchio, and A. Sanna, "CMBFHE: a novel contrast enhancement technique based on cascaded multistep binomial filtering histogram equalization," TCE, vol. 52, no. 3, 2006.
 			* @brief		nickname: cascaded multistep binomial filtering histogram equalization (CMBFHE)
 			*
@@ -161,7 +161,7 @@ namespace pixkit{
 			* @date			May 15, 2013
 			*
 			* @param: B: number of blocks
-			* @param: S: number of regions divided by the step size. S should >2xB. .This should be the "Bx2" or "Bx4" or "Bx8" etc multiple of 2. "S"需為B的2的次方倍數(2,4,8,16,32,64,128...). S越大速度慢品質高.
+			* @param: S: number of regions divided by the step size. S should >2xB. .This should be the "Bx2" or "Bx4" or "Bx8" etc multiple of 2. "S" should be B's power (i.e., 2,4,8,16,32,64,128...). Bigger S, better image quality, and slower.
 			*
 			* @return: bool: true: successful, false: failure
 			*/
@@ -172,7 +172,7 @@ namespace pixkit{
 			* @brief		local contrast enhancement
 			* @brief		paper: Z. Yu and C. Bajaj, "A fast and adaptive method for image contrast enhancement," ICIP, vol. 2, pp. 1001-1004, 2004.
 			*
-			* @author		Yunfu Liu
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
 			* @date			May 13, 2013
 			*
 			* @param		C: within [0,1] - this is only for isotropic mode
@@ -188,11 +188,11 @@ namespace pixkit{
 			* @brief		paper: J. Y. Kim, L. S. Kim, and S. H. Hwang, "An advanced contrast enhancement using partially overlapped sub-block histogram equalization," TCSVT, vol. 11, no. 4, pp. 475-484, 2001. 
 			* @brief		nickname: partially overlapped sub-block histogram equalization (POSHE)
 			* 
-			* @author		Yunfu Liu
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
 			* @date			May 15, 2013
 			*
 			* @param		B: number of blocks
-			* @param		S: number of regions divided by the step size. S should >2xB. .This should be the "Bx2" or "Bx4" or "Bx8" etc multiple of 2. "S"需為B的2的次方倍數(2,4,8,16,32,64,128...). S越大速度慢品質高.
+			* @param		S: number of regions divided by the step size. S should >2xB. .This should be the "Bx2" or "Bx4" or "Bx8" etc multiple of 2. "S" should be B's power (i.e., 2,4,8,16,32,64,128...). Bigger S, better image quality, and slower.
 			*
 			* @return		bool: true: successful, false: failure
 			*/
@@ -218,7 +218,7 @@ namespace pixkit{
 			* @brief		paper: R. C. Gonzalez and R. E. Woods, Digital Image Processing, 2nd ed., Reading, MA: Addison-Wesley, 1992.
 			* @brief		nickname: local histogram equalization (LHE)
 			*
-			* @author		Yunfu Liu 
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
 			* @date			May 16, 2013
 			* 
 			* @param		blocksize: block sizes
@@ -238,7 +238,7 @@ namespace pixkit{
 			* 
 			* @author		劉少雲
 			* @date			May 15, 2013
-			* @bug			目前看似還有bug, 待修正.
+			* @bug			It still has some bugs.
 			* 
 			* @param		x: ??????????????????????????????????
 			* 
@@ -251,7 +251,7 @@ namespace pixkit{
 			* @brief		paper: R. C. Gonzalez and R. E. Woods, Digital Image Processing, 2nd ed., Reading, MA: Addison-Wesley, 1992.
 			* @brief		nickname: global histogram equalization (GHE)
 			* 
-			* @author		Yunfu Liu
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
 			* @date			May 16, 2013
 			* 
 			* @return		bool: true: successful, false: failure
@@ -272,7 +272,7 @@ namespace pixkit{
 		* @brief		another representation: (this is the one used in this implementation) S. S. Agaian, B. Silver, and K. A. Panetta, "Transform coefficient histogram-based image enhancement algorithms using contrast entropy," TIP, 2007. 
 		* @brief		nickname: measure of enhancement (EME) or measure of improvement
 		* 
-		* @author		Yunfu Liu
+		* @author		Yunfu Liu (yunfuliu@gmail.com)
 		* @date			Sept. 4, 2013
 		*
 		* @param		nBlocks: number of blocks at either x or y axis; this size should be odd since this is just like a filter as defined in the paper
@@ -288,7 +288,7 @@ namespace pixkit{
 		* @brief		(this paper used this TEN in their paper, and the original one is published in 1970 as in their reference list)
 		* @brief		nickname: TEN
 		*
-		* @author		Yunfu Liu 
+		* @author		Yunfu Liu (yunfuliu@gmail.com)
 		* @date			Sept. 4, 2013
 		*
 		* @return		float: return the value of TEN
@@ -300,7 +300,7 @@ namespace pixkit{
 		* @brief		paper: N. Phanthuna, F. Cheevasuvit, and S. Chitwong, "Contrast enhancement for minimum mean brightness error from histogram partitioning," ASPRS Conf. 2009.
 		* @brief		nickname: absolute mean brightness error (AMBE)
 		*
-		* @author		Yunfu Liu
+		* @author		Yunfu Liu (yunfuliu@gmail.com)
 		* @date			Sept. 4, 2013
 		*
 		* @return		float: return the value of AMBE
