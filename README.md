@@ -5,22 +5,27 @@ For only academic usages of image processing (/pixkit-image) and machine learnin
 Contains image processing and machine learning related methods which have been published (on articles, e.g., journal or conference papers). 
 In addition, some frequently used related tools are also involved.
 
+All the functions completely base upon another famous repo OpenCV:
+<https://github.com/Itseez/opencv>
+
 Source
 ------
 <https://github.com/yunfuliu/pixkit>
 
 How to use
 ----------
+Install OpenCV before using pixkit.
+
 pixkit involves two paths:
 - \pixkit-image
 - \pixkit-ml
 
-for either image processing or machine learning related functions for usage.
-Also, the explanation of each function has been temporarily described in .h file in current version.
+for either image processing or machine learning related usages.
+Also, the explanation of each function has been temporarily described in .hpp file in the current version.
 
 Functions
 ---------
-In the current version, /image involves following grouped functions:
+In the current version, /pixkit-image involves following grouped functions:
 
 ** attack: Usually used to simulating attack for "watermarking".
 
