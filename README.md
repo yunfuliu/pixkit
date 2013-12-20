@@ -5,7 +5,7 @@ In addition, some frequently used related tools are also involved.
 
 Source
 ------
-https://github.com/yunfuliu/pixkit-image
+<https://github.com/yunfuliu/pixkit-image>
 
 Functions
 ---------
@@ -31,7 +31,7 @@ Please read CONTRIBUTING.txt in this directory.
 
 Bugs
 ----
-Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit-image/issues>".
+Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit-image/issues>.
 
 License
 -------
