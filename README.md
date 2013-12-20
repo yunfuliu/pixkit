@@ -1,15 +1,26 @@
-pixkit-image
+pixkit
 ============
-Contains image processing related methods which have been published (on articles, e.g., journal or conference papers). 
+Separates into image processing (/image) and machine learning (/ml) these two parts. 
+
+Contains image processing and machine learning related methods which have been published (on articles, e.g., journal or conference papers). 
 In addition, some frequently used related tools are also involved.
 
 Source
 ------
-<https://github.com/yunfuliu/pixkit-image>
+<https://github.com/yunfuliu/pixkit>
+
+How to use
+----------
+pixkit involves two paths:
+- \image\pixkit-image
+- \ml\pixkit-ml
+
+for either image processing or machine learning related functions for usage.
+Also, the explanation of each function has been temporarily described in .h file in current version.
 
 Functions
 ---------
-In the current version, following groups of functions are provided:
+In the current version, /image involves following grouped functions:
 
 ** attack: Usually used to simulating attack for "watermarking".
 
@@ -31,9 +42,8 @@ Please read CONTRIBUTING.txt in this directory.
 
 Bugs
 ----
-Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit-image/issues>.
+Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit/issues>.
 
 License
 -------
-Please read LICENSE.txt in this directory. 
-
+Please read LICENSE.txt in this directory.
