@@ -13,11 +13,13 @@
 #include <vector>
 #include <fstream>
 
-#ifndef _PIXKIT_ML
-#define _PIXKIT_ML
+#ifndef __PIXKIT_ML_HPP__
+#define __PIXKIT_ML_HPP__
+
 namespace pixkit{
 	
 
 
 }
+
 #endif

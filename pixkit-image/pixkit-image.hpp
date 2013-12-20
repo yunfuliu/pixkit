@@ -13,9 +13,9 @@
 #include <vector>
 #include <fstream>
 
-#ifndef _PIXKIT_IMAGE
-#define _PIXKIT_IMAGE
-/// Image Processing related add-ons based upon OpenCV
+#ifndef __PIXKIT_IMAGE_HPP__
+#define __PIXKIT_IMAGE_HPP__
+
 namespace pixkit{
 
 	//////////////////////////////////////////////////////////////////////////
