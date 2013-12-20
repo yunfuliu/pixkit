@@ -1,6 +1,6 @@
 pixkit
 ======
-Separates into image processing (/pixkit-image) and machine learning (/pixkit-ml) these two parts.
+For only academic usages of image processing (/pixkit-image) and machine learning (/pixkit-ml).
 
 Contains image processing and machine learning related methods which have been published (on articles, e.g., journal or conference papers). 
 In addition, some frequently used related tools are also involved.
