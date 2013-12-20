@@ -13,12 +13,12 @@ void main(){
 	cv::Mat	src,dst;
 
 	// load image
-	src	=	cv::imread("image/lena.bmp",CV_LOAD_IMAGE_GRAYSCALE);
+	src	=	cv::imread("data/lena.bmp",CV_LOAD_IMAGE_GRAYSCALE);
 	if(!src.empty()){
 		// process
 		if(pixkit::halftoning::dotdiffusion::GuoLiu2009(src,dst,8)){
 			// write output
-			cv::imwrite("output.bmp",dst);
+			cv::imwrite("result/output.bmp",dst);
 
 			// show image
 			cv::imshow("src",src);
