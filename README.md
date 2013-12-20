@@ -42,7 +42,7 @@ Please read CONTRIBUTING.txt in this directory.
 
 Bugs
 ----
-Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit/issues>.
+Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit/issues>".
 
 License
 -------
