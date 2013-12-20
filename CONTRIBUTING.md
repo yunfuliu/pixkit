@@ -1,5 +1,5 @@
 Online version please go<br>
-<https://github.com/yunfuliu/pixkit/edit/master/CONTRIBUTING.md>
+<https://github.com/yunfuliu/pixkit/blob/master/CONTRIBUTING.md>
 
 The initial form of CONTRIBUTING.txt comes from scikit-image <br>
 <https://github.com/scikit-image/scikit-image>
