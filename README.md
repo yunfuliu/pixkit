@@ -1,6 +1,6 @@
 pixkit
-============
-Separates into image processing (/image) and machine learning (/ml) these two parts. 
+======
+Separates into image processing (/pixkit-image) and machine learning (/pixkit-ml) these two parts.
 
 Contains image processing and machine learning related methods which have been published (on articles, e.g., journal or conference papers). 
 In addition, some frequently used related tools are also involved.
@@ -12,8 +12,8 @@ Source
 How to use
 ----------
 pixkit involves two paths:
-- \image\pixkit-image
-- \ml\pixkit-ml
+- \pixkit-image
+- \pixkit-ml
 
 for either image processing or machine learning related functions for usage.
 Also, the explanation of each function has been temporarily described in .h file in current version.
