@@ -1,3 +1,3 @@
-﻿- Yun-Fu Liu (yunfuliu@gmail.com)
+* Yun-Fu Liu (yunfuliu@gmail.com)
   Project coordination and function contribution
 
