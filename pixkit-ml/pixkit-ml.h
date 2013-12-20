@@ -16,9 +16,8 @@
 #ifndef _PIXKIT_ML
 #define _PIXKIT_ML
 namespace pixkit{
+	
 
-
-	}
 
 }
 #endif
