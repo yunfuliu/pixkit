@@ -1,0 +1,103 @@
+The initial form of this comes from scikit-image (https://github.com/scikit-image/scikit-image). Many thanks for this.
+
+Development process
+-------------------
+
+Here's the long and short of it:
+
+1. If you are a first-time contributor:
+
+   * Go to 
+      - https://github.com/yunfuliu/pixkit-image
+     and click the "fork" button to create your own copy of the project.
+
+   * Clone the project to your local computer::
+
+      Download GitHub for your system: 
+       - https://help.github.com/articles/set-up-git     
+      Login and clone the project.
+
+   * Add upstream repository::
+
+      git remote add upstream https://github.com/yunfuliu/pixkit-image.git
+
+   * Now, you have remote repositories named:
+
+      - ``upstream``, which refers to the ``scikit-image`` repository
+      - ``origin``, which refers to your personal fork
+      You can check by 
+        git remote
+
+2. Develop your contribution:
+
+   * Pull the latest changes from upstream::
+
+      git checkout master
+      git pull upstream master
+
+   * Create a branch for the feature you want to work on. Since the
+     branch name will appear in the merge message, use a sensible name
+     such as 'transform-speedups'::
+
+      git checkout -b transform-speedups
+
+   * Commit locally as you progress (``git add`` and ``git commit``)
+
+3. To submit your contribution:
+
+   * Push your changes back to your fork on GitHub::
+
+      git push origin transform-speedups
+
+   * Go to GitHub. The new branch will show up with a Pull Request button -
+     click it.
+
+.. note::
+
+   To reviewers: add a short explanation of what a branch did to the merge
+   message and, if closing a bug, also add "Closes gh-123" where 123 is the
+   bug number.
+
+
+Divergence between ``upstream master`` and your feature branch
+..............................................................
+
+Do *not* ever merge the main branch into yours. If GitHub indicates that the
+branch of your Pull Request can no longer be merged automatically, rebase
+onto master::
+
+   git checkout master
+   git pull upstream master
+   git checkout transform-speedups
+   git rebase master
+
+If any conflicts occur, fix the according files and continue::
+
+   git add conflict-file1 conflict-file2
+   git rebase --continue
+
+However, you should only rebase your own branches and must generally not
+rebase any branch which you collaborate on with someone else.
+
+Finally, you must push your rebased branch::
+
+   git push --force origin transform-speedups
+
+(If you are curious, here's a further discussion on the
+`dangers of rebasing <http://tinyurl.com/lll385>`__.
+Also see this `LWN article <http://tinyurl.com/nqcbkj>`__.)
+
+Guidelines
+----------
+
+* All code should have tests (see `test coverage`_ below for more details).
+* All code should be documented, to the same
+  `standard <http://projects.scipy.org/numpy/wiki/CodingStyleGuidelines>`_
+  as NumPy and SciPy.
+* For new functionality, always add an example to the
+  gallery.
+* No changes should be committed without review.  Ask on the
+  `mailing list <http://groups.google.com/group/scikit-image>`_ if
+  you get no response to your pull request.
+  **Never merge your own pull request.**
+* Examples in the gallery should have a maximum figure width of 8 inches.

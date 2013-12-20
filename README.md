@@ -1,6 +1,6 @@
 pixkit-image
 ============
-contains image processing related methods which have been published (on articles, e.g., journal or conference papers). 
+Contains image processing related methods which have been published (on articles, e.g., journal or conference papers). 
 In addition, some frequently used related tools are also involved.
 
 Source
@@ -24,6 +24,14 @@ In the current version, following groups of functions are provided:
 ** enhancement::global: Image contrast enhancement methods, global methods.
 
 ** qualityassessment: Image quality assessment.
+
+Contributors
+------------
+Please read CONTRIBUTING.txt in this directory.
+
+Bugs
+----
+Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit-image/issues>".
 
 License
 -------
