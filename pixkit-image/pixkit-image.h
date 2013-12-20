@@ -1,11 +1,9 @@
 //////////////////////////////////////////////////////////////////////////
 // 
-// SOURCE CODE: https://github.com/yunfuliu/pixkit-image
+// SOURCE CODE: https://github.com/yunfuliu/pixkit
 // 
 // BEIRF: pixkit-image contains image processing related methods which have been published (on articles, e.g., journal or conference papers). 
 //	In addition, some frequently used related tools are also involved.
-// 
-// Yun-Fu Liu (yunfuliu@gmail.com)
 // 
 //////////////////////////////////////////////////////////////////////////
 #include <opencv2/core/core.hpp>
@@ -15,8 +13,8 @@
 #include <vector>
 #include <fstream>
 
-#ifndef _PIXKIT
-#define _PIXKIT
+#ifndef _PIXKIT_IMAGE
+#define _PIXKIT_IMAGE
 /// Image Processing related add-ons based upon OpenCV
 namespace pixkit{
 

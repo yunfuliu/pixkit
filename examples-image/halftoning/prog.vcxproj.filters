@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="samplecode.cpp" />
-    <ClCompile Include="pixkit-image\pixkit-image.cpp">
+    <ClCompile Include="..\..\pixkit-image\pixkit-image.cpp">
       <Filter>pixkit-image</Filter>
     </ClCompile>
   </ItemGroup>
@@ -12,7 +12,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pixkit-image\pixkit-image.h">
+    <ClInclude Include="..\..\pixkit-image\pixkit-image.h">
       <Filter>pixkit-image</Filter>
     </ClInclude>
   </ItemGroup>
