@@ -14,7 +14,7 @@ Source
 
 How to use
 ----------
-Install OpenCV before using pixkit.
+Install OpenCV before using pixkit, and go <https://github.com/yunfuliu/pixkit/releases> to download pixkit.
 
 pixkit involves two paths:
 - \pixkit-image
@@ -55,4 +55,4 @@ Please read LICENSE.txt in this directory.
 
 Others
 ------
-Semantic Versioning <http://semver.org/><br> is used in our version control. 
+Semantic Versioning is used in our version control. <http://semver.org/>
