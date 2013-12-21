@@ -1,5 +1,5 @@
+#include "edgedetection.cpp"
 #include "../pixkit-image.hpp"
-
 //////////////////////////////////////////////////////////////////////////
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
 
@@ -157,7 +157,7 @@ float pixkit::qualityassessment::AMBE(const cv::Mat &src1,const cv::Mat &src2){
 
 	return abs((double)(mean1-mean2));
 }
-float	pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
+float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions

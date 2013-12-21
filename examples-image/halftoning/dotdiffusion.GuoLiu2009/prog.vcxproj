@@ -134,11 +134,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\pixkit-image\src\halftoning.cpp" />
-    <ClCompile Include="samplecode.cpp" />
+    <ClCompile Include="..\..\..\pixkit-image\src\halftoning.cpp" />
+    <ClCompile Include="example_dotdiffusion.GuoLiu2009.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\pixkit-image\pixkit-image.hpp" />
+    <ClInclude Include="..\..\..\pixkit-image\pixkit-image.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

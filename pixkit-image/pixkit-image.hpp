@@ -90,7 +90,33 @@ namespace pixkit{
 		namespace dotdiffusion{
 
 			/**
-			* @brief		filtering with median filter
+			* @brief		paper: Yun-Fu Liu and Jing-Ming Guo, "New class tiling design for dot-diffused halftoning," IEEE Trans. Image Processing, vol. 22, no. 3, pp. 1199-1208, March 2013.
+			* 
+			* @param		ctSize:	CT size
+			*/
+			class CNADDCT{
+			public:
+				int				m_CT_height;	// CT's height and width
+				int				m_CT_width;
+				unsigned char	**m_ct;
+				CNADDCT();
+				~CNADDCT();
+				bool			generation(cv::Size ctSize);	// ct generation
+				bool			save(char name[]);
+				bool			load(char name[]);
+			private:
+				int				m_CTmap_height;	// ct map
+				int				m_CTmap_width;
+				int				m_CM_size;		// class matrix
+				int				m_numberOfCM;	// number of cm in a ct
+				int				**m_cm;
+				int				*m_cmData;
+				unsigned char	*m_ctmap;
+				unsigned char	*m_ctData;
+			};
+			void NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
+
+			/**
 			* @brief		paper: J. M. Guo and Y. F. Liu"Improved dot diffusion by diffused matrix and class matrix co-optimization," IEEE Trans. Image Processing, vol. 18, no. 8, pp. 1804-1816, 2009.
 			*
 			* @author		Yunfu Liu (yunfuliu@gmail.com)
