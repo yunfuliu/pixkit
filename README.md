@@ -52,3 +52,7 @@ Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit/issues>".
 License
 -------
 Please read LICENSE.txt in this directory.
+
+Others
+------
+Semantic Versioning <http://semver.org/><br> is used in our version control. 
