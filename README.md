@@ -5,8 +5,7 @@ For only academic usages of image processing (/pixkit-image) and machine learnin
 Contains image processing and machine learning related methods which have been published (on articles, e.g., journal or conference papers). 
 In addition, some frequently used related tools are also involved.
 
-All the functions completely base upon another famous repo OpenCV:
-<https://github.com/Itseez/opencv>
+All the functions completely base upon another famous repo [OpenCV] (https://github.com/Itseez/opencv)
 
 Source
 ------
@@ -14,7 +13,7 @@ Source
 
 How to use
 ----------
-Install OpenCV before using pixkit, and go <https://github.com/yunfuliu/pixkit/releases> to download pixkit.
+Install OpenCV before using pixkit, and go <[HERE] (http://goo.gl/GHfv9g "pixkit/releases")> to download pixkit.
 
 pixkit involves two paths:
 - \pixkit-image
@@ -43,7 +42,7 @@ In the current version, /pixkit-image involves following grouped functions:
 
 Contributors
 ------------
-Please read CONTRIBUTING.txt in this directory.
+Please read [CONTRIBUTING.md] (https://github.com/yunfuliu/pixkit/blob/master/CONTRIBUTING.md) in this directory.
 
 Bugs
 ----
@@ -51,8 +50,8 @@ Please "report bugs on GitHub <https://github.com/yunfuliu/pixkit/issues>".
 
 License
 -------
-Please read LICENSE.txt in this directory.
+Please read [LICENSE.txt] (https://github.com/yunfuliu/pixkit/blob/master/LICENSE.txt) in this directory.
 
 Others
 ------
-Semantic Versioning is used in our version control. <http://semver.org/>
+[Semantic Versioning] (http://semver.org/) is used in our version control.
