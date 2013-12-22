@@ -14,7 +14,7 @@ Here's the long and short of it:
 
    * Be a fork:
    
-       Go to <https://github.com/yunfuliu/pixkit>
+       Go to <[pixkit](https://github.com/yunfuliu/pixkit)>
        and click the "fork" button to create your own copy of the project
        (called ``origin`` remote).
 
@@ -115,6 +115,6 @@ Guidelines
   <b>/examples-xx folder</b>.
 
 * No changes should be committed without review. Ask 
-  <b>Yun-Fu Liu</b> (yunfuliu@gmail.com) if you get no response to your pull request.
+  [Yun-Fu Liu](yunfuliu@gmail.com) if you get no response to your pull request.
 **Never merge your own pull request.**
 
