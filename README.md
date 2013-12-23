@@ -1,3 +1,5 @@
+Please read below before being a <b>user</b> or a <b>contributer</b>, many thanks. 
+
 pixkit
 ======
 For only academic usages of image processing (`/pixkit-image`) and machine learning (`/pixkit-ml`).
