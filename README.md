@@ -1,30 +1,15 @@
 pixkit
 ======
-For only academic usages of image processing (/pixkit-image) and machine learning (/pixkit-ml).
+For only academic usages of image processing (`/pixkit-image`) and machine learning (`/pixkit-ml`).
 
-Contains image processing and machine learning related methods which have been published (on articles, e.g., journal or conference papers). 
+Contains image processing and machine learning related methods which <b>have been published</b> (on articles, e.g., journal or conference papers). 
 In addition, some frequently used related tools are also involved.
 
-All the functions completely base upon another famous repo [OpenCV](https://github.com/Itseez/opencv)
-
-Source
-------
-<https://github.com/yunfuliu/pixkit>
-
-How to use
-----------
-Install OpenCV before using pixkit, and go <[HERE](http://goo.gl/GHfv9g "pixkit/releases")> to download pixkit.
-
-pixkit involves two paths:
-- \pixkit-image
-- \pixkit-ml
-
-for either image processing or machine learning related usages.
-Also, the explanation of each function has been temporarily described in .hpp file in the current version.
+All the functions completely base upon another famous repo OpenCV: <https://github.com/Itseez/opencv>
 
 Functions
 ---------
-In the current version, /pixkit-image involves following grouped functions:
+In the current version, `/pixkit-image` involves following grouped functions:
 
 ** attack: Usually used to simulating attack for "watermarking".
 
@@ -39,6 +24,18 @@ In the current version, /pixkit-image involves following grouped functions:
 ** enhancement::global: Image contrast enhancement methods, global methods.
 
 ** qualityassessment: Image quality assessment.
+
+Users
+-----
+Install [OpenCV](http://opencv.org/), and go <[HERE](http://goo.gl/GHfv9g "pixkit/releases")> to download pixkit.
+
+pixkit involves two paths:
+- `\pixkit-image`
+- `\pixkit-ml`
+
+for either image processing or machine learning related usages.
+Also, the explanation of each function has been temporarily described in `.hpp` in the current version.
+
 
 Contributors
 ------------
