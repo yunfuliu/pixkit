@@ -25,20 +25,20 @@ In the current version, `/pixkit-image` involves following grouped functions:
 
 ** qualityassessment: Image quality assessment.
 
-Users
------
+For users
+---------
 Install [OpenCV](http://opencv.org/), and go <[HERE](http://goo.gl/GHfv9g "pixkit/releases")> to download pixkit.
 
 pixkit involves two paths:
-- `\pixkit-image`
+- `\pixkit-image`: Manual please go [here](https://github.com/yunfuliu/pixkit/blob/master/pixkit-image/readme.md)
 - `\pixkit-ml`
 
 for either image processing or machine learning related usages.
 Also, the explanation of each function has been temporarily described in `.hpp` in the current version.
 
 
-Contributors
-------------
+For contributors
+----------------
 Please read [CONTRIBUTING.md](https://github.com/yunfuliu/pixkit/blob/master/CONTRIBUTING.md) in this directory.
 
 Bugs
