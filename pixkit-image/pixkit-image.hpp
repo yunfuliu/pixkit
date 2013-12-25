@@ -23,14 +23,6 @@ namespace pixkit{
 	namespace attack{
 
 		/**
-		* @brief		add Gaussian noise to each pixel
-		* @bug			目前稍嫌不正確, 應將normal的cdf轉換, 以將輸入y取得x, 之公式取得, 才可進行正確運算.
-		*
-		* @param		sd:	standard deviation, unit: grayscale. range: 0~255
-		*/
-		bool	addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const double sd);
-
-		/**
 		* @brief		add white noise to each pixel
 		*
 		* @param		maxMag: the biggest mag of the noise
@@ -160,23 +152,6 @@ namespace pixkit{
 			bool LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
 
 			/**
-			* @brief		local contrast enhancement		
-			* @brief		paper: L. Jiao, Z. Sun, and A. Sha, "Improvement of image contrast with local adaptation,," Intl. Conf. Multimedia and Information Technology, 2010.
-			* @brief		nickname: Partially Overlapped Sub-block Logarithmic Trandformation (POSLT)
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			Sept. 3, 2013
-			* @bug			This function still has some bugs. Nov. 28, 2013.
-			* 
-			* @param		BlockSize: block size (blocksize >= step size)
-			* @param		StepSize: step size (the smaller step size, the better quality; when step size = block size: nonoverlapped strategy; when step size< block: overlapped strategy)
-			* @param		mode: 1: use EME as cost function; 2: use TEN as cost function
-			*
-			* @return		bool: true: successful, false: failure
-			*/
-			bool JiaoSunSha2010(const cv::Mat &src,cv::Mat &dst,const cv::Size BlockSize,const cv::Size StepSize,const short mode);
-
-			/**
 			* @brief		local contrast enhancement, KimKimHwang2001 POSHE's improvement
 			* @brief		paper: F. Lamberti, B. Montrucchio, and A. Sanna, "CMBFHE: a novel contrast enhancement technique based on cascaded multistep binomial filtering histogram equalization," TCE, vol. 52, no. 3, 2006.
 			* @brief		nickname: cascaded multistep binomial filtering histogram equalization (CMBFHE)
@@ -254,21 +229,6 @@ namespace pixkit{
 
 		/// Global methods
 		namespace global{
-
-			/**
-			* @brief		global contrast enhancement
-			* @brief		paper: M. Abdullah-Al-Wadud, Md. Hasanul Kabir, M. Ali Akber Dewan, and O. Chae, "A dynamic histogram equalization for image contrast enhancement," Intl. Conf. Consumer Electronics, pp. 1-2, 2007.
-			* @brief		nickname: dynamic histogram equalization (DHE)
-			* 
-			* @author		劉少雲
-			* @date			May 15, 2013
-			* @bug			It still has some bugs.
-			* 
-			* @param		x: ??????????????????????????????????
-			* 
-			* @return		bool: true: successful, false: failure
-			*/
-			bool WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
 
 			/**
 			* @brief		global contrast enhancement
