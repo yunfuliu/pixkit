@@ -2,6 +2,11 @@ project(pixkit)
 
 cmake_minimum_required (VERSION 2.6)
 
+set(PIXKIT_VERSION_MAJOR 0)
+set(PIXKIT_VERSION_MINOR 1)
+set(PIXKIT_VERSION_PATCH 2)
+set(PIXKIT_VERSION_STRING ${PIXKIT_VERSION_MAJOR}${PIXKIT_VERSION_MINOR}${PIXKIT_VERSION_PATCH})
+
 
 # ============================================================================ #
 # Where to output binaries and libraries
@@ -14,8 +19,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 # Where to install the pixkit library
 #set(PIXKIT_INSTALL_PREFIX "/usr/local/pixkit/lib" CACHE PATH "Installation Directory")
 #set(PIXKIT_INCLUDE_PREFIX "/usr/local/pixkit/include" CACHE PATH "Includes Directory")
-set(PIXKIT_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/lib" CACHE PATH "Installation Directory") ##########
-set(PIXKIT_INCLUDE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/include" CACHE PATH "Includes Directory") ##########
+set(PIXKIT_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/lib" CACHE PATH "Installation Directory") ##########
+set(PIXKIT_INCLUDE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/include" CACHE PATH "Includes Directory") ##########
+set(PIXKIT_SAMPLES_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/samples" CACHE PATH "Samples Directory") ##########
 
 
 # ============================================================================ #
@@ -28,6 +34,9 @@ find_package(OpenCV REQUIRED)
 
 
 # ============================================================================ #
+
+set(CMAKE_DEBUG_POSTFIX ${PIXKIT_VERSION_STRING}d)
+set(CMAKE_RELEASE_POSTFIX ${PIXKIT_VERSION_STRING})
 # Create projects (pixkit-image)
 include_directories("pixkit-image/")
 
@@ -42,8 +51,8 @@ set(PIXKIT_IMAGE_SRCS
 	pixkit-image/src/qualityassessment.cpp
 	pixkit-image/src/NADD2013/NADD.cpp
 )
-add_library(PIXKIT_IMAGE ${PIXKIT_IMAGE_SRCS})
-target_link_libraries(PIXKIT_IMAGE ${OpenCV_LIBS})
+add_library(pixkit_image ${PIXKIT_IMAGE_SRCS})
+target_link_libraries(pixkit_image ${OpenCV_LIBS})
 
 # Create projects (pixkit-ml)
 include_directories("pixkit-ml/")
@@ -53,8 +62,8 @@ set(PIXKIT_ML_SRCS
 	pixkit-ml/pixkit-ml.hpp
 	pixkit-ml/src/pixkit-ml.cpp
 )
-add_library(PIXKIT_ML ${PIXKIT_ML_SRCS})
-target_link_libraries(PIXKIT_ML ${OpenCV_LIBS})
+add_library(pixkit_ml ${PIXKIT_ML_SRCS})
+target_link_libraries(pixkit_ml ${OpenCV_LIBS})
 
 
 # ============================================================================ #
@@ -62,19 +71,19 @@ target_link_libraries(PIXKIT_ML ${OpenCV_LIBS})
 add_executable(image_halftoning_dotdiffusion_GuoLiu2009
 	examples-image/halftoning/dotdiffusion.GuoLiu2009/example_dotdiffusion.GuoLiu2009.cpp
 )
-target_link_libraries(image_halftoning_dotdiffusion_GuoLiu2009 PIXKIT_IMAGE)
+target_link_libraries(image_halftoning_dotdiffusion_GuoLiu2009 pixkit_image)
 
 # Sample programs
 add_executable(image_halftoning_dotdiffusion_NADD2013
 	examples-image/halftoning/dotdiffusion.NADD2013/example_dotdiffusion.NADD2013.cpp
 )
-target_link_libraries(image_halftoning_dotdiffusion_NADD2013 PIXKIT_IMAGE)
+target_link_libraries(image_halftoning_dotdiffusion_NADD2013 pixkit_image)
 
 
 # ============================================================================ #
 # Library installation
-install(TARGETS PIXKIT_IMAGE DESTINATION ${PIXKIT_INSTALL_PREFIX})
-install(TARGETS PIXKIT_ML DESTINATION ${PIXKIT_INSTALL_PREFIX})
+install(TARGETS pixkit_image DESTINATION ${PIXKIT_INSTALL_PREFIX})
+install(TARGETS pixkit_ml DESTINATION ${PIXKIT_INSTALL_PREFIX})
 install(FILES
     pixkit-image/pixkit-image.hpp
 	pixkit-ml/pixkit-ml.hpp
