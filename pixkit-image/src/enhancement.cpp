@@ -857,78 +857,76 @@ bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv
 	double range[256]={0};
 	int q=0;
 	for (int i=0;i<256;i++){
-		if ((i-1)>=0 && (i+1)<256 || i==0 || i==255){
-			//	get first non-zero number
-			if (hist[i-1]==0 && hist[i]!=0 || (i==0 && hist[0]!=0)){
-				minima[count]=i;
-				count++;
-				PartitionFlag=true;
-			}	
-			//	get minima number
-			if (hist[i]<hist[i-1] && hist[i]<hist[i+1]){
-				minima[count]=i;
-				count++;
-				PartitionFlag=true;
+		//	get first non-zero number
+		if (hist[i-1]==0 && hist[i]!=0 || (i==0 && hist[0]!=0)){
+			minima[count]=i;
+			count++;
+			PartitionFlag=true;
+		}	
+		//	get minima number
+		if (hist[i]<hist[i-1] && hist[i]<hist[i+1]){
+			minima[count]=i;
+			count++;
+			PartitionFlag=true;
+		}
+		//	get last non-zero number && i==0, hist[0]!=0
+		if ((hist[i]!=0 && hist[i+1]==0) || (i==255 && hist[0]!=0)){
+			minima[count]=i;
+			count++;
+			PartitionFlag=true;
+		}
+		if (count==1){					//	第一個minima不進行分區
+			PartitionFlag=false;
+		}
+		if (minima[0]==minima[1]){		//	修正上面判斷BUG
+			count=1;
+			PartitionFlag=false;
+		}
+		//	judge is (mean +- standard deviation) satisfy 68.3% of GL or not.
+		int a=0;		
+		while (PartitionFlag){
+			double	sum=0, mean=0, sd=0, temp=0;
+			//	get mean
+			for (int k=minima[count-2];k<=minima[count-1];k++){
+				mean+=(double)hist[k]*k;
+				sum+=(double)hist[k];
 			}
-			//	get last non-zero number && i==0, hist[0]!=0
-			if (hist[i]!=0 && hist[i+1]==0 || i==255){
-				minima[count]=i;
-				count++;
-				PartitionFlag=true;
+			mean/=sum;
+			//	get standard deviation
+			for (int k=minima[count-2];k<=minima[count-1];k++){
+				sd+=(pow((double)k-mean,2)*(double)hist[k]);
 			}
-			if (count==1){					//	第一個minima不進行分區
-				PartitionFlag=false;
+			sd=sqrt(sd/sum);
+			//	judge 68.3% for (mean +- sd)
+			for (int k=(int)(mean-sd+0.5);k<=(int)(mean+sd+0.5);k++){
+				temp+=(double)hist[k];
 			}
-			if (minima[0]==minima[1]){		//	修正上面判斷BUG
-				count=1;
-				PartitionFlag=false;
-			}
-			//	judge is (mean +- standard deviation) satisfy 68.3% of GL or not.
-			int a=0;		
-			while (PartitionFlag){
-				double	sum=0, mean=0, sd=0, temp=0;
-				//	get mean
-				for (int k=minima[count-2];k<=minima[count-1];k++){
-					mean+=(double)hist[k]*k;
-					sum+=(double)hist[k];
-				}
-				mean/=sum;
-				//	get standard deviation
-				for (int k=minima[count-2];k<=minima[count-1];k++){
-					sd+=(pow((double)k-mean,2)*(double)hist[k]);
-				}
-				sd=sqrt(sd/sum);
-				//	judge 68.3% for (mean +- sd)
-				for (int k=(int)(mean-sd+0.5);k<=(int)(mean+sd+0.5);k++){
-					temp+=(double)hist[k];
-				}
-				temp/=sum;
-				if (temp>=0.683){
-					if (SubHistFlag){		//	(mean+sd) 至 high-minima的高斯分布判定
-						if(SubHistFlag2){
-							count+=3;
-							SubHistFlag2=false;
-						}else{
-							count+=2;
-						}
-						SubHistFlag=false;
-						a=0;
+			temp/=sum;
+			if (temp>=0.683){
+				if (SubHistFlag){		//	(mean+sd) 至 high-minima的高斯分布判定
+					if(SubHistFlag2){
+						count+=3;
+						SubHistFlag2=false;
 					}else{
-						PartitionFlag=false;
-					}					
-				}else{						//	low-minima 至 (mean-sd)的高斯分布判定.
-					if(a>0){
-						for (int m=0;m<=a;m++){
-							minima[count+m+2]=minima[count+m];
-							SubHistFlag2=true;
-						}
+						count+=2;
 					}
-					minima[count+1]=minima[count-1];
-					minima[count]=(int)(mean+sd+0.5);
-					minima[count-1]=(int)(mean-sd+0.5);
-					SubHistFlag=true;
-					a++;
+					SubHistFlag=false;
+					a=0;
+				}else{
+					PartitionFlag=false;
+				}					
+			}else{						//	low-minima 至 (mean-sd)的高斯分布判定.
+				if(a>0){
+					for (int m=0;m<=a;m++){
+						minima[count+m+2]=minima[count+m];
+						SubHistFlag2=true;
+					}
 				}
+				minima[count+1]=minima[count-1];
+				minima[count]=(int)(mean+sd+0.5);
+				minima[count-1]=(int)(mean-sd+0.5);
+				SubHistFlag=true;
+				a++;
 			}
 		}
 	}
@@ -1028,4 +1026,157 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 	return true;
 }
 
+bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r)
+{
+	if(MorD < 1 || MorD > 2)
+	{
+		return false;
+	}
 
+	const int nColors	=	256;
+	float Pmax = 0,Pmin = 1.0, Xm=0 , Xg=0 ,Beta=0;
+	vector <float> pdf(nColors,0),cdf(nColors,0);
+
+	//統計灰階分佈pdf
+	cv::Mat	tdst(src.size(),src.type());
+	for(int i=0;i<src.rows;i++)
+		for(int j=0;j<src.cols;j++)
+			pdf[(int)src.data[i*src.cols+j]]++;		
+
+	//計算出平均值,並找出積率分佈中的最大最小值
+	for(int i=0;i<nColors;i++)
+	{
+		pdf[i] /= (float)(src.rows*src.rows);
+		Xm += i*pdf[i];
+
+		if(pdf[i]>Pmax)
+			Pmax = pdf[i];
+
+		if(pdf[i]<Pmin)
+			Pmin = pdf[i];
+	}
+	//影像灰階值的中位數
+	Xg = (0+nColors-1)/2.0;
+	//計算Beta,用來更新權重
+	Beta = Pmax*abs(Xm-Xg)/(nColors-1);
+
+	vector <int> segmentation(pow(2,(double)r)+1,0);
+
+	segmentation[0] = -1;
+	segmentation[pow(2,(double)r)] = nColors-1;
+	/////////////////////////////////////////////////////////////////////////////////////////
+	//Histogram Segmentation Module
+	/////////////////////////////////////////////////////////////////////////////////////////////
+	if(MorD == 1)//用平均值分割
+	{
+		int Xl,Xu;
+
+		for(int i=0;i<r;i++)
+		{
+			int location = pow(2,(double)(r-i))/2;
+			int interval = location;
+			for(int j=0;j<pow(2,(double)i);j++)
+			{
+				Xl = segmentation[location-interval]+1;
+				Xu = segmentation[location+interval];
+
+				float m=0,sum=0;
+				for(int k=Xl;k<=Xu;k++)
+				{
+					m += k*pdf[k];
+					sum += pdf[k];
+				}
+
+				segmentation[location] =(int)(m/sum+0.5);
+				location += 2*interval;
+			}
+		}
+	}
+	else if(MorD == 2)//用中位數分割
+	{
+		for(int i=0;i<nColors;i++)
+			cdf[i] = pdf[i];
+
+		for(int i=1;i<nColors;i++)
+			cdf[i] += cdf[i-1];
+
+		int Xl,Xu;
+
+		for(int i=0;i<r;i++)
+		{
+			int location = pow(2,(double)(r-i))/2;
+			int interval = location;
+			for(int j=0;j<pow(2,(double)i);j++)
+			{
+				Xl = segmentation[location-interval]+1;
+				Xu = segmentation[location+interval]; 
+
+				float m = (cdf[Xl]+cdf[Xu])/2 , m_min = 1.0;
+
+				for(int k=Xl;k<=Xu;k++)
+				{
+					if(abs(cdf[k]-m) < m_min)
+					{
+						m_min = abs(cdf[k]-m);
+						segmentation[location] = k;
+					}
+				}
+
+				location += 2*interval;
+			}
+		}
+	}
+	/////////////////////////////////////////////////////////////
+	//權重更新模組
+	/////////////////////////////////////////////////////////////
+	for(int i=0;i<pow(2,(double)r);i++)
+	{
+		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
+
+		float alpha = 0;
+
+		for(int j=Xl;j<=Xu;j++)
+			alpha += pdf[j];
+
+		for(int j=Xl;j<=Xu;j++)
+		{
+			pdf[j] =  Pmax*pow((pdf[j]-Pmin)/(Pmax-Pmin),alpha)+Beta;
+		}
+	}
+	//將權重做正規劃
+	float sum = 0;
+	for(int i=0;i<nColors;i++)
+		sum += pdf[i];
+
+	for(int i=0;i<nColors;i++)
+		pdf[i] /= sum;
+	/////////////////////////////////////////////////////////////////////
+	//將每一區段作值方圖等化
+	////////////////////////////////////////////////////////////////////////
+	for(int i=0;i<pow(2,(double)r);i++)
+	{
+		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
+		float t_weight=0,D_range=Xu-Xl;
+		//將每個區段的CDF正規劃到1
+		for(int j=Xl;j<=Xu;j++)
+			t_weight += pdf[j];
+
+		for(int j=Xl;j<=Xu;j++)
+			cdf[j] = pdf[j]/t_weight;
+
+		for(int j=Xl+1;j<=Xu;j++)
+			cdf[j] += cdf[j-1];
+
+		for(int j=Xl;j<=Xu;j++)
+			cdf[j] = cdf[j]*D_range + Xl;
+	}
+
+	for(int i=0;i<src.rows;i++)
+		for(int j=0;j<src.cols;j++){
+			tdst.data[i*src.cols+j] = cdf[src.data[i*src.cols+j]]+0.5;
+		}
+	//////////////////////////////////////////////////////////////////////////
+	dst	=	tdst.clone();
+
+	return true;
+}

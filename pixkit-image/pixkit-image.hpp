@@ -13,6 +13,8 @@
 #include <vector>
 #include <fstream>
 
+using namespace std;
+
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
 
@@ -281,6 +283,13 @@ namespace pixkit{
 			* @return		bool: true: successful, false: failure
 			*/
 			bool GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);
+
+			/************************************************************************/
+			/** 
+
+			*/
+			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
+			/************************************************************************/
 
 		}
 
