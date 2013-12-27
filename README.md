@@ -1,4 +1,4 @@
-Please read below before being a <b>user</b> or a <b>contributer</b>, many thanks. 
+Please read below before being a <b>[user](https://github.com/yunfuliu/pixkit#for-users)</b> or a <b>[contributer](https://github.com/yunfuliu/pixkit/blob/master/CONTRIBUTING.md)</b>, many thanks. 
 
 pixkit
 ======
