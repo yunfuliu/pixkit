@@ -19,10 +19,7 @@
 namespace pixkit{
 	
 	namespace clustering{
-
 		
-
-
 	}
 
 }

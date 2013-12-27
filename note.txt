@@ -1,0 +1,18 @@
+ok ** 解決install針對ml無法使用之問題
+
+
+** lib包含版本和debug and release說明
+** 測試lib能否用於其他proj
+
+
+** 解決nadd無法使用之問題
+
+** 編寫使用手冊
+
+
+
+** 加入python測試功能
+
+
+
+

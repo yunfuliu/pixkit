@@ -12,8 +12,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 # ============================================================================ #
 # Where to install the pixkit library
-set(PIXKIT_INSTALL_PREFIX "/usr/local/pixkit/lib" CACHE PATH "Installation Directory")
-set(PIXKIT_INCLUDE_PREFIX "/usr/local/pixkit/include" CACHE PATH "Includes Directory")
+#set(PIXKIT_INSTALL_PREFIX "/usr/local/pixkit/lib" CACHE PATH "Installation Directory")
+#set(PIXKIT_INCLUDE_PREFIX "/usr/local/pixkit/include" CACHE PATH "Includes Directory")
+set(PIXKIT_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/lib" CACHE PATH "Installation Directory") ##########
+set(PIXKIT_INCLUDE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/include" CACHE PATH "Includes Directory") ##########
 
 
 # ============================================================================ #
@@ -75,7 +77,7 @@ install(TARGETS PIXKIT_IMAGE DESTINATION ${PIXKIT_INSTALL_PREFIX})
 install(TARGETS PIXKIT_ML DESTINATION ${PIXKIT_INSTALL_PREFIX})
 install(FILES
     pixkit-image/pixkit-image.hpp
-	pixkit-ml.hpp
+	pixkit-ml/pixkit-ml.hpp
     DESTINATION
     ${PIXKIT_INCLUDE_PREFIX}
 )
