@@ -18,8 +18,12 @@
 
 namespace pixkit{
 	
+	namespace clustering{
 
+		
+
+
+	}
 
 }
-
 #endif
