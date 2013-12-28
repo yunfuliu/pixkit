@@ -577,6 +577,10 @@ bool pixkit::halftoning::dotdiffusion::CNADDCT::save(char name[]){
 	}
 
 	FILE	*fn=fopen(name,"wb");
+	if(fn==NULL){
+		CV_Error(CV_StsNullPtr,"[pixkit::halftoning::dotdiffusion::CNADDCT::save] fn is NULL.");
+		return false;
+	}
 	//////////////////////////////////////////////////////////////////////////
 	// save the height and width of ct (format: short int (2B) for each of height and width)
 	fwrite(&m_CT_height,sizeof(short int),1,fn);
@@ -627,6 +631,10 @@ bool pixkit::halftoning::dotdiffusion::CNADDCT::load(char name[]){
 	// load the .map file and make an entire CT from CT map
 
 	FILE	*fn=fopen(name,"rb");
+	if(fn==NULL){
+		CV_Error(CV_StsNullPtr,"[pixkit::halftoning::dotdiffusion::CNADDCT::load] fn is NULL.");
+		return false;
+	}
 	//////////////////////////////////////////////////////////////////////////
 	// load the size of ct
 	fread(&m_CT_height,sizeof(short int),1,fn);
