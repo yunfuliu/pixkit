@@ -15,7 +15,7 @@ PIXKIT MANUAL
 
 * All the required resources involving "include" and "lib" are in the folder `/install`
 
-	- Samples: Some examples are also builded up in `/samples` for test
+	- Samples: Some examples are also built up in `/samples` for test
 
 	- Function definitions: Please go [wiki](https://github.com/yunfuliu/pixkit/wiki)
 
