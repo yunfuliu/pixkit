@@ -262,7 +262,6 @@ namespace pixkit{
 			* 
 			* @author		Shao-Yun Liu
 			* @date			May 15, 2013
-			* @bug			It still has some bugs.
 			* 
 			* @param		x: It is a power-term, and it is suggested within [0 ~ 5]. 
 			* 
