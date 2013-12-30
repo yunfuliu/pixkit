@@ -63,18 +63,25 @@ target_link_libraries(pixkit_ml ${OpenCV_LIBS})
 
 
 # ============================================================================ #
-# Sample programs
+# Sample programs (image/halftoning)
 add_executable(image_halftoning_dotdiffusion_GuoLiu2009
 	examples-image/halftoning/dotdiffusion.GuoLiu2009/example_dotdiffusion.GuoLiu2009.cpp
 )
 target_link_libraries(image_halftoning_dotdiffusion_GuoLiu2009 pixkit_image)
-
-# Sample programs
 add_executable(image_halftoning_dotdiffusion_NADD2013
 	examples-image/halftoning/dotdiffusion.NADD2013/example_dotdiffusion.NADD2013.cpp
 )
 target_link_libraries(image_halftoning_dotdiffusion_NADD2013 pixkit_image)
 
+# Sample programs (image/enhancement)
+add_executable(image_enhancement_MaryKim2008
+	examples-image/enhancement/enhancement.MaryKim2008/example_MaryKim2008.cpp
+)
+target_link_libraries(image_enhancement_MaryKim2008 pixkit_image)
+add_executable(image_enhancement_WadudKabirDewanChae2007
+	examples-image/enhancement/enhancement.WadudKabirDewanChae2007/example_WadudKabirDewanChae2007.cpp
+)
+target_link_libraries(image_enhancement_WadudKabirDewanChae2007 pixkit_image)
 
 # ============================================================================ #
 # Library installation
