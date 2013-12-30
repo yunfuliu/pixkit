@@ -31,13 +31,11 @@ For users
 ---------
 Install [OpenCV](http://opencv.org/), and go <[HERE](http://goo.gl/GHfv9g "pixkit/releases")> to download pixkit.
 
-pixkit involves two paths:
-- `\pixkit-image`: Manual please go [here](https://github.com/yunfuliu/pixkit/blob/master/pixkit-image/readme.md)
+pixkit involves two major functions:
+- `\pixkit-image`
 - `\pixkit-ml`
 
-for either image processing or machine learning related usages.
-Also, the explanation of each function has been temporarily described in `.hpp` in the current version.
-
+Manual please go [manual](https://github.com/yunfuliu/pixkit/blob/master/MANUAL.md) for details.
 
 For contributors
 ----------------

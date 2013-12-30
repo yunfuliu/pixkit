@@ -18,7 +18,7 @@ void main(){
 		// process
 		if(pixkit::halftoning::dotdiffusion::GuoLiu2009(src,dst,8)){
 			// write output
-			cv::imwrite("result/output.bmp",dst);
+			cv::imwrite("output.bmp",dst);
 
 			// show image
 			cv::imshow("src",src);
