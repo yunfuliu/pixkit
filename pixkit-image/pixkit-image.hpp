@@ -13,8 +13,6 @@
 #include <vector>
 #include <fstream>
 
-using namespace std;
-
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
 
