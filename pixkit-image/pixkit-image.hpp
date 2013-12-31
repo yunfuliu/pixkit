@@ -263,7 +263,6 @@ namespace pixkit{
 			*/
 			bool GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);
 
-			/************************************************************************/
 			/**
 			* @brief		global contrast enhancement
 			* @brief		paper: Mary Kim and Min Gyo Chung, "Recursively Separated and Weighted Histogram Equalization for Brightness Preservation and Contrast Enhancement," 2008.
@@ -277,7 +276,6 @@ namespace pixkit{
 			* @return		bool: true: successful, false: failure
 			*/
 			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
-			/************************************************************************/
 
 		}
 
