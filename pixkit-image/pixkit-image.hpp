@@ -23,6 +23,13 @@ namespace pixkit{
 	namespace attack{
 
 		/**
+		* @brief		add Gaussian noise to each pixel
+		*
+		* @param		sd:	standard deviation, unit: grayscale. range: 0~255
+		*/
+		bool	addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const double sd);
+
+		/**
 		* @brief		add white noise to each pixel
 		*
 		* @param		maxMag: the biggest mag of the noise
@@ -232,6 +239,20 @@ namespace pixkit{
 
 			/**
 			* @brief		global contrast enhancement
+			* @brief		paper: M. Abdullah-Al-Wadud, Md. Hasanul Kabir, M. Ali Akber Dewan, and O. Chae, "A dynamic histogram equalization for image contrast enhancement," Intl. Conf. Consumer Electronics, pp. 1-2, 2007.
+			* @brief		nickname: dynamic histogram equalization (DHE)
+			* 
+			* @author		Shao-Yun Liu
+			* @date			May 15, 2013
+			* 
+			* @param		x: It is a power-term, and it is suggested within [0 ~ 5]. 
+			* 
+			* @return		bool: true: successful, false: failure
+			*/
+			bool WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
+
+			/**
+			* @brief		global contrast enhancement
 			* @brief		paper: R. C. Gonzalez and R. E. Woods, Digital Image Processing, 2nd ed., Reading, MA: Addison-Wesley, 1992.
 			* @brief		nickname: global histogram equalization (GHE)
 			* 
@@ -241,6 +262,20 @@ namespace pixkit{
 			* @return		bool: true: successful, false: failure
 			*/
 			bool GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);
+
+			/**
+			* @brief		global contrast enhancement
+			* @brief		paper: Mary Kim and Min Gyo Chung, "Recursively Separated and Weighted Histogram Equalization for Brightness Preservation and Contrast Enhancement," 2008.
+			*
+			* @author		JC Yu
+			* @date			December 15, 2013
+			*
+			* @param        MorD 1:直方圖用平均值去切割 2:直方圖用中位數去切割
+			* @param        r: 直方圖分割遞回的次數,論文建議給予2
+			*
+			* @return		bool: true: successful, false: failure
+			*/
+			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
 
 		}
 

@@ -12,11 +12,12 @@ void main(){
 
 	cv::Mat	src,dst;
 
-	// load image
+	char name1[50],name2[50];
+
 	src	=	cv::imread("../../../data/lena.bmp",CV_LOAD_IMAGE_GRAYSCALE);
 	if(!src.empty()){
 		// process
-		if(pixkit::halftoning::dotdiffusion::GuoLiu2009(src,dst,8)){
+		if(pixkit::enhancement::global::MaryKim2008(src,dst,2)){
 			// write output
 			cv::imwrite("output.bmp",dst);
 

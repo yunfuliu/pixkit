@@ -12,6 +12,8 @@ Here's the long and short of it:
 1. If you are a first-time contributor:
 ---------------------------------------
 
+   * Sign up for github (if you have no accounts): [Go here](https://github.com/)
+
    * Be a fork:
    
        Go to <[pixkit](https://github.com/yunfuliu/pixkit)>
@@ -27,9 +29,12 @@ Here's the long and short of it:
    * Add upstream repository:
 
        To keep track of the original repository, you need to add 
-       another remote named ``upstream``.
-
+       another remote named ``upstream``.<br>
+       
+       Right click on the project after you clone it, and click "open a shell here"
        ``git remote add upstream https://github.com/yunfuliu/pixkit.git``
+
+       Checkout by ``git remote``
 
    * Now, you have remote repositories named:
 
@@ -45,21 +50,43 @@ Here's the long and short of it:
 
 2. Develop your contribution:
 -----------------------------
+Following operations are needed to keep track of the original repo.
 
    * Pull the latest changes from ``upstream``:
 
        ``git checkout master``<br>
        ``git pull upstream master``
 
-   * Create a branch for the feature you want to work on. Since the
-     branch name will appear in the merge message, use a sensible name
-     such as 'transform-speedups':
+   * Go to the GUI, and create a new branch for the feature you want 
+     to work on. Since the branch name will appear in the merge message, 
+     use a sensible name such as 'add-halftoning' (add funcationality of 
+     halftoning):
 
-       ``git checkout -b transform-speedups``
+*NOTE* 
+
+    Please base upon the branch 'master' to create your new branch,
+    rather than 'release'.
+    Also, branch name 'add-???' for adding new functionality;
+    branch name 'bug#???' for debuging. 
 
    * Commit locally as you progress (``git add`` and ``git commit``)
 
-3. To submit your contribution:
+3. Work on your contributions:
+-----------------------------
+
+   * For adding new functionality:<br>
+     1) Define your functions in `./pixkit-xxx/*.hpp`<br>
+     2) Place your source code in `./pixkit-xxx/src/*.cpp` 
+        Notably, please completely test your functions, such as various 
+        image sizes.<br>
+     3) Organize your example in `./examples-xxx` for each of your 
+        functionality<br>
+     4) Explane your functions in [wiki](https://github.com/yunfuliu/pixkit/wiki)
+
+   * For debugging: 
+     1) When you finish, please let us know during pulling requests. 
+
+4. To submit your contribution:
 -------------------------------
 
    * Push your changes back to your fork on GitHub::
