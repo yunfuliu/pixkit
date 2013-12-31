@@ -159,23 +159,6 @@ namespace pixkit{
 			bool LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
 
 			/**
-			* @brief		local contrast enhancement		
-			* @brief		paper: L. Jiao, Z. Sun, and A. Sha, "Improvement of image contrast with local adaptation,," Intl. Conf. Multimedia and Information Technology, 2010.
-			* @brief		nickname: Partially Overlapped Sub-block Logarithmic Trandformation (POSLT)
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			Sept. 3, 2013
-			* @bug			This function still has some bugs. Nov. 28, 2013.
-			* 
-			* @param		BlockSize: block size (blocksize >= step size)
-			* @param		StepSize: step size (the smaller step size, the better quality; when step size = block size: nonoverlapped strategy; when step size< block: overlapped strategy)
-			* @param		mode: 1: use EME as cost function; 2: use TEN as cost function
-			*
-			* @return		bool: true: successful, false: failure
-			*/
-			bool JiaoSunSha2010(const cv::Mat &src,cv::Mat &dst,const cv::Size BlockSize,const cv::Size StepSize,const short mode);
-
-			/**
 			* @brief		local contrast enhancement, KimKimHwang2001 POSHE's improvement
 			* @brief		paper: F. Lamberti, B. Montrucchio, and A. Sanna, "CMBFHE: a novel contrast enhancement technique based on cascaded multistep binomial filtering histogram equalization," TCE, vol. 52, no. 3, 2006.
 			* @brief		nickname: cascaded multistep binomial filtering histogram equalization (CMBFHE)
