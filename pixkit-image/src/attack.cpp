@@ -4,17 +4,25 @@
 bool	pixkit::attack::addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const double sd){
 	
 	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
 	if(src.empty()){
 		return false;
 	}
 	if(src.type()!=CV_8U){
 		return false;
 	}
+	if(sd<0.){
+		CV_Error(CV_StsBadArg,"[pixkit::attack::addGaussianNoise] sd should bigger than 0.");
+	}else if(sd==0.){
+		dst=src.clone();
+		return true;
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	///// initialization
 	const	double	PI			=	3.1415926;
 	const	int		MAXVALUE	=	255;
+	const	int		CENTER		=	128;
 
 	//////////////////////////////////////////////////////////////////////////
 	cv::Mat	tdst;
@@ -23,53 +31,63 @@ bool	pixkit::attack::addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const doub
 	//////////////////////////////////////////////////////////////////////////
 	///// get cdf [output] dis
 	double	cdf[257]={0};
-	double	fm=0.;	// 分母
+	double	fm=0.;	// denominator
 	for(int i=-128;i<=128;i++){
-		if(sd==0.){
-			if(i!=0){	// 使得以下計算error最小值為i==0時
-				cdf[i+128]	=	0.;
-			}else{
-				cdf[i+128]	=	1.;
-			}
-		}else{
-			cdf[i+128]=1./sqrt((double)2.*PI*sd*sd)*exp((double)-0.5*i*i/sd/sd);	// get pdf
-		}
-		fm+=cdf[i+128];	// get fm
+		cdf[i+CENTER]=1./sqrt((double)2.*PI*sd*sd)*exp((double)-0.5*i*i/sd/sd);	// get pdf
+		fm+=cdf[i+CENTER];	// get fm
 	}
-	for(int i=0;i<257;i++){
-		cdf[i]/=fm;	// normalize
-	}
+	cdf[0]/=fm;
 	for(int i=1;i<257;i++){
-		cdf[i]+=cdf[i-1];	// cdf
+		cdf[i]/=fm;	// normalize	
+		cdf[i]+=cdf[i-1];	// get cdf
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// add noise
+	///// add noise
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			///// obtain noise, 垂直為white noise, 以找到對應的水平雜訊強度, 故以尋找最小值方式進行, [output] noise
+
+			// obtain noise
 			double	rand_value=(double)rand()/RAND_MAX;	// white noise from 0 to 1
-			double	minv=9999999.;
-			double	noise_position=0;
-			for(int k=0;k<257;k++){
-				if(cdf[k]!=0){
-					double	temp=fabs(rand_value-cdf[k]);
-					if(temp<minv){
-						minv=temp;
-						noise_position=k;
+			double	minv=fabs(rand_value-cdf[CENTER]);	// start from center
+			double	noise_position=CENTER;
+			if(rand_value<0.5){	// to speed up, it is separated into two parts
+				for(int k=127;k>=0;k--){	// find out the minimum to be the noise mag 
+					if(cdf[k]!=0){
+						double	temp=fabs(rand_value-cdf[k]);
+						if(temp<minv){
+							minv=temp;
+							noise_position=k;
+						}
+					}else{
+						break;
+					}
+				}
+			}else{
+				for(int k=129;k<257;k++){	// find out the minimum to be the noise mag 
+					if(cdf[k]!=1.){
+						double	temp=fabs(rand_value-cdf[k]);
+						if(temp<minv){
+							minv=temp;
+							noise_position=k;
+						}
+					}else{
+						break;
 					}
 				}
 			}
-			double	noise_mag=noise_position-128.;
 
-			///// add noise
-			tdst.data[i*tdst.cols+j]+=noise_mag;
+			// get mag
+			double	noise_mag=noise_position-CENTER;
+
+			// add noise
+			tdst.data[i*tdst.cols+j]+=noise_mag;			
 			if(tdst.data[i*tdst.cols+j]>MAXVALUE){
 				tdst.data[i*tdst.cols+j]=MAXVALUE;
-			}
-			if(tdst.data[i*tdst.cols+j]<0){
+			}else if(tdst.data[i*tdst.cols+j]<0){
 				tdst.data[i*tdst.cols+j]=0;
 			}
+
 		}
 	}
 

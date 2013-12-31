@@ -24,7 +24,6 @@ namespace pixkit{
 
 		/**
 		* @brief		add Gaussian noise to each pixel
-		* @bug			目前稍嫌不正確, 應將normal的cdf轉換, 以將輸入y取得x, 之公式取得, 才可進行正確運算.
 		*
 		* @param		sd:	standard deviation, unit: grayscale. range: 0~255
 		*/
