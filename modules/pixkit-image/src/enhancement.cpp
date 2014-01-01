@@ -1,4 +1,4 @@
-#include "../pixkit-image.hpp"
+#include "../include/pixkit-image.hpp"
 
 //////////////////////////////////////////////////////////////////////////
 ///// Local contrast enhancement

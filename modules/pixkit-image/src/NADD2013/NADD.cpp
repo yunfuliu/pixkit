@@ -38,7 +38,7 @@
 //========================================================================
 
 #include <ctime>
-#include "../../../pixkit-image/pixkit-image.hpp"
+#include "../../include/pixkit-image.hpp"
 
 /************************************************************************/
 /* CLOAD                                                                */
@@ -685,15 +685,17 @@ bool pixkit::halftoning::dotdiffusion::CNADDCT::load(char name[]){
 /************************************************************************/
 /* NADD2013                                                             */
 /************************************************************************/
-void pixkit::halftoning::dotdiffusion::NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct){
+bool pixkit::halftoning::dotdiffusion::NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct){
 
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions
 	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"");
+//		CV_Error(CV_BadNumChannels,"");
+		return false;
 	}
 	if(src.empty()){
-		CV_Error(CV_StsBadArg,"src is empty.");
+//		CV_Error(CV_StsBadArg,"src is empty.");
+		return false;
 	}
 
 	// get src clone to dst
@@ -784,4 +786,6 @@ void pixkit::halftoning::dotdiffusion::NADD2013(cv::Mat &src,cv::Mat &dst,pixkit
 	delete	[]	temp_dst;
 	delete	[]	orderData;
 	delete	[]	order;
+
+	return true;
 }
