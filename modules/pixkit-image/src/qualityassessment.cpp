@@ -1,5 +1,5 @@
 #include "edgedetection.cpp"
-#include "../pixkit-image.hpp"
+#include "../include/pixkit-image.hpp"
 //////////////////////////////////////////////////////////////////////////
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
 

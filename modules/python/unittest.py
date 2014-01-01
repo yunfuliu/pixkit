@@ -3,9 +3,9 @@ import os
 
 # ===============================================================================
 # add programs
-programs = ['test_prog']
+programs = ['test_image_halftoning']
 for i in range(len(programs)):
-  programs[i] = '.\\x64\\Debug\\' + programs[i]
+  programs[i] = '.\\' + programs[i]
 if sys.platform == 'win32':
   for i in range(len(programs)):
     programs[i] = programs[i] + '.exe'

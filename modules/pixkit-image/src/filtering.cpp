@@ -1,4 +1,4 @@
-#include "../pixkit-image.hpp"
+#include "../include/pixkit-image.hpp"
 
 //////////////////////////////////////////////////////////////////////////
 bool pixkit::filtering::medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size blocksize){
