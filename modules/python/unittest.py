@@ -12,18 +12,18 @@ if sys.platform == 'win32':
 
 # ===============================================================================
 # Helper functions
-def test_func_01(imagePath):
-  command = " ".join([programs[0], ' -i ', imagePath])
+def image_halftoning(delay):
+  command = " ".join([programs[0], delay])
   print command
   a = os.system(command)
   print a
 
 # ===============================================================================
 # Example datasets
-imagePath1 = '.\datasets\iguazu\img1.pgm'
+delay = '0' #ms
 
 # Go!
-test_func_01(imagePath1)
+image_halftoning(delay)
 
 
 
