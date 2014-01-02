@@ -102,6 +102,13 @@ add_executable(test_image_halftoning
 )
 target_link_libraries(test_image_halftoning pixkit_image)
 
+# set up property
+set_target_properties(
+	test_image_halftoning
+	PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY_RELEASE	${PIXKIT_TEST_PREFIX}
+)
+
 
 
 # ============================================================================ #
