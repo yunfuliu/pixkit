@@ -23,7 +23,7 @@ namespace pixkit{
 		* @brief		clustering the input data by using this function
 		* @brief		paper: V. K. Dehariya, S. K. Shrivastava, R. C. Jain, "Clustering Of Image Data Set Using K-Means And Fuzzy K-Means Algorithms", IEEE International Conf. of CICN, 2010
 		*
-		* @author		Yunfu Liu (yunfuliu@gmail.com)
+		* @author		HuangYu Liu (yf6204220@hotmail.com)
 		* @date			Jan. 3, 2014
 		* @version		1.0
 		*
