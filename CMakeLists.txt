@@ -113,8 +113,18 @@ set_target_properties(
 
 # ============================================================================ #
 # Library installation
-install(TARGETS pixkit_image DESTINATION ${PIXKIT_INSTALL_PREFIX})
-install(TARGETS pixkit_ml DESTINATION ${PIXKIT_INSTALL_PREFIX})
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(PIXKIT_ENV "x64")
+else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(PIXKIT_ENV "x86")
+endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(MSVC10)
+	set(PIXKIT_COMPILER "vc10")
+elseif(MSVC11)
+	set(PIXKIT_COMPILER "vc11")
+endif()
+install(TARGETS pixkit_image DESTINATION "${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
+install(TARGETS pixkit_ml DESTINATION "${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
 install(FILES
     modules/pixkit-image/include/pixkit-image.hpp
 	modules/pixkit-ml/include/pixkit-ml.hpp
