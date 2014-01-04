@@ -65,7 +65,7 @@ target_link_libraries(pixkit_image ${OpenCV_LIBS})
 # pixkit-ml libraries
 set(PIXKIT_ML_SRCS
 	modules/pixkit-ml/include/pixkit-ml.hpp
-	modules/pixkit-ml/src/pixkit-ml.cpp
+	modules/pixkit-ml/src/fuzzyCMeans.cpp
 )
 add_library(pixkit_ml ${PIXKIT_ML_SRCS})
 target_link_libraries(pixkit_ml ${OpenCV_LIBS})
