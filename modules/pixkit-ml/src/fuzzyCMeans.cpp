@@ -15,6 +15,14 @@ double radius(const vector<vector<double>> &src, const int c1, const vector<vect
 	return euclideanDistance;
 }
 bool pixkit::clustering::fuzzyCMeans(const std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, const int seedNum, const int K, const double m, const int iterNum, std::vector<std::vector<double>> &initialPosi, pixkit::clustering::FUZZYCM_TYPE type){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+
+
+
+
+
 	int i, j, k, d, s;
 
 	double vectorSize = src.size();		//The vector height
