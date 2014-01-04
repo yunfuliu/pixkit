@@ -1,8 +1,10 @@
 #include "../include/pixkit-ml.hpp"
+#include <ctime>
+
+using namespace std;
 
 //Calculate the euclidean distance between the two points
-double radius(const vector<vector<double>> &src, const int c1, const vector<vector<double>> &randomPosi, const int k1)
-{
+double radius(const vector<vector<double>> &src, const int c1, const vector<vector<double>> &randomPosi, const int k1){
 	double euclideanDistance = 0.0;
 
 	//Calculate the euclidean distance in multi-dimension
@@ -12,10 +14,7 @@ double radius(const vector<vector<double>> &src, const int c1, const vector<vect
 
 	return euclideanDistance;
 }
-
-enum TYPE{FUZZYCM_USERDEFINEPOS = 1, FUZZYCM_RANDPOS};
-
-bool pixkit-mi::clustering::fuzzyCMeans(const vector<vector<double>> &src, vector<vector<double>> &dst, const int seedNum, const int K, const double m, const int iterNum, vector<vector<double>> &initialPosi = vector<vector<double>>(), TYPE type = FUZZYCM_RANDPOS){
+bool pixkit::clustering::fuzzyCMeans(const std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, const int seedNum, const int K, const double m, const int iterNum, std::vector<std::vector<double>> &initialPosi, pixkit::clustering::FUZZYCM_TYPE type){
 	int i, j, k, d, s;
 
 	double vectorSize = src.size();		//The vector height
