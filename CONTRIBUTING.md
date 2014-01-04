@@ -38,10 +38,8 @@ Here's the long and short of it:
 
    * Now, you have remote repositories named:
 
-       - ``upstream``, which refers to the 'pixkit' repository
+       - ``upstream``, which refers to the original 'pixkit' repository
        - ``origin``, which refers to your personal fork <br>
-       You can check by 
-         ``git remote``
 
 *NOTE* 
 
@@ -69,39 +67,45 @@ Following operations are needed to keep track of the original repo.
     Also, branch name 'add-???' for adding new functionality;
     branch name 'bug#???' for debuging. 
 
-   * Commit locally as you progress (``git add`` and ``git commit``)
+   * Commit locally as you progress (``git add`` and ``git commit``). You can also do these on GitHub GUI.
 
 3. Work on your contributions:
 -----------------------------
 
-   * For adding new functionality:<br>
-     1) Define your functions in `./pixkit-xxx/*.hpp`<br>
-     2) Place your source code in `./pixkit-xxx/src/*.cpp` 
-        Notably, please completely test your functions, such as various 
-        image sizes.<br>
-     3) Organize your example in `./examples-xxx` for each of your 
-        functionality<br>
-     4) Explane your functions in [wiki](https://github.com/yunfuliu/pixkit/wiki)
-
-   * For debugging: 
-     1) When you finish, please let us know during pulling requests. 
+   * To contribute a new functionality:<br>
+     - 1) Define your functions in `./modules/pixkit-NAME/include/pixkit-NAME.hpp`<br>
+     - 2) Place your source code in `.modules/pixkit-NAME/src/*.cpp`<br>
+     - 3) Place and organize each of your examples in `./examples-NAME/*` individually.
+        Notably, please completely test your functions, such as various image sizes, 
+        to make sure it could work correctly on various situstions.<br>
+     - 4) Explane your functions in [wiki](https://github.com/yunfuliu/pixkit/wiki)
 
 4. To submit your contribution:
 -------------------------------
 
-   * Push your changes back to your fork on GitHub::
+   * To make sure your contributions are basing upon the state-of-the-art original 
+     pixkit (for consistency), pull the latest changes from ``upstream``:
 
-      ``git push origin transform-speedups``
+       ``git checkout master``<br>
+       ``git pull upstream master``
 
-   * Go to GitHub. The new branch will show up with a Pull Request button -
-     click it.
+   * Make sure your functions still work correctly on each of your examples in 
+     `./examples-NAME/*`. 
+
+   * Go on to the GitHub GUI, commit and push (sync) your contributions to cloud. 
+
+   * The last step is to send a pull request to merge your contributions into original repo:
+     - Go to original repo [here](https://github.com/yunfuliu/pixkit) 
+     - Click "Pull Requests" on the right
+     - Click "compare across forks" on the top, 
+       the base fork should be "yunfuliu/pixkit master", and head fork should be yours.
+     - Create this pull request, and wait for a peer review process for your contributions.  
 
 *NOTE*
 
     To reviewers: add a short explanation of what a branch did to the merge
     message and, if closing a bug, also add "Closes gh-123" where 123 is the
     bug number.
-
 
 Divergence between 'upstream master' and your feature branch
 --------------------------------------------------------------
@@ -139,7 +143,7 @@ Guidelines
   <https://github.com/yunfuliu/pixkit/wiki>
 
 * For new functionality, always add an example to the corresponding 
-  <b>/examples-xx folder</b>.
+  <b>./examples-NAME/ folder</b>.
 
 * No changes should be committed without review. Ask 
   [Yun-Fu Liu](yunfuliu@gmail.com) if you get no response to your pull request.
