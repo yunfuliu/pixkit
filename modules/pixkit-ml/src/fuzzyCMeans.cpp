@@ -31,6 +31,8 @@ bool pixkit::clustering::fuzzyCMeans(const std::vector<std::vector<double>> &src
 	double distance = 0.0;
 	srand(time(NULL));
 
+	dst = vector<vector<double>>(vectorSize, vector<double>(dimension, 0));
+
 	vector<double> weightSum(vectorSize, 0);
 
 	vector<double> srcLabel(vectorSize, 0);

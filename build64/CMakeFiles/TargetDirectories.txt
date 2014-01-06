@@ -1,0 +1,9 @@
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/ALL_BUILD.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/ZERO_CHECK.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/image_enhancement_MaryKim2008.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/image_enhancement_WadudKabirDewanChae2007.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/image_halftoning_dotdiffusion_GuoLiu2009.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/image_halftoning_dotdiffusion_NADD2013.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/pixkit_image.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/pixkit_ml.dir
+C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/CMakeFiles/test_image_halftoning.dir
