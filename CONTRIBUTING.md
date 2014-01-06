@@ -78,7 +78,7 @@ Following operations are needed to keep track of the original repo.
      - 3) Place and organize each of your examples in `./examples-NAME/*` individually.
         Notably, please completely test your functions, such as various image sizes, 
         to make sure it could work correctly on various situstions.<br>
-     - 4) Explane your functions in [wiki](https://github.com/yunfuliu/pixkit/wiki)
+     - 4) Explane your functions in [wiki](https://github.com/yunfuliu/pixkit/wiki) with same style. 
 
 4. To submit your contribution:
 -------------------------------
