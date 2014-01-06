@@ -1,5 +1,0 @@
-C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/install/lib/x64/vc10/pixkit_image020.lib
-C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/install/lib/x64/vc10/pixkit_ml020.lib
-C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/install/include/pixkit-image.hpp
-C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/install/include/pixkit-ml.hpp
-C:/Users/Jeremy Liu/Documents/GitHub/pixkit/build64/install/test/unittest.py
