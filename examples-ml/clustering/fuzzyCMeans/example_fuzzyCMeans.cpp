@@ -19,17 +19,17 @@ void main(){
 	src[4][0] = 10;	src[4][1] = 5;
 	src[5][0] = 12;	src[5][1] = 4;
 	
-	// unsupervised clustering with fuzzy c means 
-	pixkit::clustering::fuzzyCMeans(src,dst,1,2,2.0,15);
+	// unsupervised clustering with fuzzy c means
+	pixkit::clustering::fuzzyCMeans(src,dst,1,2,2.0,4);
 
 	// output display
 	for(int i = 0; i < src.size(); i++){
 		for(int j = 0; j < src[0].size(); j++){
-			std::cout << dst[i][j] << " ";
+			std::cout << dst[i][j] << "\t";
 		}
 		std::cout << std::endl;
 	}
-	std::cout		<<	std::endl;
+	std::cout	<<	std::endl;
 
 	system("pause");
 }

@@ -38,7 +38,7 @@ namespace pixkit{
 		* @return		bool: true: successful, false: failure
 		*/
 		enum FUZZYCM_TYPE{FUZZYCM_USERDEFINEPOS, FUZZYCM_RANDPOS};
-		bool fuzzyCMeans(const std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, const int seedNum, const int K, const double m, const int iterNum, std::vector<std::vector<double>> &initialPosi = std::vector<std::vector<double>>(), pixkit::clustering::FUZZYCM_TYPE type = FUZZYCM_RANDPOS);
+		bool fuzzyCMeans(const std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, const int seedNum, const int K, const double m, const int iterNum, std::vector<std::vector<double>> &initialPosi = std::vector<std::vector<double>>(), pixkit::clustering::FUZZYCM_TYPE type = FUZZYCM_RANDPOS,bool debug=false);
 	}
 
 }
