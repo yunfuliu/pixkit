@@ -847,28 +847,28 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 
 	const int nColors	=	256;
 
-	std::vector<double>	Histogram(nColors,0);	// 256個灰階值
+	std::vector<double>	hist(nColors,0);	// initialize histogram 
 
 	// 進行統計
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			Histogram[(int)(src.data[i*src.cols+j])]++;
+			hist[(int)(src.data[i*src.cols+j])]++;
 		}
 	}
 	for(int graylevel=0;graylevel<nColors;graylevel++){
-		Histogram[graylevel]/=(double)(src.rows*src.cols);
+		hist[graylevel]/=(double)(src.rows*src.cols);
 	}
 
 	// 將Histogram改為累積分配函數
 	for(int graylevel=1;graylevel<nColors;graylevel++){
-		Histogram[graylevel]+=Histogram[graylevel-1];
+		hist[graylevel]+=hist[graylevel-1];
 	}
 
 	// 取得新的輸出值
 	cv::Mat	tdst(src.size(),src.type());
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			double	tempv	=	Histogram[(int)(src.data[i*src.cols+j])];
+			double	tempv	=	hist[(int)(src.data[i*src.cols+j])];
 			if(tempv>1){
 				tempv=1.;
 			}
