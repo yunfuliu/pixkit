@@ -1,4 +1,4 @@
-#include "../pixkit-image.hpp"
+#include "../include/pixkit-image.hpp"
 
 //////////////////////////////////////////////////////////////////////////
 bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize){
@@ -6,10 +6,15 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 	//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(ClassMatrixSize!=8&&ClassMatrixSize!=16){
-		CV_Error(CV_StsBadArg,"[halftoning::dotdiffusion::GuoLiu2009] accepts only 8 and 16 these two class matrix sizes");
+//		CV_Error(CV_StsBadArg,"[halftoning::dotdiffusion::GuoLiu2009] accepts only 8 and 16 these two class matrix sizes");
+		return false;
 	}
 	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::dotdiffusion::GuoLiu2009] accepts only grayscale image");
+//		CV_Error(CV_BadNumChannels,"[halftoning::dotdiffusion::GuoLiu2009] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////////

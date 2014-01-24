@@ -3,22 +3,29 @@ project(pixkit)
 cmake_minimum_required (VERSION 2.6)
 
 set(PIXKIT_VERSION_MAJOR 0)
-set(PIXKIT_VERSION_MINOR 2)
+set(PIXKIT_VERSION_MINOR 3)
 set(PIXKIT_VERSION_PATCH 0)
 set(PIXKIT_VERSION_STRING ${PIXKIT_VERSION_MAJOR}${PIXKIT_VERSION_MINOR}${PIXKIT_VERSION_PATCH})
+
+
+
+# ============================================================================ #
+# Where to install the pixkit library
+set(PIXKIT_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/lib" CACHE PATH "Installation Directory")
+set(PIXKIT_INCLUDE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/include" CACHE PATH "Includes Directory")
+set(PIXKIT_SAMPLES_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/samples" CACHE PATH "Samples Directory")
+set(PIXKIT_TEST_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/test" CACHE PATH "Samples Directory")
+
 
 
 # ============================================================================ #
 # Where to output binaries and libraries
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/samples")
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/samples")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PIXKIT_SAMPLES_PREFIX})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
-# ============================================================================ #
-# Where to install the pixkit library
-set(PIXKIT_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/lib" CACHE PATH "Installation Directory")
-set(PIXKIT_INCLUDE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/include" CACHE PATH "Includes Directory")
-#set(PIXKIT_SAMPLES_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/samples" CACHE PATH "Samples Directory")
 
 
 # ============================================================================ #
@@ -30,36 +37,40 @@ find_package(OpenCV REQUIRED)
 #find_package(Doxygen)
 
 
+
 # ============================================================================ #
+# Create projects
 set(CMAKE_DEBUG_POSTFIX ${PIXKIT_VERSION_STRING}d)
 set(CMAKE_RELEASE_POSTFIX ${PIXKIT_VERSION_STRING})
-# Create projects (pixkit-image)
-include_directories("pixkit-image/")
+# Create projects (pixkit-image) ***********************************************
+include_directories("modules/pixkit-image")
 
 # pixkit-image libraries
 set(PIXKIT_IMAGE_SRCS
-	pixkit-image/pixkit-image.hpp
-	pixkit-image/src/attack.cpp
-	pixkit-image/src/edgedetection.cpp
-	pixkit-image/src/enhancement.cpp
-	pixkit-image/src/filtering.cpp
-	pixkit-image/src/halftoning.cpp
-	pixkit-image/src/qualityassessment.cpp
-	pixkit-image/src/NADD2013/NADD.cpp
+	modules/pixkit-image/include/pixkit-image.hpp
+	modules/pixkit-image/src/attack.cpp
+	modules/pixkit-image/src/edgedetection.cpp
+	modules/pixkit-image/src/enhancement.cpp
+	modules/pixkit-image/src/filtering.cpp
+	modules/pixkit-image/src/halftoning.cpp
+	modules/pixkit-image/src/qualityassessment.cpp
+	modules/pixkit-image/src/NADD2013/NADD.cpp
 )
 add_library(pixkit_image ${PIXKIT_IMAGE_SRCS})
 target_link_libraries(pixkit_image ${OpenCV_LIBS})
 
-# Create projects (pixkit-ml)
-include_directories("pixkit-ml/")
+# Create projects (pixkit-ml) **************************************************
+#include_directories("modules/pixkit-ml/")
 
 # pixkit-ml libraries
 set(PIXKIT_ML_SRCS
-	pixkit-ml/pixkit-ml.hpp
-	pixkit-ml/src/pixkit-ml.cpp
+	modules/pixkit-ml/include/pixkit-ml.hpp
+	modules/pixkit-ml/src/fuzzyCMeans.cpp
+	modules/pixkit-ml/src/KMeans.cpp
 )
 add_library(pixkit_ml ${PIXKIT_ML_SRCS})
 target_link_libraries(pixkit_ml ${OpenCV_LIBS})
+
 
 
 # ============================================================================ #
@@ -83,16 +94,50 @@ add_executable(image_enhancement_WadudKabirDewanChae2007
 )
 target_link_libraries(image_enhancement_WadudKabirDewanChae2007 pixkit_image)
 
+
+
+# ============================================================================ #
+# Test programs (image/halftoning)
+add_executable(test_image_halftoning
+	modules/pixkit-image/test/test_halftoning.cpp
+)
+target_link_libraries(test_image_halftoning pixkit_image)
+
+# set up property
+set_target_properties(
+	test_image_halftoning
+	PROPERTIES
+	RUNTIME_OUTPUT_DIRECTORY_RELEASE	${PIXKIT_TEST_PREFIX}
+)
+
+
+
 # ============================================================================ #
 # Library installation
-install(TARGETS pixkit_image DESTINATION ${PIXKIT_INSTALL_PREFIX})
-install(TARGETS pixkit_ml DESTINATION ${PIXKIT_INSTALL_PREFIX})
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(PIXKIT_ENV "x64")
+else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(PIXKIT_ENV "x86")
+endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(MSVC10)
+	set(PIXKIT_COMPILER "vc10")
+elseif(MSVC11)
+	set(PIXKIT_COMPILER "vc11")
+endif()
+install(TARGETS pixkit_image DESTINATION "${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
+install(TARGETS pixkit_ml DESTINATION "${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
 install(FILES
-    pixkit-image/pixkit-image.hpp
-	pixkit-ml/pixkit-ml.hpp
+    modules/pixkit-image/include/pixkit-image.hpp
+	modules/pixkit-ml/include/pixkit-ml.hpp
     DESTINATION
     ${PIXKIT_INCLUDE_PREFIX}
 )
+install(FILES
+    modules/python/unittest.py
+    DESTINATION
+    ${PIXKIT_TEST_PREFIX}
+)
+
 
 
 # ============================================================================ #

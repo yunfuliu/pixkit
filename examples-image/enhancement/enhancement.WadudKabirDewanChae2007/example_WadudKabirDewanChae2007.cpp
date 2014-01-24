@@ -6,7 +6,7 @@
 #include <iostream>
 
 // pixkit-image
-#include "../../../pixkit-image/pixkit-image.hpp"
+#include "../../../modules/pixkit-image/include/pixkit-image.hpp"
 
 void main(){
 
