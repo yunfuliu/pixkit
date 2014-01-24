@@ -46,15 +46,15 @@ namespace pixkit{
 		* @auther		ChienYu Chen (s941314g@yahoo.com.tw)
 		* @date			Jan. 24, 2014
 		*
-		* @param		input:			Input data. The data type is vector.
-		* @param		output:			Output data. The data type is vector.
+		* @param		src:			Input data. The data type is vector.
+		* @param		dst:			Output data. The data type is vector.
 		* @param		K:				How many universe do the user want to cluster, for instance, if you want to segment the input data to two different parts, then you must set the argument to 2.
 		* @param		iter:			Set the iteration number. If set this argument bigger, then the error of result will be much smaller.
-		* @param		initial:		The initial position can define by the user or computer.
+		* @param		type:			The initial position can define by the user or computer.
 		* @param		KM_TYPE:		If user set the type to 1, then the initial position will define by the user. If user set the type to 2, then the initial position will define random by the computer.
 		*/
 		enum KM_TYPE{KM_USERDEFINEPOS, KM_RANDPOS};
-		bool kMean(std::vector<std::vector<double>> &input, std::vector<std::vector<double>> &output, int K, int iter, bool initial = KM_RANDPOS);
+		bool KMeans(std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, int K, int iter, pixkit::clustering::KM_TYPE type = KM_RANDPOS);
 	}
 
 }

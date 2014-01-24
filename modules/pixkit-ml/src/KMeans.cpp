@@ -46,23 +46,23 @@ void calculate(vector<vector<double>> &input, vector<vector<double>> &out, vecto
 		}
 	#pragma endregion
 }
-bool pixkit::clustering::kMean(vector<vector<double>> &input, vector<vector<double>> &output, int K, int iter, bool initial){
+bool pixkit::clustering::KMeans(std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, int K, int iter, pixkit::clustering::KM_TYPE type){
 
-	double vectorSize = input.size();		//	The vector height
-	double dimension = input[0].size();	//	The vector width
+	double vectorSize = src.size();		//	The vector height
+	double dimension = src[0].size();	//	The vector width
 	
 	vector<double> dimensionMaxValue(dimension, 0);
-	output = vector<vector<double>>(K, vector<double>(input[0].size(), 0));
+	dst = vector<vector<double>>(K, vector<double>(src[0].size(), 0));
 
 	srand(time(NULL));
 
-	if( input[0].size() != output[0].size()){	//	Determind the dimension between the input data and the output data is same or not
+	if( src[0].size() != dst[0].size()){	//	Determind the dimension between the input data and the output data is same or not
 
 		cout<<"The input data and the output need be the same dimension\n";
 		return false;
 	}
 
-	if(initial == 1){	//	Generate random initial points
+	if(type == pixkit::clustering::KM_RANDPOS){	//	Generate random initial points
 
 		//	In default case, the initial point define by the computer using the random function
 		for(int d = 0; d < dimension; d++){
@@ -70,32 +70,32 @@ bool pixkit::clustering::kMean(vector<vector<double>> &input, vector<vector<doub
 
 			//	Detect the dimension of input database
 			for(int i = 0; i < vectorSize; i++){
-				if(input[i][d] > dimensionMaxValue[d]){
-					dimensionMaxValue[d] = input[i][d];
+				if(src[i][d] > dimensionMaxValue[d]){
+					dimensionMaxValue[d] = src[i][d];
 				}
 			}
 		}
 
 		for(int i = 0; i < K; i++){
 			for(int d = 0; d < dimension; d++){
-				output[i][d] = rand() % (int)dimensionMaxValue[d];
+				dst[i][d] = rand() % (int)dimensionMaxValue[d];
 			}
 		}
 	}
 
-	vector<double> oldlength(output.size(),1);
-	vector<double> newlength(output.size(),0);
-	vector<vector<double>>	sum(output.size(),vector<double>(output[0].size(),0));	//	Calculate the sum
+	vector<double> oldlength(dst.size(),1);
+	vector<double> newlength(dst.size(),0);
+	vector<vector<double>>	sum(dst.size(),vector<double>(dst[0].size(),0));	//	Calculate the sum
 	
 	if(iter != -1){
 
 		while (iter !=0 ){
 
-			calculate(input,output,sum);	//	Calculate new mean value
+			calculate(src,dst,sum);	//	Calculate new mean value
 
-			for(int i=0;i<output.size();i++){
-				for(int j=0;j<output[0].size();j++){
-					output[i][j]=sum[i][j];
+			for(int i=0;i<dst.size();i++){
+				for(int j=0;j<dst[0].size();j++){
+					dst[i][j]=sum[i][j];
 					sum[i][j]=0;
 				}
 			}
@@ -108,19 +108,19 @@ bool pixkit::clustering::kMean(vector<vector<double>> &input, vector<vector<doub
 		int error=1;
 		while(error !=0){
 
-			calculate(input,output,sum);
+			calculate(src,dst,sum);
 			error=0;
 
-			for(int i=0;i<output.size();i++){
-				for(int j=0;j<output[0].size();j++){
-					newlength[i]+=fabs(output[i][j]-sum[i][j]);
+			for(int i=0;i<dst.size();i++){
+				for(int j=0;j<dst[0].size();j++){
+					newlength[i]+=fabs(dst[i][j]-sum[i][j]);
 				}
 				error=(newlength[i]/oldlength[i] ==0)? error:error+1;
 			}
 
-			for(int i=0;i<output.size();i++){
-				for(int j=0;j<output[0].size();j++){
-					output[i][j]=sum[i][j];
+			for(int i=0;i<dst.size();i++){
+				for(int j=0;j<dst[0].size();j++){
+					dst[i][j]=sum[i][j];
 					sum[i][j]=0;
 				}
 				oldlength[i]=newlength[i];
