@@ -29,13 +29,7 @@ In the current version, `/pixkit-image` involves following grouped functions:
 
 For users
 ---------
-Install [OpenCV](http://opencv.org/), and go <[HERE](http://goo.gl/GHfv9g "pixkit/releases")> to download pixkit.
-
-pixkit involves two major functions:
-- `\pixkit-image`
-- `\pixkit-ml`
-
-Manual please go [manual](https://github.com/yunfuliu/pixkit/blob/master/MANUAL.md) for details.
+See [manual](https://github.com/yunfuliu/pixkit/blob/master/MANUAL.md) for details.
 
 For contributors
 ----------------
