@@ -3,7 +3,8 @@ PIXKIT MANUAL
 
 * Install [OpenCV](http://opencv.org/)
 
-* Download [pixkit](http://goo.gl/GHfv9g "pixkit/releases") to for instance, `C:\pixkit\src\`
+* Go [releases](http://goo.gl/GHfv9g "pixkit/releases") and download the latest version to for instance, `C:\pixkit\src\`  
+  *Not the "Download ZIP" in the homepage!*
 
 	pixkit involves following major functions:
 	- image processing: `pixkit-image`
@@ -24,3 +25,4 @@ PIXKIT MANUAL
 
 	- Function definitions: Please go [wiki](https://github.com/yunfuliu/pixkit/wiki)
 
+* (Optional) If you meet bugs during above procedure, please go [issues](https://github.com/yunfuliu/pixkit/issues) to report in either English or Chinese.
