@@ -3,24 +3,24 @@ PIXKIT MANUAL
 
 * Install [OpenCV](http://opencv.org/)
 
-* Download [pixkit](http://goo.gl/GHfv9g "pixkit/releases")
+* Download [pixkit](http://goo.gl/GHfv9g "pixkit/releases") to for instance, `C:\pixkit\src\`
 
 	pixkit involves following major functions:
 	- image processing: `pixkit-image`
 	- maching learning: `pixkit-ml`
 
-* Build up pixkit with CMake for your environment
+* Build up pixkit with CMake for your environment, and assign a path for your build with, i.e., `C:\pixkit\build\`
 	
-	Currently, only the following environments are tested:
-	- Visual Studio 12 Win64 (please select the Visual Studio 11 while you are selecting the platform)
-	- Visual Studio 11 Win32 and Win64
-	- Visual Studio 10 Win32 and Win64
+	By now, only the following environments are tested:
+	- Visual Studio 12 Win64 (please select the Visual Studio 11 while selecting your platform)
+	- Visual Studio 11 Win32/Win64
+	- Visual Studio 10 Win32/Win64
 
-* Compile INSTALL project in `pixkit.sln` with both release and debug modes
+* Compile INSTALL project in `C:\pixkit\build\pixkit.sln` with both release and debug modes
 
-* All the required resources involving "include" and "lib" are in the folder `/install`
+* All the required resources involving "include" and "lib" are in the folder `C:\pixkit\build\install\`
 
-	- Samples: Some few examples are also built up in `/install/samples` for test
+	- Samples: Some few examples are also built up in `C:\pixkit\build\install\samples\` for test
 
 	- Function definitions: Please go [wiki](https://github.com/yunfuliu/pixkit/wiki)
 
