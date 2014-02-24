@@ -143,6 +143,8 @@ namespace pixkit{
 		/// Local methods
 		namespace local{
 
+			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize);
+
 			/**
 			* @brief		local contrast enhancement
 			* @brief		paper: B. Liu, W. Jin, Y. Chen, C. Liu, and L. Li, "Contrast enhancement using non-overlapped sub-blocks and local histogram projection," TCE, vol. 57, no. 2, 2011.
