@@ -4,28 +4,32 @@ pixkit
 ======
 For only academic usages of image processing (`/pixkit-image`) and machine learning (`/pixkit-ml`).
 
-Contains image processing and machine learning related methods which <b>have been published</b> (on articles, e.g., journal or conference papers). 
-In addition, some frequently used related tools are also involved.
+Contains image processing and machine learning related methods which <b>had been published</b> (on articles, e.g., journal or conference papers). 
+In addition to above implementations, some frequently utilized tools, i.e., attack simulation and quality assessment, are also involved as expected.
 
-All the functions completely base upon another famous repo OpenCV: <https://github.com/Itseez/opencv>
+The repo, OpenCV, is used to build up all the pixkit functions: <https://github.com/Itseez/opencv>
 
 Functions
 ---------
-In the current version, `/pixkit-image` involves following grouped functions:
+By far, the current version, `/modules/pixkit-image` involves the following function groups:
 
-** attack: Usually used to simulating attack for "watermarking".
+** **attack**: Usually used to simulate attack for "watermarking".
 
-** filtering: Image filtering.
+** **filtering**: Image filtering.
 
-** edgedetection: edge detection.
+** **edgedetection**: Edge detection.
 
-** halftoning: Image halftoning. Turn images into binary (halftone) form.
+** **halftoning**: Image halftoning. Turn images into binary (halftone) form.
 
-** enhancement::local: Image contrast enhancement methods, regional methods.
+** **enhancement::local**: Image contrast enhancement methods, regional methods.
 
-** enhancement::global: Image contrast enhancement methods, global methods.
+** **enhancement::global**: Image contrast enhancement methods, global methods.
 
-** qualityassessment: Image quality assessment.
+** **qualityassessment**: Image quality assessment.
+
+Also, `/modules/pixkit-ml` involves the following function groups:
+
+** **clustering**: Data clustering.
 
 For users
 ---------
