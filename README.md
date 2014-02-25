@@ -2,7 +2,7 @@ Please read below before being a <b>[user](https://github.com/yunfuliu/pixkit#fo
 
 pixkit
 ======
-For only academic usages of image processing (`/pixkit-image`) and machine learning (`/pixkit-ml`).
+For only academic usages of image processing (`pixkit-image`) and machine learning (`pixkit-ml`).
 
 Contains image processing and machine learning related methods which <b>had been published</b> (on articles, e.g., journal or conference papers). 
 In addition to above implementations, some frequently utilized tools, i.e., attack simulation and quality assessment, are also involved as expected.
