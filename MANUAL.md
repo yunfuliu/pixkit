@@ -17,6 +17,8 @@ PIXKIT MANUAL
 	- Visual Studio 11 Win32/Win64
 	- Visual Studio 10 Win32/Win64
 
+    ![aa](http://miupix.cc/dm/M45HRY/sample.jpg)
+
 * Compile INSTALL project in `C:\pixkit\build\pixkit.sln` with both release and debug modes
 
 * All the required resources involving "include" and "lib" are in the folder `C:\pixkit\build\install\`
