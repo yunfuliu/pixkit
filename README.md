@@ -1,5 +1,7 @@
 Please read below before being a <b>[user](https://github.com/yunfuliu/pixkit#for-users)</b> or a <b>[contributer](https://github.com/yunfuliu/pixkit/blob/master/CONTRIBUTING.md)</b>, many thanks. 
 
+[![GitHub version](https://badge.fury.io/gh/yunfuliu%2Fpixkit.png)](http://badge.fury.io/gh/yunfuliu%2Fpixkit)
+
 pixkit
 ======
 For only academic usages of image processing (`pixkit-image`) and machine learning (`pixkit-ml`).
