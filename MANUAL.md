@@ -27,4 +27,4 @@ PIXKIT MANUAL
 
 	- Function definitions: Please go [wiki](https://github.com/yunfuliu/pixkit/wiki)
 
-* (Optional) If you meet bugs during above procedure, please go [issues](https://github.com/yunfuliu/pixkit/issues) to report in either English or Chinese.
+* (Optional) If you meet bugs during above procedure or while you are using pixkit, please go [issues](https://github.com/yunfuliu/pixkit/issues) and report in either English or Chinese.
