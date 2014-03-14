@@ -49,6 +49,7 @@ include_directories("modules/pixkit-image")
 set(PIXKIT_IMAGE_SRCS
 	modules/pixkit-image/include/pixkit-image.hpp
 	modules/pixkit-image/src/attack.cpp
+	modules/pixkit-image/src/comp.cpp
 	modules/pixkit-image/src/edgedetection.cpp
 	modules/pixkit-image/src/enhancement.cpp
 	modules/pixkit-image/src/filtering.cpp
