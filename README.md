@@ -17,6 +17,8 @@ By far, the current version, `/modules/pixkit-image` involves the following func
 
 ** **attack**: Usually used to simulate attack for "watermarking".
 
+** **comp**: Image compression.
+
 ** **filtering**: Image filtering.
 
 ** **edgedetection**: Edge detection.
