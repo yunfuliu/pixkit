@@ -19,7 +19,7 @@
 namespace pixkit{
 
 	//////////////////////////////////////////////////////////////////////////
-	/// attack
+	/// Attack
 	namespace attack{
 
 		/**
@@ -39,7 +39,7 @@ namespace pixkit{
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	/// filtering related
+	/// Filtering related
 	namespace filtering{
 
 		/**
@@ -59,7 +59,6 @@ namespace pixkit{
 		bool medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size blocksize);
 
 	}
-
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Edge detection related
@@ -135,6 +134,21 @@ namespace pixkit{
 
 	}
 
+	//////////////////////////////////////////////////////////////////////////
+	/// Image compression
+	namespace comp{
+
+		bool	BTC(const cv::Mat &src,cv::Mat &dst,int blockSize);
+
+		enum	EDBTC_TYPE{EDBTC_TYPE_Floyd,EDBTC_TYPE_Jarvis,EDBTC_TYPE_Stucki};
+		bool	EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYPE type);
+
+		enum	ODBTC_TYPE{ODBTC_TYPE_ClusteredDot,ODBTC_TYPE_DispersedDot};
+		bool	ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYPE type);
+
+		bool	DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize);
+
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Image enhancement related
