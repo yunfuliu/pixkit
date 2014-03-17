@@ -144,13 +144,11 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 	for(int i=0;i<mHeight;i++){
 		for(int j=0;j<mWidth;j++){
 
+			//////////////////////////////////////////////////////////////////////////
 			bool	A=true,	// bottom, top, left, right; thus br: bottom-right
 				B=true,
 				C=true,
 				D=true;
-			double	mean=0;
-			double	var=0;
-
 			if(i+SSFilterSize_h>=mHeight){
 				A=false;
 			}
@@ -164,52 +162,75 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 				D=false;
 			}
 
-			if(A==true && B==true && C==false && D==false)
-			{
-				mean=Sum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]/(double)((i+SSFilterSize_h+1)*(j+SSFilterSize_w+1));
-				var=sqrt((sqsum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]/(double)((i+SSFilterSize_h+1)*(j+SSFilterSize_w+1)))-mean*mean);
-			}
-			else if(A==true && B==true && C==false && D==true)
-			{
-				mean=(Sum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]-Sum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)])/(double)((i+SSFilterSize_h+1)*blockSize.width);
-				var=sqrt(((sqsum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]-sqsum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)])/(double)((i+SSFilterSize_h+1)*blockSize.width))-mean*mean);
-			}
-			else if(A==true && B==false && C==false && D==true)
-			{
-				mean=(Sum[(i+SSFilterSize_h)*mWidth+mWidth-1]-Sum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)])/(double)((i+SSFilterSize_h+1)*(mWidth-j+SSFilterSize_w));
-				var=sqrt(((sqsum[(i+SSFilterSize_h)*mWidth+mWidth-1]-sqsum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)])/(double)((i+SSFilterSize_h+1)*(mWidth-j+SSFilterSize_w)))-mean*mean);
-			}
-			else if(A==true && B==true && C==true && D==false)
-			{
-				mean=(Sum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]-Sum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)])/(double)(blockSize.height*(j+SSFilterSize_w+1));
-				var=sqrt(((sqsum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]-sqsum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)])/(double)(blockSize.height*(j+SSFilterSize_w+1)))-mean*mean);
-			}
-			else if(A==true && B==false && C==true && D==true)
-			{
-				mean=(Sum[(i+SSFilterSize_h)*mWidth+(mWidth-1)]-Sum[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)]-Sum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)]+Sum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)(blockSize.height*(mWidth-j+SSFilterSize_w));
-				var=sqrt(((sqsum[(i+SSFilterSize_h)*mWidth+(mWidth-1)]-sqsum[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)]-sqsum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)]+sqsum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)(blockSize.height*(mWidth-j+SSFilterSize_w)))-mean*mean);
-			}
-			else if(A==false && B==true && C==true && D==false){
 
-				mean=(Sum[(mHeight-1)*mWidth+(j+SSFilterSize_w)]-Sum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)])/(double)((mHeight-i+SSFilterSize_h)*(j+SSFilterSize_w+1));
-				var=sqrt(((sqsum[(mHeight-1)*mWidth+(j+SSFilterSize_w)]-sqsum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)])/(double)((mHeight-i+SSFilterSize_h)*(j+SSFilterSize_w+1)))-mean*mean);
-
-			}else if(A==false && B==true && C==true && D==true)
-			{
-				mean=(Sum[(mHeight-1)*mWidth+(j+SSFilterSize_w)]-Sum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)]-Sum[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)]+Sum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)((mHeight-i+SSFilterSize_h)*blockSize.width);
-				var=sqrt(((sqsum[(mHeight-1)*mWidth+(j+SSFilterSize_w)]-sqsum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)]-sqsum[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)]+sqsum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)((mHeight-i+SSFilterSize_h)*blockSize.width))-mean*mean);
+			//////////////////////////////////////////////////////////////////////////
+			///// get area size
+			// width
+			double	areaWidth	=	blockSize.width,
+					areaHeight	=	blockSize.height;
+			if(!D){
+				areaWidth	=	j+SSFilterSize_w+1;
+			}else if(!B){
+				areaWidth	=	mWidth-j+SSFilterSize_w;
 			}
-			else if(A==false && B==false && C==true && D==true)
-			{
-				mean=(Sum[(mHeight-1)*mWidth+(mWidth-1)]-Sum[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)]-Sum[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)]+Sum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)((mHeight-i+SSFilterSize_h)*(mWidth-j+SSFilterSize_w));
-				var=sqrt(((sqsum[(mHeight-1)*mWidth+(mWidth-1)]-sqsum[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)]-sqsum[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)]+sqsum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)((mHeight-i+SSFilterSize_h)*(mWidth-j+SSFilterSize_w)))-mean*mean);
-			}
-			else{
-				mean=(Sum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]-Sum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)]-Sum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)]+Sum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)(blockSize.height*blockSize.width);
-				var=sqrt(((sqsum[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)]-sqsum[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)]-sqsum[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)]+sqsum[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)])/(double)(blockSize.height*blockSize.width))-mean*mean);
+			// height
+			if(!C){
+				areaHeight	=	i+SSFilterSize_h+1;
+			}else if(!A){
+				areaHeight	=	mHeight-i+SSFilterSize_h;
 			}
 
 
+			//////////////////////////////////////////////////////////////////////////
+			///// get value
+			double	cTR_sum=0,cTR_sqsum=0,
+					cTL_sum=0,cTL_sqsum=0,
+					cBR_sum=0,cBR_sqsum=0,
+					cBL_sum=0,cBL_sqsum=0;
+			if(A&&B){
+				cTR_sum		=	Sum		[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)];
+				cTR_sqsum	=	sqsum	[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)];
+			}else if(!A&&B){
+				cTR_sum		=	Sum		[(mHeight-1)*mWidth+(j+SSFilterSize_w)];
+				cTR_sqsum	=	sqsum	[(mHeight-1)*mWidth+(j+SSFilterSize_w)];
+			}else if(A&&!B){
+				cTR_sum		=	Sum		[(i+SSFilterSize_h)*mWidth+mWidth-1];
+				cTR_sqsum	=	sqsum	[(i+SSFilterSize_h)*mWidth+mWidth-1];
+			}else if(!A&&!B){
+				cTR_sum		=	Sum		[(mHeight-1)*mWidth+(mWidth-1)];
+				cTR_sqsum	=	sqsum	[(mHeight-1)*mWidth+(mWidth-1)];
+			}
+			if(A&&D){
+				cTL_sum		=	-Sum	[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)];
+				cTL_sqsum	=	-sqsum	[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)];
+			}else if(!A&&D){
+				cTL_sum		=	-Sum	[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)];
+				cTL_sqsum	=	-sqsum	[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)];
+			}
+			if(B&&C){
+				cBR_sum		=	-Sum	[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)];
+				cBR_sqsum	=	-sqsum	[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)];
+			}else if(!B&&C){
+				cBR_sum		=	-Sum	[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)];
+				cBR_sqsum	=	-sqsum	[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)];
+			}
+			if(C&&D){
+				cBL_sum		=	Sum		[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)];
+				cBL_sqsum	=	sqsum	[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)];
+			}
+
+
+			////////////////////////////////////////////////////////////////////////// ok
+			///// get mean and sd
+			double	mean	=cTR_sum		+cTL_sum	+cBR_sum	+cBL_sum;				
+			double	sd		=cTR_sqsum		+cTL_sqsum	+cBR_sqsum	+cBL_sqsum;	
+			mean	/=areaHeight*areaWidth;
+			sd		/=areaHeight*areaWidth;
+			sd		=sqrt(sd-mean*mean);
+			CV_DbgAssert(mean>=0.&&mean<=255.&&sd>=0.&&sd<=255.);
+
+
+			//////////////////////////////////////////////////////////////////////////
 			// get current src value
 			double	current_src_value=0.;
 			if(src.type()==CV_8UC1){
@@ -220,28 +241,32 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 				assert(false);
 			}
 
+
+			//////////////////////////////////////////////////////////////////////////
 			// calc Gaussian's cdf
 			double	input;
-			if(var==0){	// means all the value in this block are the same
+			if(sd==0){	// means all the value in this block are the same
 				input=0.;
 			}else{
-				input=(current_src_value-mean)/(sqrt(2.0)*var);
+				input=(current_src_value-mean)/(sqrt(2.0)*sd);
 			}
 			double t=1/(1+0.3275911*input);
 			double erf=0.25482929592*t-0.284496736*t*t+1.421413741*t*t*t-1.453152027*t*t*t*t+1.061405429*t*t*t*t*t;
 			erf=1-(erf*exp(-(input*input)));
 			erf=0.5*(1+erf);
 
+
+			//////////////////////////////////////////////////////////////////////////
 			// get output
 			if(tdst.type()==CV_8UC1){
-				if(current_src_value >= mean-1.885*var){
+				if(current_src_value >= mean-1.885*sd){
 					((uchar*)tdst.data)[i*mWidth+j]= erf*255;
 				}else{
 					((uchar*)tdst.data)[i*mWidth+j]=0;
 				}
 				CV_DbgAssert(((uchar*)tdst.data)[i*mWidth+j]>=0.&&((uchar*)tdst.data)[i*mWidth+j]<=255.);
 			}else if(tdst.type()==CV_32FC1){
-				if(current_src_value >= mean-1.885*var){
+				if(current_src_value >= mean-1.885*sd){
 					((float*)tdst.data)[i*mWidth+j]= erf*255;
 				}else{
 					((float*)tdst.data)[i*mWidth+j]=0;
