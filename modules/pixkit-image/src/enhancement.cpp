@@ -669,7 +669,6 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 
 	return true;
 }
-
 bool pixkit::enhancement::local::Pizer1987(cv::Mat &src,cv::Mat &dst, cv::Size title, float L )
 {
 	///////////////////////////////////////////////////////////////////////////////////////////////////
