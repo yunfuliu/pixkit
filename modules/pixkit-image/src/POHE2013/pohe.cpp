@@ -162,6 +162,8 @@ inline bool calcAreaMean(const cv::Mat &src,
 		CV_DbgAssert((*mean)>=0.&&(*mean)<=255.);
 		*sd		=cTR_sqsum		+cTL_sqsum	+cBR_sqsum	+cBL_sqsum;	
 		*sd		/=areaHeight*areaWidth;
+		*sd		=fabs(*sd);
+		CV_DbgAssert((*sd)>=((*mean)*(*mean)));
 		*sd		=sqrt(*sd-(*mean)*(*mean));
 		CV_DbgAssert((*sd)>=0.&&(*sd)<=255.);
 
