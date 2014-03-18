@@ -140,18 +140,18 @@ inline bool calcAreaMean(const cv::Mat &src,
 				cBR_sum=0,cBR_sqsum=0,
 				cBL_sum=0,cBL_sqsum=0;
 		cTR_sum			=	sum.ptr<double>(y_up)[x_right];
-		if(!sqsum.empty())	cTR_sqsum		=	sqsum.ptr<double>(y_up)[x_right];
+		cTR_sqsum		=	sqsum.ptr<double>(y_up)[x_right];
 		if(C&&D){
 			cBL_sum		=	sum.ptr<double>(y_dn)[x_left];		
-			if(!sqsum.empty())	cBL_sqsum	=	sqsum.ptr<double>(y_dn)[x_left];	
+			cBL_sqsum	=	sqsum.ptr<double>(y_dn)[x_left];	
 		}
 		if(D){
 			cTL_sum		=	-sum.ptr<double>(y_up)[x_left];
-			if(!sqsum.empty())	cTL_sqsum	=	-sqsum.ptr<double>(y_up)[x_left];
+			cTL_sqsum	=	-sqsum.ptr<double>(y_up)[x_left];
 		}
 		if(C){
 			cBR_sum		=	-sum.ptr<double>(y_dn)[x_right];
-			if(!sqsum.empty())	cBR_sqsum	=	-sqsum.ptr<double>(y_dn)[x_right];
+			cBR_sqsum	=	-sqsum.ptr<double>(y_dn)[x_right];
 		}
 
 
@@ -160,14 +160,10 @@ inline bool calcAreaMean(const cv::Mat &src,
 		*mean	=cTR_sum		+cTL_sum	+cBR_sum	+cBL_sum;
 		*mean	/=areaHeight*areaWidth;
 		CV_DbgAssert((*mean)>=0.&&(*mean)<=255.);
-		if(!sqsum.empty()){	
-			*sd		=cTR_sqsum		+cTL_sqsum	+cBR_sqsum	+cBL_sqsum;	
-			*sd		/=areaHeight*areaWidth;
-			*sd		=sqrt(*sd-(*mean)*(*mean));
-			CV_DbgAssert((*sd)>=0.&&(*sd)<=255.);
-		}
-
-
+		*sd		=cTR_sqsum		+cTL_sqsum	+cBR_sqsum	+cBL_sqsum;	
+		*sd		/=areaHeight*areaWidth;
+		*sd		=sqrt(*sd-(*mean)*(*mean));
+		CV_DbgAssert((*sd)>=0.&&(*sd)<=255.);
 
 	return true;
 }

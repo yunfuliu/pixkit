@@ -58,6 +58,9 @@ namespace pixkit{
 		*/
 		bool medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size blocksize);
 
+		// fast box filtering
+		bool FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize);
+
 	}
 
 	//////////////////////////////////////////////////////////////////////////
