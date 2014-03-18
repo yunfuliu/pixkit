@@ -1,4 +1,4 @@
-ï»¿//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 // 
 // SOURCE CODE: https://github.com/yunfuliu/pixkit
 // 
@@ -163,7 +163,7 @@ namespace pixkit{
 			* @brief		paper: F. Lamberti, B. Montrucchio, and A. Sanna, "CMBFHE: a novel contrast enhancement technique based on cascaded multistep binomial filtering histogram equalization," TCE, vol. 52, no. 3, 2006.
 			* @brief		nickname: cascaded multistep binomial filtering histogram equalization (CMBFHE)
 			*
-			* @author		è³´æŸå‹³, Yunfu Liu
+			* @author		¿à¬f¾±, Yunfu Liu
 			* @date			May 15, 2013
 			*
 			* @param: B: number of blocks
@@ -208,7 +208,7 @@ namespace pixkit{
 			* @brief		local contrast enhancement
 			* @brief		paper: J. A. Stark, "Adaptive image contrast enhancement using generalizations of histogram equalization," TIP, vol. 9, no. 5, pp. 889-896, 2000.
 			* 
-			* @author		è³´æŸå‹³, Yunfu Liu 
+			* @author		¿à¬f¾±, Yunfu Liu 
 			* @date			May 14, 2013
 			* 
 			* @param		alpha: 0~1. 0: histogram equalization; 1: local-mean subtraction effect.
@@ -233,21 +233,6 @@ namespace pixkit{
 			*/
 			bool LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize);
 
-			
-			/**
-			* @brief		local contrast enhancement
-			* @brief		paper: S. M. Pizer, E. P. Amburn, J. D. Austin, et al.: Adaptive Histogram Equalization and Its Variations. Computer Vision, Graphics, and Image Processing 39 (1987) 355Â­-368
-			* @brief		nickname:contrast limit  adaptive histogram equalization (CLAHE)
-			*
-			* @author		JC Yu
-			* @date			May 14, 2014
-			* 
-			* @param		title: å½±åƒè¢«åŠƒåˆ†ç‚ºæ•¸å€‹ä¸é‡ç–Šçš„å€åŸŸ
-			* 
-			* @param		L: é™åˆ¶histogramçš„é«˜åº¦,rang0~1
-			*
-			* @return		bool: true: successful, false: failure
-			*/
 			bool Pizer1987(cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03);
 
 			/**
@@ -258,13 +243,13 @@ namespace pixkit{
 			* @author		JC Yu
 			* @date			May 14, 2014, 
 			* 
-			* @param		title: å½±åƒè¢«åŠƒåˆ†ç‚ºæ•¸å€‹ä¸é‡ç–Šçš„å€åŸŸ
+			* @param		title: ¼v¹³³Q¹º¤À¬°¼Æ­Ó¤£­«Å|ªº°Ï°ì
 			* 
-			* @param		L: é™åˆ¶histogramçš„é«˜åº¦,rang0~1
+			* @param		L: ­­¨îhistogramªº°ª«×,rang0~1
 			*
-            * @param		K1: ç”¨ä¾†æ§åˆ¶å°æ¯”,å»ºè­°ç¯„åœ10~25
+            * @param		K1: ¥Î¨Ó±±¨î¹ï¤ñ,«ØÄ³½d³ò10~25
 			*
-            * @param		K2: ç”¨ä¾†æè¿°ç°éšå€¼æ­£è¦åŒ–å…¶å°æ¯”æ˜¯å¢åŠ æˆ–æ¸›å°‘,ç¯„åœ0~1
+            * @param		K2: ¥Î¨Ó´y­z¦Ç¶¥­È¥¿³W¤Æ¨ä¹ï¤ñ¬O¼W¥[©Î´î¤Ö,½d³ò0~1
 			*
 			* @return		bool: true: successful, false: failure
 			*/
@@ -279,11 +264,11 @@ namespace pixkit{
 			* @author		JC Yu
 			* @date			May 14, 2014, 
 			* 
-			* @param		title: å½±åƒè¢«åŠƒåˆ†ç‚ºæ•¸å€‹ä¸é‡ç–Šçš„å€åŸŸ
+			* @param		N: ¼v¹³ªºblock size
 			* 
-			* @param		L: é™åˆ¶histogramçš„é«˜åº¦,rang0~1
+			* @param		L: ­­¨îhistogramªº°ª«×,rang0~1
 			*
-            * @param		phi: ç”¨ä¾†èª¿æ•´å€¼æ–¹åœ–,ç¯„åœ0~1
+            * @param		phi: ¥Î¨Ó½Õ¾ã­È¤è¹Ï,½d³ò0~1
 			*
 
 			*
@@ -291,7 +276,7 @@ namespace pixkit{
 			*/
 			bool Sundarami2011(cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
 		}
-		
+
 		/// Global methods
 		namespace global{
 
@@ -328,8 +313,8 @@ namespace pixkit{
 			* @author		JC Yu
 			* @date			December 15, 2013
 			*
-			* @param        MorD 1:ç›´æ–¹åœ–ç”¨å¹³å‡å€¼å»åˆ‡å‰² 2:ç›´æ–¹åœ–ç”¨ä¸­ä½æ•¸å»åˆ‡å‰²
-			* @param        r: ç›´æ–¹åœ–åˆ†å‰²éå›çš„æ¬¡æ•¸,è«–æ–‡å»ºè­°çµ¦äºˆ2
+			* @param        MorD 1:ª½¤è¹Ï¥Î¥­§¡­È¥h¤Á³Î 2:ª½¤è¹Ï¥Î¤¤¦ì¼Æ¥h¤Á³Î
+			* @param        r: ª½¤è¹Ï¤À³Î»¼¦^ªº¦¸¼Æ,½×¤å«ØÄ³µ¹¤©2
 			*
 			* @return		bool: true: successful, false: failure
 			*/
