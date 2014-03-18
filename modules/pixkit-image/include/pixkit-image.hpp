@@ -252,55 +252,10 @@ namespace pixkit{
 			*/
 			bool LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize);
 
-
-			/**
-			* @brief		Adaptive Histogram Equalization and Its Variations. Computer Vision, Graphics, and Image Processing 39 (1987) 355­-368.
-			* @brief		paper:S. M. Pizer, E. P. Amburn, J. D. Austin
-			* @brief		nickname:CLAHE
-			*
-			* @author		JC Yu
-			* @date			May 14, 2014, 
-			* 
-			* @param		title: 影像被劃分為數個不重疊的區域
-			* @param		L: 限制histogram的高度,rang0~1
-			*
-			* @return		bool: true: successful, false: failure
-			*/
 			bool Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03);
 
-
-			/**
-			* @brief		local contrast enhancement Efficient Algorithm for Contrast Enhancement of Natural Images, 2014
-			* @brief		paper: S. Lal and M. Chandra
-			* @brief		nickname:ACEBFS
-			*
-			* @author		JC Yu
-			* @date			May 14, 2014, 
-			* 
-			* @param		title: 影像被劃分為數個不重疊的區域
-			* @param		L: 限制histogram的高度,rang0~1
-            * @param		K1: 用來控制對比,建議範圍10~25
-			* @param		K2: 用來描述灰階值正規化其對比是增加或減少,範圍0~1
-			*
-			* @return		bool: true: successful, false: failure
-			*/
             bool Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
 
-
-		    /**
-			* @brief		HISTOGRAM BASED CONTRAST ENHANCEMENT FOR MAMMOGRAM IMAGES, 2011
-			* @brief		paper: M.Sundarami, K.Ramar, N.Arumugami, G.Prabini
-			* @brief		nickname:histogram modified contrast limit  adaptive histogram equalization (HMCLAHE)
-			*
-			* @author		JC Yu
-			* @date			May 14, 2014, 
-			* 
-			* @param		N: 影像的block size
-			* @param		L: 限制histogram的高度,rang0~1
-            * @param		phi: 用來調整值方圖,範圍0~1
-			*
-			* @return		bool: true: successful, false: failure
-			*/
 			bool Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
 		}
 
