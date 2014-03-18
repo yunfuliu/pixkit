@@ -669,6 +669,292 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 
 	return true;
 }
+bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L ){
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	if(src.type()!=CV_8UC1){
+		return false;
+	}
+	if(L>1 || L<=0){
+		return false;
+	}
+
+	if(title.height > (src.rows/4) || title.width > (src.cols/4)){
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	const int nColors = 256;
+	int x = src.cols/title.width, y = src.rows/title.height;
+
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+
+	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //儲存每個title的轉移函式
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//計算每個title的轉移函式
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	for(int m = 0;m<title.height;m++){
+		for(int n = 0;n<title.width;n++){
+			int i,j,i1=(m+1)*y,j1=(n+1)*x;
+
+			if( (m+1) == title.height ){
+				i1 = src.rows;
+			}
+			if((n+1) == title.width ){
+				j1 = src.cols;
+			}
+
+			int Count = 0;
+			for(i=m*y;i<i1;i++){
+				for(j=n*x;j<j1;j++){
+					hist[m*title.width+n][(int)src.data[i*src.cols+j]]++;
+					Count++;
+				}
+			}
+
+			int limt = (int) (Count*L + 0.5);  //計算需要裁切的限制
+
+			float over_limit = 0;
+			for(int k=1;k<256;k++){
+				if(hist[m*title.width+n][k] > limt){
+					over_limit += (hist[m*title.width+n][k]-limt);
+					hist[m*title.width+n][k] = limt;
+				}
+			}
+
+			over_limit /= nColors;
+
+			for(int k=0;k<256;k++){
+				hist[m*title.width+n][k] += over_limit;
+				hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
+			}
+
+			for(int k=1;k<256;k++){
+				hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	//計算輸出
+	///////////////////////////////////////////////////////////////////////
+	int a1=0,a2=x/2,b1=0,b2=y/2;  //a表示x軸方向.b表示y軸方向
+	for(int i=0;i<src.rows;i++){
+		a2 = x/2 , a1 = 0;
+		for(int j=0;j<src.cols;j++){
+			if(j>a2){
+				a1=a2;
+				a2+=x;
+
+				if(a2>=src.cols)
+					a2 = src.cols-1;
+			}
+			if(i>b2){
+				b1 = b2;
+				b2 += y;
+				if(b2>=src.rows)
+					b2 = src.rows-1;
+			}
+
+			int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
+			if(p2 >= title.width){
+				p2 = title.width-1;
+			}
+			if(q2 >= title.height){
+				q2 = title.height-1;
+			}
+
+			float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
+			int v = (int)src.data[i*src.cols+j];
+			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
+		}
+	}
+
+	return true;
+}
+bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	if(src.type()!=CV_8UC1){
+		return false;
+	}
+
+	if(L>1 || L<=0){
+		return false;
+	}
+
+	if(title.height > (src.rows/4) || title.width > (src.cols/4)){
+		return false;
+	}
+
+	if(K2>1 || K2<0){
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	const int nColors = 256;
+	int x = src.cols/title.width, y = src.rows/title.height;
+
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+	cv::Mat temp = cvCreateMat(src.rows,src.cols,src.type());
+	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //儲存每個title的轉移函式
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//計算Sigmoid轉換
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	for(int i=0;i<temp.rows;i++){
+		for(int j=0;j<temp.cols;j++){
+			float t = (double)src.data[i*src.cols+j]/(nColors-1);
+			float o = t + K1*t/(1.0-exp(K1*(K2+t)));
+
+			temp.data[i*temp.cols+j] = o*(nColors-1);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//計算每個title的轉移函式
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	for(int m = 0;m<title.height;m++){
+		for(int n = 0;n<title.width;n++){
+			int i,j,i1=(m+1)*y,j1=(n+1)*x;
+
+			if( (m+1) == title.height ){
+				i1 = src.rows;
+			}
+			if((n+1) == title.width ){
+				j1 = src.cols;
+			}
+			int Count = 0;
+			for(i=m*y;i<i1;i++){
+				for(j=n*x;j<j1;j++){
+					hist[m*title.width+n][(int)temp.data[i*temp.cols+j]]++;
+					Count++;
+				}
+			}
+
+			int limt = (int) (Count*L + 0.5);  //計算需要裁切的限制
+
+			float over_limit = 0;
+			for(int k=1;k<256;k++){
+
+				if(hist[m*title.width+n][k] > limt){
+					over_limit += (hist[m*title.width+n][k]-limt);
+					hist[m*title.width+n][k] = limt;
+				}
+			}
+
+			over_limit /= nColors;
+
+			for(int k=0;k<256;k++){
+				hist[m*title.width+n][k] += over_limit;
+				hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
+			}
+
+			for(int k=1;k<256;k++){
+				hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	//計算輸出
+	///////////////////////////////////////////////////////////////////////
+	int a1=0,a2=x/2,b1=0,b2=y/2;  //a表示x軸方向.b表示y軸方向
+	for(int i=0;i<src.rows;i++){
+		a2 = x/2 , a1 = 0;
+		for(int j=0;j<src.cols;j++){
+			if(j>a2){
+				a1=a2;
+				a2+=x;
+
+				if(a2>=src.cols)
+					a2 = src.cols-1;
+			}
+			if(i>b2){
+				b1 = b2;
+				b2 += y;
+				if(b2>=src.rows)
+					b2 = src.rows-1;
+			}
+
+			int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
+			if(p2 >= title.width){
+				p2 = title.width-1;
+			}
+			if(q2 >= title.height){
+				q2 = title.height-1;
+			}
+
+			float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
+			int v = (int)src.data[i*src.cols+j];
+			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
+		}
+	}
+
+	return true;
+}
+bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L, float phi){
+
+	//////////////////////////////////////////////////////////////////////////////
+	if(src.type()!=CV_8UC1){
+		return false;
+	}
+	if(L>1 || L<=0){
+		return false;
+	}
+	if(N.height >= src.rows-1 || N.width >= src.cols-1){
+		return false;
+	}
+	if(phi>1 || phi<0){
+		return false;
+	}
+	if(N.height%2==0 || N.width%2==0){
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////////
+	int limt = (int) (N.height*N.width*L + 0.5);
+	int x = N.width/2, y = N.height/2;
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+	for(int i=0;i<dst.rows;i++){
+		for(int j=0;j<dst.cols;j++){
+			std::vector<float> hist(256,0);
+
+			float Total = 0;
+			for(int m=i-y;m<=i+y;m++){
+				for(int n=j-x;n<=j+x;n++){
+					if(m>=0 && m<dst.rows && n>=0 && n<dst.cols){
+						hist[(int)src.data[m*src.cols+n]]++;
+						Total++;
+					}
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			//調整Histogram
+			//////////////////////////////////////////////////////////////////////////
+			float u = Total/256.0; //代表均勻分布
+			for(int k=0;k<256;k++){
+				hist[k] = (1.0/(1.0+phi))*hist[k] + (phi/(1+phi))*u;
+			}
+
+			float over_limit = 0;
+			for(int k=1;k<256;k++){
+				if(hist[k] > limt){
+					over_limit += (hist[k]-limt);
+					hist[k] = limt;
+				}
+			}
+
+			over_limit /= 256;
+
+			for(int k=0;k<256;k++){
+				hist[k] += over_limit;
+			}
+
+			for(int k=1;k<256;k++){
+				hist[k] += hist[k-1];
+			}
+
+			dst.data[i*dst.cols+j] = (unsigned char) ( (hist[(int)src.data[i*src.cols+j]]*255.0/Total + 0.5) ); 
+		}
+	}
+	return true;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 ///// Global contrast enhancement
