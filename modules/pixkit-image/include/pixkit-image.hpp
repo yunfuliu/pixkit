@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////
 // 
 // SOURCE CODE: https://github.com/yunfuliu/pixkit
 // 
@@ -182,7 +182,7 @@ namespace pixkit{
 			* @brief		paper: F. Lamberti, B. Montrucchio, and A. Sanna, "CMBFHE: a novel contrast enhancement technique based on cascaded multistep binomial filtering histogram equalization," TCE, vol. 52, no. 3, 2006.
 			* @brief		nickname: cascaded multistep binomial filtering histogram equalization (CMBFHE)
 			*
-			* @author		��f��, Yunfu Liu
+			* @author		賴柏勳, Yunfu Liu
 			* @date			May 15, 2013
 			*
 			* @param: B: number of blocks
@@ -227,7 +227,7 @@ namespace pixkit{
 			* @brief		local contrast enhancement
 			* @brief		paper: J. A. Stark, "Adaptive image contrast enhancement using generalizations of histogram equalization," TIP, vol. 9, no. 5, pp. 889-896, 2000.
 			* 
-			* @author		��f��, Yunfu Liu 
+			* @author		賴柏勳, Yunfu Liu 
 			* @date			May 14, 2013
 			* 
 			* @param		alpha: 0~1. 0: histogram equalization; 1: local-mean subtraction effect.
@@ -251,6 +251,62 @@ namespace pixkit{
 			* @return		bool: true: successful, false: failure
 			*/
 			bool LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize);
+			/**
+			* @brief		Adaptive Histogram Equalization and Its Variations. Computer Vision, Graphics, and Image Processing 39 (1987) 355­-368.
+			* @brief		paper:S. M. Pizer, E. P. Amburn, J. D. Austin
+			* @brief		nickname:CLAHE
+			*
+			* @author		JC Yu
+			* @date			May 14, 2014, 
+			* 
+			* @param		title: 影像被劃分為數個不重疊的區域
+			* 
+			* @param		L: 限制histogram的高度,rang0~1
+			*
+			* @return		bool: true: successful, false: failure
+			*/
+			bool Pizer1987(cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03);
+
+			/**
+			* @brief		local contrast enhancement Efficient Algorithm for Contrast Enhancement of Natural Images, 2014
+			* @brief		paper: S. Lal and M. Chandra
+			* @brief		nickname:ACEBFS
+			*
+			* @author		JC Yu
+			* @date			May 14, 2014, 
+			* 
+			* @param		title: 影像被劃分為數個不重疊的區域
+			* 
+			* @param		L: 限制histogram的高度,rang0~1
+			*
+            * @param		K1: 用來控制對比,建議範圍10~25
+			*
+            * @param		K2: 用來描述灰階值正規化其對比是增加或減少,範圍0~1
+			*
+			* @return		bool: true: successful, false: failure
+			*/
+
+            bool Lal2014(cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
+
+		    /**
+			* @brief		HISTOGRAM BASED CONTRAST ENHANCEMENT FOR MAMMOGRAM IMAGES, 2011
+			* @brief		paper: M.Sundarami, K.Ramar, N.Arumugami, G.Prabini
+			* @brief		nickname:histogram modified contrast limit  adaptive histogram equalization (HMCLAHE)
+			*
+			* @author		JC Yu
+			* @date			May 14, 2014, 
+			* 
+			* @param		N: 影像的block size
+			* 
+			* @param		L: 限制histogram的高度,rang0~1
+			*
+            * @param		phi: 用來調整值方圖,範圍0~1
+			*
+
+			*
+			* @return		bool: true: successful, false: failure
+			*/
+			bool Sundarami2011(cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
 		}
 
 		/// Global methods
@@ -289,8 +345,8 @@ namespace pixkit{
 			* @author		JC Yu
 			* @date			December 15, 2013
 			*
-			* @param        MorD 1:����ϥΥ����ȥh���� 2:����ϥΤ���ƥh����
-			* @param        r: ����Ϥ��λ��^������,�פ��ĳ����2
+			* @param        MorD 1:直方圖用平均值去切割 2:直方圖用中位數去切割
+			* @param        r: 直方圖分割遞回的次數,論文建議給予2
 			*
 			* @return		bool: true: successful, false: failure
 			*/
