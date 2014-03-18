@@ -157,8 +157,7 @@ namespace pixkit{
 		/// Local methods
 		namespace local{
 
-			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize);
-			bool POHE2013(const cv::Mat &src,cv::Mat &dst,cv::Mat &sum,cv::Mat &sqsum,const cv::Size blockSize);
+			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,cv::Mat &sum=cv::Mat(),cv::Mat &sqsum=cv::Mat());
 
 			/**
 			* @brief		local contrast enhancement

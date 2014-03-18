@@ -38,19 +38,10 @@
 //========================================================================
 
 #include "../../include/pixkit-image.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
 
-// calc cdf of uniform
-double calcCDF_Uniform(double src,double &maxv,double &minv){
-	if(src==maxv){
-		return 1.0f;
-	}else if(src==minv){
-		return 0.0f;
-	}else{
-		return (src-minv)/(maxv-minv);
-	}
-}
 // calc cdf of Gaussian
-double calcCDF_Gaussian(double src,double &mean,double &sd){
+inline double calcCDF_Gaussian(double &src,double &mean,double &sd){
 	// exception when sd=0
 	if(sd==0&&mean==src){
 		return 1.;
@@ -65,42 +56,7 @@ double calcCDF_Gaussian(double src,double &mean,double &sd){
 	erf=1.-erf*exp(-(x*x));
 	return 0.5*(1+(x<0?-erf:erf));	
 }
-// calc integral image
-void integrate(const cv::Mat &src,double *dst,float order){
-
-	const int &mHeight=src.rows;
-	const int &mWidth=src.cols;
-
-	if(src.type()==CV_8UC1){
-		for(int i=0;i<mHeight;i++){
-			for(int j=0;j<mWidth;j++){
-				dst[i*mWidth+j]=pow((double)((uchar*)src.data)[i*src.cols+j],(double)order);
-			}
-		}
-	}else if(src.type()==CV_32FC1){
-		for(int i=0;i<mHeight;i++){
-			for(int j=0;j<mWidth;j++){
-				dst[i*mWidth+j]=pow((double)((float*)src.data)[i*src.cols+j],(double)order);
-			}
-		}
-	}else{
-		CV_Error(CV_StsBadArg,"[integrate] src should be either CV_8UC1 or CV_32FC1");
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	for(int i=1;i<mHeight;i++){
-		dst[i*mWidth]=dst[i*mWidth]+dst[(i-1)*mWidth];
-	}
-	for(int j=1;j<mWidth;j++){
-		dst[j]=dst[j]+dst[j-1];
-	}
-	for(int i=1;i<mHeight;i++){
-		for(int j=1;j<mWidth;j++){
-			dst[i*mWidth+j]=dst[i*mWidth+j]+dst[(i-1)*mWidth+j]+dst[i*mWidth+j-1]-dst[(i-1)*mWidth+j-1];
-		}
-	}
-}
-bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize){
+bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,cv::Mat &sum,cv::Mat &sqsum){
 
 	//////////////////////////////////////////////////////////////////////////
 	// Exceptions
@@ -119,51 +75,59 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 	if(src.type()!=CV_8UC1&&src.type()!=CV_32FC1){
 		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] src should be either CV_8UC1 or CV_32FC1");
 	}
-
+	if(!sum.empty()){
+		if(sum.type()!=CV_64FC1){
+			CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] both sum and sqsum should be CV_64FC1");
+		}
+	}
+	if(!sqsum.empty()){
+		if(sqsum.type()!=CV_64FC1){
+			CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] both sum and sqsum should be CV_64FC1");
+		}
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// initialization
 	cv::Mat	tdst;	// temp dst. To avoid that when src == dst occur.
 	tdst.create(src.size(),src.type());
-	const int &mHeight=src.rows;
-	const int &mWidth=src.cols;
-	double	*Sum=new double [mHeight*mWidth];
-	double	*sqsum=new double [mHeight*mWidth];	
+	const int &height=src.rows;
+	const int &width=src.cols;
 
 
-	//////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////// ok
 	///// create integral images
-	integrate(src,Sum,1);
-	integrate(src,sqsum,2);
+	if(sum.empty()||sqsum.empty()){
+		cv::integral(src,sum,sqsum,CV_64F);
+	}
 
 
 	//////////////////////////////////////////////////////////////////////////
 	///// process
 	int SSFilterSize_h=blockSize.height/2;	// SSFilterSize: Single Side Filter Size
 	int SSFilterSize_w=blockSize.width/2;	// SSFilterSize: Single Side Filter Size
-	for(int i=0;i<mHeight;i++){
-		for(int j=0;j<mWidth;j++){
+	for(int i=0;i<height;i++){
+		for(int j=0;j<width;j++){
 
 			//////////////////////////////////////////////////////////////////////////
 			bool	A=true,	// bottom, top, left, right; thus br: bottom-right
-				B=true,
-				C=true,
-				D=true;
-			if(i+SSFilterSize_h>=mHeight){
+					B=true,
+					C=true,
+					D=true;
+			if((i+SSFilterSize_h)>=height){
 				A=false;
 			}
-			if(j+SSFilterSize_w>=mWidth){
+			if((j+SSFilterSize_w)>=width){
 				B=false;
 			}
-			if(i-SSFilterSize_h-1<0){
+			if((i-SSFilterSize_h-1)<0){
 				C=false;
 			}
-			if(j-SSFilterSize_w-1<0){
+			if((j-SSFilterSize_w-1)<0){
 				D=false;
 			}
 
 
-			//////////////////////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////////////////////// ok
 			///// get area size
 			// width
 			double	areaWidth	=	blockSize.width,
@@ -171,52 +135,47 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 			if(!D){
 				areaWidth	=	j+SSFilterSize_w+1;
 			}else if(!B){
-				areaWidth	=	mWidth-j+SSFilterSize_w;
+				areaWidth	=	width-j+SSFilterSize_w;
 			}
 			// height
 			if(!C){
 				areaHeight	=	i+SSFilterSize_h+1;
 			}else if(!A){
-				areaHeight	=	mHeight-i+SSFilterSize_h;
+				areaHeight	=	height-i+SSFilterSize_h;
 			}
 
 
 			//////////////////////////////////////////////////////////////////////////
 			///// get value
+			// get positions
+			int	y_up	=	i+SSFilterSize_h		+1,	// '+1' is the bias term of the integral image 
+				y_dn	=	i-SSFilterSize_h-1		+1;
+			if(!A){
+				y_up	=	height-1				+1;
+			}
+			int	x_left	=	j-SSFilterSize_w-1		+1,
+				x_right	=	j+SSFilterSize_w		+1;
+			if(!B){
+				x_right	=	width-1					+1;
+			}
+			// get values
 			double	cTR_sum=0,cTR_sqsum=0,
 					cTL_sum=0,cTL_sqsum=0,
 					cBR_sum=0,cBR_sqsum=0,
 					cBL_sum=0,cBL_sqsum=0;
-			if(A&&B){
-				cTR_sum		=	Sum		[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)];
-				cTR_sqsum	=	sqsum	[(i+SSFilterSize_h)*mWidth+(j+SSFilterSize_w)];
-			}else if(!A&&B){
-				cTR_sum		=	Sum		[(mHeight-1)*mWidth+(j+SSFilterSize_w)];
-				cTR_sqsum	=	sqsum	[(mHeight-1)*mWidth+(j+SSFilterSize_w)];
-			}else if(A&&!B){
-				cTR_sum		=	Sum		[(i+SSFilterSize_h)*mWidth+mWidth-1];
-				cTR_sqsum	=	sqsum	[(i+SSFilterSize_h)*mWidth+mWidth-1];
-			}else if(!A&&!B){
-				cTR_sum		=	Sum		[(mHeight-1)*mWidth+(mWidth-1)];
-				cTR_sqsum	=	sqsum	[(mHeight-1)*mWidth+(mWidth-1)];
-			}
-			if(A&&D){
-				cTL_sum		=	-Sum	[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)];
-				cTL_sqsum	=	-sqsum	[(i+SSFilterSize_h)*mWidth+(j-SSFilterSize_w-1)];
-			}else if(!A&&D){
-				cTL_sum		=	-Sum	[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)];
-				cTL_sqsum	=	-sqsum	[(mHeight-1)*mWidth+(j-SSFilterSize_w-1)];
-			}
-			if(B&&C){
-				cBR_sum		=	-Sum	[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)];
-				cBR_sqsum	=	-sqsum	[(i-SSFilterSize_h-1)*mWidth+(j+SSFilterSize_w)];
-			}else if(!B&&C){
-				cBR_sum		=	-Sum	[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)];
-				cBR_sqsum	=	-sqsum	[(i-SSFilterSize_h-1)*mWidth+(mWidth-1)];
-			}
+			cTR_sum			=	sum.ptr<double>(y_up)[x_right];
+			cTR_sqsum		=	sqsum.ptr<double>(y_up)[x_right];
 			if(C&&D){
-				cBL_sum		=	Sum		[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)];
-				cBL_sqsum	=	sqsum	[(i-SSFilterSize_h-1)*mWidth+(j-SSFilterSize_w-1)];
+				cBL_sum		=	sum.ptr<double>(y_dn)[x_left];		
+				cBL_sqsum	=	sqsum.ptr<double>(y_dn)[x_left];	
+			}
+			if(D){
+				cTL_sum		=	-sum.ptr<double>(y_up)[x_left];
+				cTL_sqsum	=	-sqsum.ptr<double>(y_up)[x_left];
+			}
+			if(C){
+				cBR_sum		=	-sum.ptr<double>(y_dn)[x_right];
+				cBR_sqsum	=	-sqsum.ptr<double>(y_dn)[x_right];
 			}
 
 
@@ -234,9 +193,9 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 			// get current src value
 			double	current_src_value=0.;
 			if(src.type()==CV_8UC1){
-				current_src_value	=	((uchar*)src.data)[i*mWidth+j];
+				current_src_value	=	src.ptr<uchar>(i)[j];
 			}else if(src.type()==CV_32FC1){
-				current_src_value	=	((float*)src.data)[i*mWidth+j];
+				current_src_value	=	src.ptr<float>(i)[j];
 			}else{
 				assert(false);
 			}
@@ -244,34 +203,25 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 
 			//////////////////////////////////////////////////////////////////////////
 			// calc Gaussian's cdf
-			double	input;
-			if(sd==0){	// means all the value in this block are the same
-				input=0.;
-			}else{
-				input=(current_src_value-mean)/(sqrt(2.0)*sd);
-			}
-			double t=1/(1+0.3275911*input);
-			double erf=0.25482929592*t-0.284496736*t*t+1.421413741*t*t*t-1.453152027*t*t*t*t+1.061405429*t*t*t*t*t;
-			erf=1-(erf*exp(-(input*input)));
-			erf=0.5*(1+erf);
+			double	cdf	=	calcCDF_Gaussian(current_src_value,mean,sd);
 
 
 			//////////////////////////////////////////////////////////////////////////
 			// get output
 			if(tdst.type()==CV_8UC1){
 				if(current_src_value >= mean-1.885*sd){
-					((uchar*)tdst.data)[i*mWidth+j]= erf*255;
+					tdst.ptr<uchar>(i)[j]=	cdf*255;
 				}else{
-					((uchar*)tdst.data)[i*mWidth+j]=0;
+					tdst.ptr<uchar>(i)[j]=	0;
 				}
-				CV_DbgAssert(((uchar*)tdst.data)[i*mWidth+j]>=0.&&((uchar*)tdst.data)[i*mWidth+j]<=255.);
+				CV_DbgAssert(((uchar*)tdst.data)[i*width+j]>=0.&&((uchar*)tdst.data)[i*width+j]<=255.);
 			}else if(tdst.type()==CV_32FC1){
 				if(current_src_value >= mean-1.885*sd){
-					((float*)tdst.data)[i*mWidth+j]= erf*255;
+					tdst.ptr<float>(i)[j]=	cdf*255;
 				}else{
-					((float*)tdst.data)[i*mWidth+j]=0;
+					tdst.ptr<float>(i)[j]=	0;
 				}
-				CV_DbgAssert(((float*)tdst.data)[i*mWidth+j]>=0.&&((float*)tdst.data)[i*mWidth+j]<=255.);
+				CV_DbgAssert(((float*)tdst.data)[i*width+j]>=0.&&((float*)tdst.data)[i*width+j]<=255.);
 			}else{
 				assert(false);
 			}
@@ -279,12 +229,6 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 	}
 
 
-	//////////////////////////////////////////////////////////////////////////
-	///// copy
 	dst	=	tdst.clone();
-	// delete
-	delete [] Sum;
-	delete [] sqsum;
-
 	return true;
 }
