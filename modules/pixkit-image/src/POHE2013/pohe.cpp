@@ -56,6 +56,123 @@ inline double calcCDF_Gaussian(double &src,double &mean,double &sd){
 	erf=1.-erf*exp(-(x*x));
 	return 0.5*(1+(x<0?-erf:erf));	
 }
+
+// calc the sum of an area 
+inline bool calcAreaMean(const cv::Mat &src,
+	cv::Point currpos,
+	cv::Size blockSize,
+	cv::Mat &sum=cv::Mat(),
+	double *mean=NULL,
+	cv::Mat &sqsum=cv::Mat(),
+	double *sd=NULL){
+
+		//////////////////////////////////////////////////////////////////////////
+		///// exceptions
+		if(blockSize.width%2==0||blockSize.height%2==0){
+			CV_Error(CV_StsBadArg,"[calcAreaMean] either block's height or width is 0.");
+		}
+
+
+		//////////////////////////////////////////////////////////////////////////
+		///// initialization
+		int SSFilterSize_h	=	blockSize.height/2;	// SSFilterSize: Single Side Filter Size
+		int SSFilterSize_w	=	blockSize.width/2;	// SSFilterSize: Single Side Filter Size
+		const	int	&height	=	src.rows;
+		const	int	&width	=	src.cols;
+		const	int	&i		=	currpos.y;
+		const	int	&j		=	currpos.x;
+
+
+
+		//////////////////////////////////////////////////////////////////////////
+		bool	A=true,	// bottom, top, left, right; thus br: bottom-right
+			B=true,
+			C=true,
+			D=true;
+		if((i+SSFilterSize_h)>=height){
+			A=false;
+		}
+		if((j+SSFilterSize_w)>=width){
+			B=false;
+		}
+		if((i-SSFilterSize_h-1)<0){
+			C=false;
+		}
+		if((j-SSFilterSize_w-1)<0){
+			D=false;
+		}
+
+
+		////////////////////////////////////////////////////////////////////////// ok
+		///// get area size
+		// width
+		double	areaWidth	=	blockSize.width,
+				areaHeight	=	blockSize.height;
+		if(!D){
+			areaWidth	=	j+SSFilterSize_w+1;
+		}else if(!B){
+			areaWidth	=	width-j+SSFilterSize_w;
+		}
+		// height
+		if(!C){
+			areaHeight	=	i+SSFilterSize_h+1;
+		}else if(!A){
+			areaHeight	=	height-i+SSFilterSize_h;
+		}
+
+
+		//////////////////////////////////////////////////////////////////////////
+		///// get value
+		// get positions
+		int	y_up	=	i+SSFilterSize_h		+1,	// '+1' is the bias term of the integral image 
+			y_dn	=	i-SSFilterSize_h-1		+1;
+		if(!A){
+			y_up	=	height-1				+1;
+		}
+		int	x_left	=	j-SSFilterSize_w-1		+1,
+			x_right	=	j+SSFilterSize_w		+1;
+		if(!B){
+			x_right	=	width-1					+1;
+		}
+		// get values
+		double	cTR_sum=0,cTR_sqsum=0,
+				cTL_sum=0,cTL_sqsum=0,
+				cBR_sum=0,cBR_sqsum=0,
+				cBL_sum=0,cBL_sqsum=0;
+		cTR_sum			=	sum.ptr<double>(y_up)[x_right];
+		if(!sqsum.empty())	cTR_sqsum		=	sqsum.ptr<double>(y_up)[x_right];
+		if(C&&D){
+			cBL_sum		=	sum.ptr<double>(y_dn)[x_left];		
+			if(!sqsum.empty())	cBL_sqsum	=	sqsum.ptr<double>(y_dn)[x_left];	
+		}
+		if(D){
+			cTL_sum		=	-sum.ptr<double>(y_up)[x_left];
+			if(!sqsum.empty())	cTL_sqsum	=	-sqsum.ptr<double>(y_up)[x_left];
+		}
+		if(C){
+			cBR_sum		=	-sum.ptr<double>(y_dn)[x_right];
+			if(!sqsum.empty())	cBR_sqsum	=	-sqsum.ptr<double>(y_dn)[x_right];
+		}
+
+
+		////////////////////////////////////////////////////////////////////////// ok
+		///// get mean and sd
+		*mean	=cTR_sum		+cTL_sum	+cBR_sum	+cBL_sum;
+		*mean	/=areaHeight*areaWidth;
+		CV_DbgAssert((*mean)>=0.&&(*mean)<=255.);
+		if(!sqsum.empty()){	
+			*sd		=cTR_sqsum		+cTL_sqsum	+cBR_sqsum	+cBL_sqsum;	
+			*sd		/=areaHeight*areaWidth;
+			*sd		=sqrt(*sd-(*mean)*(*mean));
+			CV_DbgAssert((*sd)>=0.&&(*sd)<=255.);
+		}
+
+
+
+	return true;
+}
+
+
 bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,cv::Mat &sum,cv::Mat &sqsum){
 
 	//////////////////////////////////////////////////////////////////////////
@@ -86,6 +203,7 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 		}
 	}
 
+
 	//////////////////////////////////////////////////////////////////////////
 	// initialization
 	cv::Mat	tdst;	// temp dst. To avoid that when src == dst occur.
@@ -103,90 +221,13 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 
 	//////////////////////////////////////////////////////////////////////////
 	///// process
-	int SSFilterSize_h=blockSize.height/2;	// SSFilterSize: Single Side Filter Size
-	int SSFilterSize_w=blockSize.width/2;	// SSFilterSize: Single Side Filter Size
 	for(int i=0;i<height;i++){
 		for(int j=0;j<width;j++){
 
-			//////////////////////////////////////////////////////////////////////////
-			bool	A=true,	// bottom, top, left, right; thus br: bottom-right
-					B=true,
-					C=true,
-					D=true;
-			if((i+SSFilterSize_h)>=height){
-				A=false;
-			}
-			if((j+SSFilterSize_w)>=width){
-				B=false;
-			}
-			if((i-SSFilterSize_h-1)<0){
-				C=false;
-			}
-			if((j-SSFilterSize_w-1)<0){
-				D=false;
-			}
-
-
-			////////////////////////////////////////////////////////////////////////// ok
-			///// get area size
-			// width
-			double	areaWidth	=	blockSize.width,
-					areaHeight	=	blockSize.height;
-			if(!D){
-				areaWidth	=	j+SSFilterSize_w+1;
-			}else if(!B){
-				areaWidth	=	width-j+SSFilterSize_w;
-			}
-			// height
-			if(!C){
-				areaHeight	=	i+SSFilterSize_h+1;
-			}else if(!A){
-				areaHeight	=	height-i+SSFilterSize_h;
-			}
-
-
-			//////////////////////////////////////////////////////////////////////////
-			///// get value
-			// get positions
-			int	y_up	=	i+SSFilterSize_h		+1,	// '+1' is the bias term of the integral image 
-				y_dn	=	i-SSFilterSize_h-1		+1;
-			if(!A){
-				y_up	=	height-1				+1;
-			}
-			int	x_left	=	j-SSFilterSize_w-1		+1,
-				x_right	=	j+SSFilterSize_w		+1;
-			if(!B){
-				x_right	=	width-1					+1;
-			}
-			// get values
-			double	cTR_sum=0,cTR_sqsum=0,
-					cTL_sum=0,cTL_sqsum=0,
-					cBR_sum=0,cBR_sqsum=0,
-					cBL_sum=0,cBL_sqsum=0;
-			cTR_sum			=	sum.ptr<double>(y_up)[x_right];
-			cTR_sqsum		=	sqsum.ptr<double>(y_up)[x_right];
-			if(C&&D){
-				cBL_sum		=	sum.ptr<double>(y_dn)[x_left];		
-				cBL_sqsum	=	sqsum.ptr<double>(y_dn)[x_left];	
-			}
-			if(D){
-				cTL_sum		=	-sum.ptr<double>(y_up)[x_left];
-				cTL_sqsum	=	-sqsum.ptr<double>(y_up)[x_left];
-			}
-			if(C){
-				cBR_sum		=	-sum.ptr<double>(y_dn)[x_right];
-				cBR_sqsum	=	-sqsum.ptr<double>(y_dn)[x_right];
-			}
-
-
 			////////////////////////////////////////////////////////////////////////// ok
 			///// get mean and sd
-			double	mean	=cTR_sum		+cTL_sum	+cBR_sum	+cBL_sum;				
-			double	sd		=cTR_sqsum		+cTL_sqsum	+cBR_sqsum	+cBL_sqsum;	
-			mean	/=areaHeight*areaWidth;
-			sd		/=areaHeight*areaWidth;
-			sd		=sqrt(sd-mean*mean);
-			CV_DbgAssert(mean>=0.&&mean<=255.&&sd>=0.&&sd<=255.);
+			double	mean,sd;
+			calcAreaMean(src,cv::Point(j,i),blockSize,sum,&mean,sqsum,&sd);
 
 
 			//////////////////////////////////////////////////////////////////////////
