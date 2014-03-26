@@ -59,7 +59,7 @@ namespace pixkit{
 		bool medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size blocksize);
 
 		// fast box filtering
-		bool FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize);
+		bool FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize,cv::Mat &sum=cv::Mat());
 
 	}
 
@@ -160,7 +160,7 @@ namespace pixkit{
 		/// Local methods
 		namespace local{
 
-			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,cv::Mat &sum=cv::Mat(),cv::Mat &sqsum=cv::Mat());
+			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
 
 			/**
 			* @brief		local contrast enhancement

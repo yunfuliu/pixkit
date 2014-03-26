@@ -53,7 +53,7 @@ bool pixkit::filtering::medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size bl
 
 //////////////////////////////////////////////////////////////////////////
 // fast box filtering
-bool pixkit::filtering::FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize){
+bool pixkit::filtering::FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize,cv::Mat &sum){
 
 	////////////////////////////////////////////////////////////////////////// ok
 	///// exceptions
@@ -74,8 +74,13 @@ bool pixkit::filtering::FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize){
 
 	////////////////////////////////////////////////////////////////////////// ok
 	///// get integral image
-	cv::Mat	sum;
-	cv::integral(src,sum,CV_64FC1);
+	if(sum.empty()){
+		cv::integral(src,sum,CV_64FC1);
+	}else{
+		if(sum.type()!=CV_64FC1){
+			CV_Error(CV_StsBadArg,"[pixkit::filtering::FBF] sum type should be CV_64FC1.");
+		}
+	}
 
 
 	////////////////////////////////////////////////////////////////////////// ok
@@ -153,6 +158,7 @@ bool pixkit::filtering::FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize){
 			///// get output
 			if(tdst.type()==CV_32FC1){
 				tdst.ptr<float>(i)[j]	=	(cTR_sum		+cTL_sum	+cBR_sum	+cBL_sum)/(areaHeight*areaWidth);
+				tdst.ptr<float>(i)[j]	=	fabs(tdst.ptr<float>(i)[j]);
 				CV_DbgAssert(tdst.ptr<float>(i)[j]>=0.&&tdst.ptr<float>(i)[j]<=255.);
 			}else if(tdst.type()==CV_8UC1){
 				tdst.ptr<uchar>(i)[j]	=	(cTR_sum		+cTL_sum	+cBR_sum	+cBL_sum)/(areaHeight*areaWidth);

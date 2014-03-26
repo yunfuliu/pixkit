@@ -61,9 +61,9 @@ inline double calcCDF_Gaussian(double &src,double &mean,double &sd){
 inline bool calcAreaMean(const cv::Mat &src,
 	cv::Point currpos,
 	cv::Size blockSize,
-	cv::Mat &sum=cv::Mat(),
+	const cv::Mat &sum=cv::Mat(),
 	double *mean=NULL,
-	cv::Mat &sqsum=cv::Mat(),
+	const cv::Mat &sqsum=cv::Mat(),
 	double *sd=NULL){
 
 		//////////////////////////////////////////////////////////////////////////
@@ -162,16 +162,20 @@ inline bool calcAreaMean(const cv::Mat &src,
 		CV_DbgAssert((*mean)>=0.&&(*mean)<=255.);
 		*sd		=cTR_sqsum		+cTL_sqsum	+cBR_sqsum	+cBL_sqsum;	
 		*sd		/=areaHeight*areaWidth;
-		*sd		=fabs(*sd);
-		CV_DbgAssert((*sd)>=((*mean)*(*mean)));
-		*sd		=sqrt(*sd-(*mean)*(*mean));
+		// compensate error
+		if(fabs((*sd)-(*mean)*(*mean))<0.00001){
+			*sd=0;
+		}else{
+			CV_DbgAssert((*sd)>=(*mean)*(*mean));
+			*sd		=sqrt(*sd-(*mean)*(*mean));
+		}		
 		CV_DbgAssert((*sd)>=0.&&(*sd)<=255.);
 
 	return true;
 }
 
 
-bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,cv::Mat &sum,cv::Mat &sqsum){
+bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum,const cv::Mat &sqsum){
 
 	//////////////////////////////////////////////////////////////////////////
 	// Exceptions
@@ -212,8 +216,12 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 
 	////////////////////////////////////////////////////////////////////////// ok
 	///// create integral images
+	cv::Mat	tsum,tsqsum;
 	if(sum.empty()||sqsum.empty()){
-		cv::integral(src,sum,sqsum,CV_64F);
+		cv::integral(src,tsum,tsqsum,CV_64F);
+	}else{
+		tsum	=	sum;
+		tsqsum	=	sqsum;
 	}
 
 
@@ -221,11 +229,11 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 	///// process
 	for(int i=0;i<height;i++){
 		for(int j=0;j<width;j++){
-
+			
 			////////////////////////////////////////////////////////////////////////// ok
 			///// get mean and sd
 			double	mean,sd;
-			calcAreaMean(src,cv::Point(j,i),blockSize,sum,&mean,sqsum,&sd);
+			calcAreaMean(src,cv::Point(j,i),blockSize,tsum,&mean,tsqsum,&sd);
 
 
 			//////////////////////////////////////////////////////////////////////////
