@@ -3,7 +3,7 @@ project(pixkit)
 cmake_minimum_required (VERSION 2.6)
 
 set(PIXKIT_VERSION_MAJOR 0)
-set(PIXKIT_VERSION_MINOR 3)
+set(PIXKIT_VERSION_MINOR 4)
 set(PIXKIT_VERSION_PATCH 0)
 set(PIXKIT_VERSION_STRING ${PIXKIT_VERSION_MAJOR}${PIXKIT_VERSION_MINOR}${PIXKIT_VERSION_PATCH})
 
@@ -68,6 +68,7 @@ set(PIXKIT_ML_SRCS
 	modules/pixkit-ml/include/pixkit-ml.hpp
 	modules/pixkit-ml/src/fuzzyCMeans.cpp
 	modules/pixkit-ml/src/KMeans.cpp
+	modules/pixkit-ml/src/labeling.cpp
 )
 add_library(pixkit_ml ${PIXKIT_ML_SRCS})
 target_link_libraries(pixkit_ml ${OpenCV_LIBS})
