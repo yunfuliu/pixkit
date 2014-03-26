@@ -95,10 +95,11 @@ Following operations are needed to keep track of the original repo.
    * Go on to the GitHub GUI, commit and push (sync) your contributions to cloud. 
 
    * The last step is to send a pull request to merge your contributions into original repo:
-     - Go to original repo [here](https://github.com/yunfuliu/pixkit) 
-     - Click "Pull Requests" on the right
-     - Click "compare across forks" on the top, 
-       the base fork should be "yunfuliu/pixkit master", and head fork should be yours.
+     - Go to original repo [here](https://github.com/yunfuliu/pixkit). 
+     - Click "Pull Requests".
+     - Click "New pull request".
+     - Click "compare across forks", 
+       the **base fork** should be "yunfuliu/pixkit master", and the **head fork** should be yours.
      - Create this pull request, and wait for a peer review process for your contributions.  
 
 *NOTE*

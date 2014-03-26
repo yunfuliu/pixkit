@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////
+ï»¿//////////////////////////////////////////////////////////////////////////
 // 
 // SOURCE CODE: https://github.com/yunfuliu/pixkit
 // 
@@ -19,7 +19,7 @@
 namespace pixkit{
 
 	//////////////////////////////////////////////////////////////////////////
-	/// attack
+	/// Attack
 	namespace attack{
 
 		/**
@@ -39,7 +39,7 @@ namespace pixkit{
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	/// filtering related
+	/// Filtering related
 	namespace filtering{
 
 		/**
@@ -58,8 +58,10 @@ namespace pixkit{
 		*/
 		bool medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size blocksize);
 
-	}
+		// fast box filtering
+		bool FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize,cv::Mat &sum=cv::Mat());
 
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Edge detection related
@@ -135,6 +137,21 @@ namespace pixkit{
 
 	}
 
+	//////////////////////////////////////////////////////////////////////////
+	/// Image compression
+	namespace comp{
+
+		bool	DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize);
+
+		enum	ODBTC_TYPE{ODBTC_TYPE_ClusteredDot,ODBTC_TYPE_DispersedDot};
+		bool	ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYPE type);
+
+		enum	EDBTC_TYPE{EDBTC_TYPE_Floyd,EDBTC_TYPE_Jarvis,EDBTC_TYPE_Stucki};
+		bool	EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYPE type);
+
+		bool	BTC(const cv::Mat &src,cv::Mat &dst,int blockSize);
+
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Image enhancement related
@@ -142,6 +159,8 @@ namespace pixkit{
 		
 		/// Local methods
 		namespace local{
+
+			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
 
 			/**
 			* @brief		local contrast enhancement
@@ -163,7 +182,7 @@ namespace pixkit{
 			* @brief		paper: F. Lamberti, B. Montrucchio, and A. Sanna, "CMBFHE: a novel contrast enhancement technique based on cascaded multistep binomial filtering histogram equalization," TCE, vol. 52, no. 3, 2006.
 			* @brief		nickname: cascaded multistep binomial filtering histogram equalization (CMBFHE)
 			*
-			* @author		¿à¬f¾±, Yunfu Liu
+			* @author		è³´æŸå‹³, Yunfu Liu
 			* @date			May 15, 2013
 			*
 			* @param: B: number of blocks
@@ -208,7 +227,7 @@ namespace pixkit{
 			* @brief		local contrast enhancement
 			* @brief		paper: J. A. Stark, "Adaptive image contrast enhancement using generalizations of histogram equalization," TIP, vol. 9, no. 5, pp. 889-896, 2000.
 			* 
-			* @author		¿à¬f¾±, Yunfu Liu 
+			* @author		è³´æŸå‹³, Yunfu Liu 
 			* @date			May 14, 2013
 			* 
 			* @param		alpha: 0~1. 0: histogram equalization; 1: local-mean subtraction effect.
@@ -232,6 +251,12 @@ namespace pixkit{
 			* @return		bool: true: successful, false: failure
 			*/
 			bool LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize);
+
+			bool Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03);
+
+            bool Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
+
+			bool Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
 		}
 
 		/// Global methods
@@ -270,8 +295,8 @@ namespace pixkit{
 			* @author		JC Yu
 			* @date			December 15, 2013
 			*
-			* @param        MorD 1:ª½¤è¹Ï¥Î¥­§¡­È¥h¤Á³Î 2:ª½¤è¹Ï¥Î¤¤¦ì¼Æ¥h¤Á³Î
-			* @param        r: ª½¤è¹Ï¤À³Î»¼¦^ªº¦¸¼Æ,½×¤å«ØÄ³µ¹¤©2
+			* @param        MorD 1:ç›´æ–¹åœ–ç”¨å¹³å‡å€¼å»åˆ‡å‰² 2:ç›´æ–¹åœ–ç”¨ä¸­ä½æ•¸å»åˆ‡å‰²
+			* @param        r: ç›´æ–¹åœ–åˆ†å‰²éå›çš„æ¬¡æ•¸,è«–æ–‡å»ºè­°çµ¦äºˆ2
 			*
 			* @return		bool: true: successful, false: failure
 			*/
