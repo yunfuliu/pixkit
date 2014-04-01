@@ -6,17 +6,23 @@
 //	In addition, some frequently used related tools are also involved.
 // 
 //////////////////////////////////////////////////////////////////////////
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv\cxcore.hpp>
+#include <opencv\cxcore.h>
+
+#include <opencv2\imgproc\imgproc.hpp>
+#include <opencv2\highgui\highgui.hpp>
+
 #include <cmath>
 #include <iostream>
-#include <vector>
+#include <vector>		// std::vector
 #include <fstream>
+#include <ctime>		// srand
 
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
 
 namespace pixkit{
+
 
 	//////////////////////////////////////////////////////////////////////////
 	/// attack
@@ -86,6 +92,74 @@ namespace pixkit{
 	/// Halftoning related
 	namespace halftoning{
 
+
+		/// Ordered Dither related
+		namespace errordiffusion{
+			
+			/**
+			* @brief		paper: V. Ostromoukhov, ¡§A simple and efficient error diffusion algorithm,¡¨ in proc. Of SIGGRAPH, 2001.
+			*
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
+			* @date			Feb 25, 2014
+			* @version		1.0
+			* 
+			* @param		src: input image (grayscale only)
+			* @param		dst: output image
+			*
+			* @return		bool: true: successful, false: failure
+			*/ 
+			bool			Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
+
+			/**
+			* @brief		paper: B. Zhou and X. Fang, ¡§Improving mid-tone quality of variable coefficient error diffusion using threshold modulation¡¨, ACM Trans. on Graphics, 2003.
+			*				extension research of [ V. Ostromoukhov, ¡§A simple and efficient error diffusion algorithm,¡¨ in proc. Of SIGGRAPH, 2001. ]
+			*
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
+			* @date			Feb 25, 2014
+			* @version		1.0
+			* 
+			* @param		src: input image (grayscale only)
+			* @param		dst: output image
+			*
+			* @return		bool: true: successful, false: failure
+			*/ 
+			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);
+		
+		}
+
+
+		/// Ordered Dither related
+		namespace ordereddithering{
+			
+			/**
+			* @brief		paper: D. Kacker and J. P. Allebach, "Aperiodic micro screen design using DBS and training," pp. 386-397, 1998.
+			*				By using DBS train the aperiodic screen
+			* 
+			* @param		ctSize:	CT size
+			*/
+		
+
+			/**
+			* @brief		paper:  D. Kacker and J. P. Allebach, "Aperiodic micro screen design using DBS and training," pp. 386-397, 1998.
+			*				By using DBS train the aperiodic screen
+			*
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
+			* @date			Feb 21, 2014
+			* @version		1.0
+			* 
+			* @param		src: input image (grayscale only)
+			* @param		dst: output image
+			*
+			* @return		bool: true: successful, false: failure
+			*/ 
+			bool			KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
+
+		
+		
+		
+		}
+
+
 		/// Dot diffusion related
 		namespace dotdiffusion{
 
@@ -114,7 +188,7 @@ namespace pixkit{
 				unsigned char	*m_ctmap;
 				unsigned char	*m_ctData;
 			};
-			void NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
+			void NADD2013(cv::Mat &src, cv::Mat &dst, pixkit::halftoning::dotdiffusion::CNADDCT &cct);
 
 			/**
 			* @brief		paper: J. M. Guo and Y. F. Liu"Improved dot diffusion by diffused matrix and class matrix co-optimization," IEEE Trans. Image Processing, vol. 18, no. 8, pp. 1804-1816, 2009.
@@ -131,8 +205,23 @@ namespace pixkit{
 			*/ 
 			bool GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
 
+			
+			/**
+			* @brief		paper: S. Lippens and W. Philips, ¡§Green-noise halftoning with dot diffusion,¡¨ in Proc. SPIE/IS&T - The International Society for Optical Engineering, vol. 6497, no. 64970V, 2007.
+			*
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
+			* @date			Feb 25, 2014
+			* @version		1.0
+			* 
+			* @param		src: input image (grayscale only)
+			* @param		dst: output image
+			*
+			* @return		bool: true: successful, false: failure
+			*/ 
+			bool LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
 
 		}
+
 
 	}
 
@@ -336,6 +425,11 @@ namespace pixkit{
 		* @brief		derive PSNR
 		*/
 		float	PSNR(const cv::Mat &src1,const cv::Mat &src2);
+
+		/**
+		* @brief		derive Auto Correlation
+		*/
+		void AutoCorrelation(cv::Mat &HI, std::vector< std::vector<double> > &Correlation, int BlockSize=12);
 
 	}
 
