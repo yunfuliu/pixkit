@@ -1,43 +1,43 @@
-Please read below before being a <b>user</b> or a <b>contributer</b>, many thanks. 
+[![GitHub version](https://badge.fury.io/gh/yunfuliu%2Fpixkit.png)](http://badge.fury.io/gh/yunfuliu%2Fpixkit)
 
 pixkit
 ======
-For only academic usages of image processing (`/pixkit-image`) and machine learning (`/pixkit-ml`).
+For only academic usages of image processing (`pixkit-image`) and machine learning (`pixkit-ml`).
 
-Contains image processing and machine learning related methods which <b>have been published</b> (on articles, e.g., journal or conference papers). 
-In addition, some frequently used related tools are also involved.
+Contains image processing and machine learning related methods which <b>had been published</b> (on articles, e.g., journal or conference papers). 
+In addition to above implementations, some frequently utilized tools, i.e., attack simulation and quality assessment, are also involved as expected.
 
-All the functions completely base upon another famous repo OpenCV: <https://github.com/Itseez/opencv>
+The repo, OpenCV, is used to build up all the pixkit functions: <https://github.com/Itseez/opencv>
 
 Functions
 ---------
-In the current version, `/pixkit-image` involves following grouped functions:
+By far, the current version, `/modules/pixkit-image` involves the following function groups:
 
-** attack: Usually used to simulating attack for "watermarking".
+** **attack**: Usually used to simulate attack for "watermarking".
 
-** filtering: Image filtering.
+** **comp**: Image compression.
 
-** edgedetection: edge detection.
+** **filtering**: Image filtering.
 
-** halftoning: Image halftoning. Turn images into binary (halftone) form.
+** **edgedetection**: Edge detection.
 
-** enhancement::local: Image contrast enhancement methods, regional methods.
+** **halftoning**: Image halftoning. Turn images into binary (halftone) form.
 
-** enhancement::global: Image contrast enhancement methods, global methods.
+** **enhancement::local**: Image contrast enhancement methods, regional methods.
 
-** qualityassessment: Image quality assessment.
+** **enhancement::global**: Image contrast enhancement methods, global methods.
+
+** **qualityassessment**: Image quality assessment.
+
+Also, `/modules/pixkit-ml` involves the following function groups:
+
+** **clustering**: Data clustering.
+
+** **labeling**: Image labeling.
 
 For users
 ---------
-Install [OpenCV](http://opencv.org/), and go <[HERE](http://goo.gl/GHfv9g "pixkit/releases")> to download pixkit.
-
-pixkit involves two paths:
-- `\pixkit-image`: Manual please go [here](https://github.com/yunfuliu/pixkit/blob/master/pixkit-image/readme.md)
-- `\pixkit-ml`
-
-for either image processing or machine learning related usages.
-Also, the explanation of each function has been temporarily described in `.hpp` in the current version.
-
+See [manual](https://github.com/yunfuliu/pixkit/blob/master/MANUAL.md) for details.
 
 For contributors
 ----------------

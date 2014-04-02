@@ -6,7 +6,7 @@
 #include <iostream>
 
 // pixkit-image
-#include "../../../pixkit-image/pixkit-image.hpp"
+#include "../../../modules/pixkit-image/include/pixkit-image.hpp"
 
 void main(){
 
@@ -23,7 +23,7 @@ void main(){
 	}
 	CTSize	=	CTSize*256;
 	char	name[30];
-	sprintf(name,"result/ct%.3d.map",CTSize);
+	sprintf(name,"ct%.3d.map",CTSize);
 	
 
 	//////////////////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ void main(){
 		pixkit::halftoning::dotdiffusion::NADD2013(src,dst,cct);
 
 		// write
-		cv::imwrite("result/output.bmp",dst);
+		cv::imwrite("output.bmp",dst);
 
 		// show results
 		cv::namedWindow("src");

@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\modules\pixkit-ml\src\fuzzyCMeans.cpp">
+      <Filter>pixkit-image</Filter>
+    </ClCompile>
+    <ClCompile Include="example_fuzzyCMeans.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="pixkit-image">
+      <UniqueIdentifier>{c5dde762-4131-4606-9189-48c7b5b5d2af}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\modules\pixkit-ml\include\pixkit-ml.hpp">
+      <Filter>pixkit-image</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
