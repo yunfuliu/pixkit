@@ -6,23 +6,20 @@
 //	In addition, some frequently used related tools are also involved.
 // 
 //////////////////////////////////////////////////////////////////////////
-#include <opencv\cxcore.hpp>
-#include <opencv\cxcore.h>
-
-#include <opencv2\imgproc\imgproc.hpp>
-#include <opencv2\highgui\highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <cmath>
 #include <iostream>
-#include <vector>		// std::vector
+#include <vector>
 #include <fstream>
-#include <ctime>		// srand
+#include <ctime>
 
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
 
 namespace pixkit{
-
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Attack
@@ -104,7 +101,6 @@ namespace pixkit{
 			bool			KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
 		}
 
-
 		/// Dot diffusion related
 		namespace dotdiffusion{
 
@@ -149,7 +145,6 @@ namespace pixkit{
 			* @return		bool: true: successful, false: failure
 			*/ 
 			bool GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
-
 			
 			/**
 			* @brief		paper: S. Lippens and W. Philips, ��Green-noise halftoning with dot diffusion,�� in Proc. SPIE/IS&T - The International Society for Optical Engineering, vol. 6497, no. 64970V, 2007.
@@ -384,16 +379,10 @@ namespace pixkit{
 		*/
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
 
-
-		/**
-		* @brief		derive PSNR
-		*/
-		float	PSNR(const cv::Mat &src1,const cv::Mat &src2);
-
-		/**
-		* @brief		derive Auto Correlation
-		*/
-		void AutoCorrelation(cv::Mat &HI, std::vector< std::vector<double> > &Correlation, int BlockSize=12);
+ 		/**
+  		* @brief		derive PSNR
+  		*/
+  		float	PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
 	}
 
