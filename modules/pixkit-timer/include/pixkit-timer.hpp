@@ -1,12 +1,15 @@
-/*
-*	File name: pixkit-timer.hpp
-*	repo: https://github.com/yunfuliu/pixkit
-*	
-*	Prototype of this comes from the CmTimer.h
-*	in repo: https://github.com/MingMingCheng/CmCode
-*
-*	Author: Ming-Ming Cheng
-*/
+//========================================================================
+//
+// pixkit-timer.hpp
+// repo: https://github.com/yunfuliu/pixkit
+//
+// Prototype of this comes from the CmTimer.h
+// in repo: https://github.com/MingMingCheng/CmCode
+//
+// Author: Ming-Ming Cheng
+// 
+//========================================================================
+
 #pragma once
 #include <ctime>
 #include <iostream>
