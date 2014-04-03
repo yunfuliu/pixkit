@@ -6,7 +6,8 @@
 #include <iostream>
 
 // pixkit-image
-#include <pixkit-image.hpp>
+#include "../../../modules/pixkit-image/include/pixkit-image.hpp"
+
 
 void main(){
 	cv::Mat	src,dst;
