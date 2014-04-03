@@ -1,4 +1,6 @@
 #include "../include/pixkit-image.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
+#include <ctime>
 
 ////////////////////////////////////////////////////////////////////////
 //	error diffusion
@@ -251,8 +253,7 @@ bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src, cv
 			}
 
 		}
-
-	}//*/
+	}
 	return true;
 }
 
@@ -510,7 +511,7 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 			}
 
 		}
-	}//*/
+	}
 	return true;
 }
 
@@ -851,7 +852,6 @@ bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv
 						comp=0.;
 					}
 
-					//*
 					// 取得error, 並取得halftone 輸出.
 					double	error;
 					if(RegImage[i][j] + comp*hysteresis < 128){
@@ -873,8 +873,6 @@ bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv
 							}
 						}
 					}
-
-					//*/
 				}
 			}
 		}

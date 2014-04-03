@@ -8,13 +8,12 @@
 //////////////////////////////////////////////////////////////////////////
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
 #include <cmath>
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include <ctime>
+
 
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
