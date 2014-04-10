@@ -89,7 +89,7 @@ namespace pixkit{
 	/// Halftoning related
 	namespace halftoning{
 
-		/// Ordered Dither related
+		/// Error Diffusion related
 		namespace errordiffusion{ 
 			bool			Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
 			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);		
@@ -383,6 +383,10 @@ namespace pixkit{
   		*/
   		float	PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
+		/**
+  		* @brief		derive HPSNR (for halftoning image quality assessment) ver. 1
+  		*/
+		float	HPSNR(const cv::Mat &src1, const cv::Mat &src2);
 	}
 
 }

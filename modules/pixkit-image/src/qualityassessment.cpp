@@ -183,3 +183,90 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	// = = = = = Return PSNR = = = = = //
 	return 10*log10((double)(src1.cols)*(src1.rows)*(255.)*(255.)/total_err);
 }
+
+float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
+{
+	
+	double  mse = 0;
+	const int height = 15;
+	const int width = 15;
+	int  wd_size = static_cast<int>(height/2*2);;
+	
+	if(src1.empty()||src2.empty()){
+		CV_Error(CV_HeaderIsNull,"[qualityassessment::HPSNR] image is empty");
+	}
+	if(src1.type()!=src2.type()){
+		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] both types of image do not match");
+	}
+	if(src1.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[qualityassessment::HPSNR] image should be grayscale");
+	}
+
+	double gaussianFilter[15][15] = {
+	0,	0,	0,	0,	0.000001,	0.000002,	0.000003,	0.000004,	0.000003,	0.000002,	0.000001,	0,	0,	0,	0,
+	0,	0,	0,	0.000002,	0.000008,	0.000021,	0.000039,	0.000048,	0.000039,	0.000021,	0.000008,	0.000002,	0,	0,	0,
+	0,	0,	0.000003,	0.000017,	0.000071,	0.000193,	0.000351,	0.000429,	0.000351,	0.000193,	0.000071,	0.000017,	0.000003,	0,	0,
+	0,	0.000002,	0.000017,	0.000106,	0.000429,	0.001166,	0.002125,	0.002595,	0.002125,	0.001166,	0.000429,	0.000106,	0.000017,	0.000002,	0,
+	0.000001,	0.000008,	0.000071,	0.000429,	0.001739,	0.004728,	0.008616,	0.010523,	0.008616,	0.004728,	0.001739,	0.000429,	0.000071,	0.000008,	0.000001,
+	0.000002,	0.000021,	0.000193,	0.001166,	0.004728,	0.012853,	0.02342,	0.028605,	0.02342,	0.012853,	0.004728,	0.001166,	0.000193,	0.000021,	0.000002,
+	0.000003,	0.000039,	0.000351,	0.002125,	0.008616,	0.02342,	0.042674,	0.052122,	0.042674,	0.02342,	0.008616,	0.002125,	0.000351,	0.000039,	0.000003,
+	0.000004,	0.000048,	0.000429,	0.002595,	0.010523,	0.028605,	0.052122,	0.063662,	0.052122,	0.028605,	0.010523,	0.002595,	0.000429,	0.000048,	0.000004,
+	0.000003,	0.000039,	0.000351,	0.002125,	0.008616,	0.02342,	0.042674,	0.052122,	0.042674,	0.02342,	0.008616,	0.002125,	0.000351,	0.000039,	0.000003,
+	0.000002,	0.000021,	0.000193,	0.001166,	0.004728,	0.012853,	0.02342,	0.028605,	0.02342,	0.012853,	0.004728,	0.001166,	0.000193,	0.000021,	0.000002,
+	0.000001,	0.000008,	0.000071,	0.000429,	0.001739,	0.004728,	0.008616,	0.010523,	0.008616,	0.004728,	0.001739,	0.000429,	0.000071,	0.000008,	0.000001,
+	0,	0.000002,	0.000017,	0.000106,	0.000429,	0.001166,	0.002125,	0.002595,	0.002125,	0.001166,	0.000429,	0.000106,	0.000017,	0.000002,	0,
+	0,	0,	0.000003,	0.000017,	0.000071,	0.000193,	0.000351,	0.000429,	0.000351,	0.000193,	0.000071,	0.000017,	0.000003,	0,	0,
+	0,	0,	0,	0.000002,	0.000008,	0.000021,	0.000039,	0.000048,	0.000039,	0.000021,	0.000008,	0.000002,	0,	0,	0,
+	0,	0,	0,	0,	0.000001,	0.000002,	0.000003,	0.000004,	0.000003,	0.000002,	0.000001,	0,	0,	0,	0
+	};
+
+	cv::Mat OriImageWd, ResImageWd;
+
+	//boundary extension ==========================
+	//wd_reg memory((IW+wd_size)*(IL+wd_size))
+	OriImageWd.create(src1.rows+wd_size, src1.cols+wd_size, 0);
+	ResImageWd.create(src2.rows+wd_size, src2.cols+wd_size, 0);
+	
+	//WdImage((Height+wd_size)x(Width+wd_size)) <- Input(HeightxWidth)
+	for(int i=0; i<src1.rows; i++){
+		for(int j=0; j<src1.cols; j++){
+			OriImageWd.data[(i+wd_size/2)*(OriImageWd.cols) + (j+wd_size/2)] = src1.data[i*src1.cols +j];
+			ResImageWd.data[(i+wd_size/2)*(ResImageWd.cols) + (j+wd_size/2)] = src2.data[i*src2.cols +j];
+		}
+	}
+
+	//copy(:, wd_size/2 ~wd_size/2+Width-1)
+	for(int j=0; j<src1.cols ;j++){
+		for(int k=0; k<wd_size/2; k++){
+			OriImageWd.data[(wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)];
+			ResImageWd.data[(wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)];
+			OriImageWd.data[(src1.rows+wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(src1.rows+wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)];
+			ResImageWd.data[(src2.rows+wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(src2.rows+wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)];
+		}
+	}
+
+	//copy(wd_size/2~wd_size/2+Width-1, : )
+	for(int i=0;i<OriImageWd.rows;i++){
+		for(int k=0;k<wd_size/2;k++){
+			OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2-k-1)] = OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2+k)];
+			ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2-k-1)] = ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2+k)];
+			OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2+k)] = OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2-k-1)];
+			ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2+k)] = ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2-k-1)];
+		}
+	}
+
+	//PSNR calculation =========================
+	for(int i=0; i<src1.rows; i++){
+		for(int j=0; j<src1.cols; j++){
+			double temp = 0.0;
+			for(int x=0; x<height; x++){
+				for(int y=0; y<width; y++){
+					temp += (ResImageWd.data[(i+x)*ResImageWd.cols + (j+y)] - OriImageWd.data[(i+x)*OriImageWd.cols + (j+y)]) * gaussianFilter[x][y];
+				}
+			}
+			mse += (temp*temp);
+		}
+	}	
+	mse /= (src1.rows * src1.cols);
+	return static_cast<float>(20*log10(255/sqrt(mse)));
+}
