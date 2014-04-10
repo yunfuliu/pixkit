@@ -381,7 +381,7 @@ namespace pixkit{
  		/**
   		* @brief		derive PSNR
   		*/
-  		float	PSNR(const cv::Mat &src1,const cv::Mat &src2);
+  		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
 		/**
   		* @brief		derive HPSNR (for halftoning image quality assessment) ver. 1
