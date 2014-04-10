@@ -186,11 +186,12 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 
 float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &ResImage)
 {
-	int  wd_size = 0;
+	
 	double  mse = 0;
 	const int height = 15;
 	const int width = 15;
-
+	int  wd_size = static_cast<int>(height/2*2);;
+	
 	if(OriImage.empty()||ResImage.empty()){
 		CV_Error(CV_HeaderIsNull,"[qualityassessment::HPSNR] image is empty");
 	}
@@ -218,67 +219,54 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &R
 	0,	0,	0,	0.000002,	0.000008,	0.000021,	0.000039,	0.000048,	0.000039,	0.000021,	0.000008,	0.000002,	0,	0,	0,
 	0,	0,	0,	0,	0.000001,	0.000002,	0.000003,	0.000004,	0.000003,	0.000002,	0.000001,	0,	0,	0,	0
 	};
+
+	cv::Mat OriImageWd, ResImageWd;
+
+	//boundary extension ==========================
+	//wd_reg memory((IW+wd_size)*(IL+wd_size))
+	OriImageWd.create(OriImage.rows+wd_size, OriImage.cols+wd_size, 0);
+	ResImageWd.create(ResImage.rows+wd_size, ResImage.cols+wd_size, 0);
 	
-	wd_size = static_cast<int>(height/2*2);
-
-	try{
-		if (OriImage.rows!=ResImage.rows || OriImage.cols!=ResImage.cols){
-			throw "Error !! size of 2 images are not the same !!\n";
-		} 
-		else{
-			cv::Mat OriImageWd, ResImageWd;
-
-			//wd_reg memory((IW+wd_size)*(IL+wd_size))
-			OriImageWd.create(OriImage.rows+wd_size, OriImage.cols+wd_size, 0);
-			ResImageWd.create(ResImage.rows+wd_size, ResImage.cols+wd_size, 0);
-
-			//boundary extension
-			//WdImage((Height+wd_size)x(Width+wd_size)) <- Input(HeightxWidth)
-			for(int i=0; i<OriImage.rows; i++){
-				for(int j=0; j<OriImage.cols; j++){
-					OriImageWd.data[(i+wd_size/2)*(OriImageWd.cols) + (j+wd_size/2)] = OriImage.data[i*OriImage.cols +j];
-					ResImageWd.data[(i+wd_size/2)*(ResImageWd.cols) + (j+wd_size/2)] = ResImage.data[i*ResImage.cols +j];
-				}
-			}
-
-			//copy(:, wd_size/2 ~wd_size/2+Width-1)
-			for(int j=0; j<OriImage.cols ;j++){
-				for(int k=0; k<wd_size/2; k++){
-					OriImageWd.data[(wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)];
-					ResImageWd.data[(wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)];
-					OriImageWd.data[(OriImage.rows+wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(OriImage.rows+wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)];
-					ResImageWd.data[(ResImage.rows+wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(ResImage.rows+wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)];
-				}
-			}
-
-			//copy(wd_size/2~wd_size/2+Width-1, : )
-			for(int i=0;i<OriImageWd.rows;i++){
-				for(int k=0;k<wd_size/2;k++){
-					OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2-k-1)] = OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2+k)];
-					ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2-k-1)] = ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2+k)];
-					OriImageWd.data[i*(OriImageWd.cols) + (OriImage.cols+wd_size/2+k)] = OriImageWd.data[i*(OriImageWd.cols) + (OriImage.cols+wd_size/2-k-1)];
-					ResImageWd.data[i*(ResImageWd.cols) + (ResImage.cols+wd_size/2+k)] = ResImageWd.data[i*(ResImageWd.cols) + (ResImage.cols+wd_size/2-k-1)];
-				}
-			}
-
-			//PSNR calculation
-			for(int i=0; i<OriImage.rows; i++){
-				for(int j=0; j<OriImage.cols; j++){
-					double temp = 0.0;
-					for(int x=0; x<height; x++){
-						for(int y=0; y<width; y++){
-							temp += (ResImageWd.data[(i+x)*ResImageWd.cols + (j+y)] - OriImageWd.data[(i+x)*OriImageWd.cols + (j+y)]) * gaussianFilter[x][y];
-						}
-					}
-					mse += (temp*temp);
-				}
-			}	
-			mse /= (OriImage.rows * OriImage.cols);
-			return static_cast<float>(20*log10(255/sqrt(mse)));
+	//WdImage((Height+wd_size)x(Width+wd_size)) <- Input(HeightxWidth)
+	for(int i=0; i<OriImage.rows; i++){
+		for(int j=0; j<OriImage.cols; j++){
+			OriImageWd.data[(i+wd_size/2)*(OriImageWd.cols) + (j+wd_size/2)] = OriImage.data[i*OriImage.cols +j];
+			ResImageWd.data[(i+wd_size/2)*(ResImageWd.cols) + (j+wd_size/2)] = ResImage.data[i*ResImage.cols +j];
 		}
 	}
-	catch (char* e){
-		std::cout << e << "\n";
-		exit(0);
+
+	//copy(:, wd_size/2 ~wd_size/2+Width-1)
+	for(int j=0; j<OriImage.cols ;j++){
+		for(int k=0; k<wd_size/2; k++){
+			OriImageWd.data[(wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)];
+			ResImageWd.data[(wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)];
+			OriImageWd.data[(OriImage.rows+wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(OriImage.rows+wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)];
+			ResImageWd.data[(ResImage.rows+wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(ResImage.rows+wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)];
+		}
 	}
+
+	//copy(wd_size/2~wd_size/2+Width-1, : )
+	for(int i=0;i<OriImageWd.rows;i++){
+		for(int k=0;k<wd_size/2;k++){
+			OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2-k-1)] = OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2+k)];
+			ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2-k-1)] = ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2+k)];
+			OriImageWd.data[i*(OriImageWd.cols) + (OriImage.cols+wd_size/2+k)] = OriImageWd.data[i*(OriImageWd.cols) + (OriImage.cols+wd_size/2-k-1)];
+			ResImageWd.data[i*(ResImageWd.cols) + (ResImage.cols+wd_size/2+k)] = ResImageWd.data[i*(ResImageWd.cols) + (ResImage.cols+wd_size/2-k-1)];
+		}
+	}
+
+	//PSNR calculation =========================
+	for(int i=0; i<OriImage.rows; i++){
+		for(int j=0; j<OriImage.cols; j++){
+			double temp = 0.0;
+			for(int x=0; x<height; x++){
+				for(int y=0; y<width; y++){
+					temp += (ResImageWd.data[(i+x)*ResImageWd.cols + (j+y)] - OriImageWd.data[(i+x)*OriImageWd.cols + (j+y)]) * gaussianFilter[x][y];
+				}
+			}
+			mse += (temp*temp);
+		}
+	}	
+	mse /= (OriImage.rows * OriImage.cols);
+	return static_cast<float>(20*log10(255/sqrt(mse)));
 }
