@@ -184,7 +184,7 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	return 10*log10((double)(src1.cols)*(src1.rows)*(255.)*(255.)/total_err);
 }
 
-float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &ResImage)
+float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 {
 	
 	double  mse = 0;
@@ -192,13 +192,13 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &R
 	const int width = 15;
 	int  wd_size = static_cast<int>(height/2*2);;
 	
-	if(OriImage.empty()||ResImage.empty()){
+	if(src1.empty()||src2.empty()){
 		CV_Error(CV_HeaderIsNull,"[qualityassessment::HPSNR] image is empty");
 	}
-	if(OriImage.type()!=ResImage.type()){
+	if(src1.type()!=src2.type()){
 		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] both types of image do not match");
 	}
-	if(OriImage.type()!=CV_8U){
+	if(src1.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[qualityassessment::HPSNR] image should be grayscale");
 	}
 
@@ -224,24 +224,24 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &R
 
 	//boundary extension ==========================
 	//wd_reg memory((IW+wd_size)*(IL+wd_size))
-	OriImageWd.create(OriImage.rows+wd_size, OriImage.cols+wd_size, 0);
-	ResImageWd.create(ResImage.rows+wd_size, ResImage.cols+wd_size, 0);
+	OriImageWd.create(src1.rows+wd_size, src1.cols+wd_size, 0);
+	ResImageWd.create(src2.rows+wd_size, src2.cols+wd_size, 0);
 	
 	//WdImage((Height+wd_size)x(Width+wd_size)) <- Input(HeightxWidth)
-	for(int i=0; i<OriImage.rows; i++){
-		for(int j=0; j<OriImage.cols; j++){
-			OriImageWd.data[(i+wd_size/2)*(OriImageWd.cols) + (j+wd_size/2)] = OriImage.data[i*OriImage.cols +j];
-			ResImageWd.data[(i+wd_size/2)*(ResImageWd.cols) + (j+wd_size/2)] = ResImage.data[i*ResImage.cols +j];
+	for(int i=0; i<src1.rows; i++){
+		for(int j=0; j<src1.cols; j++){
+			OriImageWd.data[(i+wd_size/2)*(OriImageWd.cols) + (j+wd_size/2)] = src1.data[i*src1.cols +j];
+			ResImageWd.data[(i+wd_size/2)*(ResImageWd.cols) + (j+wd_size/2)] = src2.data[i*src2.cols +j];
 		}
 	}
 
 	//copy(:, wd_size/2 ~wd_size/2+Width-1)
-	for(int j=0; j<OriImage.cols ;j++){
+	for(int j=0; j<src1.cols ;j++){
 		for(int k=0; k<wd_size/2; k++){
 			OriImageWd.data[(wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)];
 			ResImageWd.data[(wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)];
-			OriImageWd.data[(OriImage.rows+wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(OriImage.rows+wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)];
-			ResImageWd.data[(ResImage.rows+wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(ResImage.rows+wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)];
+			OriImageWd.data[(src1.rows+wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(src1.rows+wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)];
+			ResImageWd.data[(src2.rows+wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(src2.rows+wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)];
 		}
 	}
 
@@ -250,14 +250,14 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &R
 		for(int k=0;k<wd_size/2;k++){
 			OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2-k-1)] = OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2+k)];
 			ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2-k-1)] = ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2+k)];
-			OriImageWd.data[i*(OriImageWd.cols) + (OriImage.cols+wd_size/2+k)] = OriImageWd.data[i*(OriImageWd.cols) + (OriImage.cols+wd_size/2-k-1)];
-			ResImageWd.data[i*(ResImageWd.cols) + (ResImage.cols+wd_size/2+k)] = ResImageWd.data[i*(ResImageWd.cols) + (ResImage.cols+wd_size/2-k-1)];
+			OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2+k)] = OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2-k-1)];
+			ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2+k)] = ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2-k-1)];
 		}
 	}
 
 	//PSNR calculation =========================
-	for(int i=0; i<OriImage.rows; i++){
-		for(int j=0; j<OriImage.cols; j++){
+	for(int i=0; i<src1.rows; i++){
+		for(int j=0; j<src1.cols; j++){
 			double temp = 0.0;
 			for(int x=0; x<height; x++){
 				for(int y=0; y<width; y++){
@@ -267,6 +267,6 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &R
 			mse += (temp*temp);
 		}
 	}	
-	mse /= (OriImage.rows * OriImage.cols);
+	mse /= (src1.rows * src1.cols);
 	return static_cast<float>(20*log10(255/sqrt(mse)));
 }

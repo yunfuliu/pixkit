@@ -386,7 +386,7 @@ namespace pixkit{
 		/**
   		* @brief		derive HPSNR (for halftoning image quality assessment) ver. 1
   		*/
-		float	HPSNR(const cv::Mat &OriImage, const cv::Mat &ResImage);
+		float	HPSNR(const cv::Mat &src1, const cv::Mat &src2);
 	}
 
 }
