@@ -191,6 +191,16 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &OriImage, const cv::Mat &R
 	const int height = 15;
 	const int width = 15;
 
+	if(OriImage.empty()||ResImage.empty()){
+		CV_Error(CV_HeaderIsNull,"[qualityassessment::HPSNR] image is empty");
+	}
+	if(OriImage.type()!=ResImage.type()){
+		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] both types of image do not match");
+	}
+	if(OriImage.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[qualityassessment::HPSNR] image should be grayscale");
+	}
+
 	double gaussianFilter[15][15] = {
 	0,	0,	0,	0,	0.000001,	0.000002,	0.000003,	0.000004,	0.000003,	0.000002,	0.000001,	0,	0,	0,	0,
 	0,	0,	0,	0.000002,	0.000008,	0.000021,	0.000039,	0.000048,	0.000039,	0.000021,	0.000008,	0.000002,	0,	0,	0,
