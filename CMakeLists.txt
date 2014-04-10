@@ -8,14 +8,12 @@ set(PIXKIT_VERSION_PATCH 0)
 set(PIXKIT_VERSION_STRING ${PIXKIT_VERSION_MAJOR}${PIXKIT_VERSION_MINOR}${PIXKIT_VERSION_PATCH})
 
 
-
 # ============================================================================ #
 # Where to install the pixkit library
 set(PIXKIT_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/lib" CACHE PATH "Installation Directory")
 set(PIXKIT_INCLUDE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/include" CACHE PATH "Includes Directory")
 set(PIXKIT_SAMPLES_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/samples" CACHE PATH "Samples Directory")
 set(PIXKIT_TEST_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install/test" CACHE PATH "Samples Directory")
-
 
 
 # ============================================================================ #
@@ -27,6 +25,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PIXKIT_SAMPLES_PREFIX})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_CURRENT_BINARY_DIR}/bin")
 
 
+# ============================================================================ #
+# Set up the lib names for debug and release modes 
+set(CMAKE_DEBUG_POSTFIX ${PIXKIT_VERSION_STRING}d)
+set(CMAKE_RELEASE_POSTFIX ${PIXKIT_VERSION_STRING})
+
+
+# ============================================================================ #
+# Library installation
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(PIXKIT_ENV "x64")
+else(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	set(PIXKIT_ENV "x86")
+endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(MSVC10)
+	set(PIXKIT_COMPILER "vc10")
+elseif(MSVC11)
+	set(PIXKIT_COMPILER "vc11")
+endif()
+
 
 # ============================================================================ #
 # Find external libraries and dependencies
@@ -37,42 +54,48 @@ find_package(OpenCV REQUIRED)
 #find_package(Doxygen)
 
 
-
-# ============================================================================ #
-# Create projects
-set(CMAKE_DEBUG_POSTFIX ${PIXKIT_VERSION_STRING}d)
-set(CMAKE_RELEASE_POSTFIX ${PIXKIT_VERSION_STRING})
-# Create projects (pixkit-image) ***********************************************
-include_directories("modules/pixkit-image")
+# -----------------------------------------------------------
+# Install part
+# -----------------------------------------------------------
+# ***********************************************************
+# Install projects (pixkit-image) 
+# include_directories("modules/pixkit-image")
 
 # pixkit-image libraries
-set(PIXKIT_IMAGE_SRCS
-	modules/pixkit-image/include/pixkit-image.hpp
-	modules/pixkit-image/src/attack.cpp
-	modules/pixkit-image/src/comp.cpp
-	modules/pixkit-image/src/edgedetection.cpp
-	modules/pixkit-image/src/enhancement.cpp
-	modules/pixkit-image/src/filtering.cpp
-	modules/pixkit-image/src/halftoning.cpp
-	modules/pixkit-image/src/qualityassessment.cpp
-	modules/pixkit-image/src/NADD2013/NADD.cpp
-)
-add_library(pixkit_image ${PIXKIT_IMAGE_SRCS})
+file(GLOB PIXKIT_IMAGE_FILES 
+	"modules/pixkit-image/include/*.hpp"	"modules/pixkit-image/include/*.h"
+	"modules/pixkit-image/src/*.cpp"
+	"modules/pixkit-image/src/*/*.cpp")
+add_library(pixkit_image ${PIXKIT_IMAGE_FILES})
 target_link_libraries(pixkit_image ${OpenCV_LIBS})
+install(TARGETS	pixkit_image	
+	DESTINATION	"${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
 
-# Create projects (pixkit-ml) **************************************************
-#include_directories("modules/pixkit-ml/")
+# ***********************************************************
+# Install projects (pixkit-ml)
+include_directories("modules/pixkit-ml/")
 
 # pixkit-ml libraries
-set(PIXKIT_ML_SRCS
-	modules/pixkit-ml/include/pixkit-ml.hpp
-	modules/pixkit-ml/src/fuzzyCMeans.cpp
-	modules/pixkit-ml/src/KMeans.cpp
-	modules/pixkit-ml/src/labeling.cpp
-)
-add_library(pixkit_ml ${PIXKIT_ML_SRCS})
+file(GLOB PIXKIT_ML_FILES
+	"modules/pixkit-ml/include/*.hpp"	"modules/pixkit-ml/include/*.h"
+	"modules/pixkit-ml/src/*.cpp"
+	"modules/pixkit-ml/src/*/*.cpp")
+add_library(pixkit_ml ${PIXKIT_ML_FILES})
 target_link_libraries(pixkit_ml ${OpenCV_LIBS})
+install(TARGETS	pixkit_ml	
+	DESTINATION	"${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
 
+# ***********************************************************
+# Install projects (pixkit-timer)
+include_directories("modules/pixkit-timer/")
+
+# pixkit-timer libraries
+file(GLOB PIXKIT_TIMER_FILES
+	"modules/pixkit-timer/include/*.hpp"	"modules/pixkit-timer/src/*.cpp")
+add_library(pixkit_timer ${PIXKIT_TIMER_FILES})
+target_link_libraries(pixkit_timer ${OpenCV_LIBS})
+install(TARGETS	pixkit_timer	
+	DESTINATION	"${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
 
 
 # ============================================================================ #
@@ -97,7 +120,6 @@ add_executable(image_enhancement_WadudKabirDewanChae2007
 target_link_libraries(image_enhancement_WadudKabirDewanChae2007 pixkit_image)
 
 
-
 # ============================================================================ #
 # Test programs (image/halftoning)
 add_executable(test_image_halftoning
@@ -113,24 +135,12 @@ set_target_properties(
 )
 
 
-
 # ============================================================================ #
-# Library installation
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(PIXKIT_ENV "x64")
-else(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	set(PIXKIT_ENV "x86")
-endif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-if(MSVC10)
-	set(PIXKIT_COMPILER "vc10")
-elseif(MSVC11)
-	set(PIXKIT_COMPILER "vc11")
-endif()
-install(TARGETS pixkit_image DESTINATION "${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
-install(TARGETS pixkit_ml DESTINATION "${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
+# move files ********************************************************************
+file(GLOB PIXKIT_HEADER	# all the .hpp files
+	"modules/pixkit-*/include/*.hpp"	"modules/pixkit-*/include/*.h")
 install(FILES
-    modules/pixkit-image/include/pixkit-image.hpp
-	modules/pixkit-ml/include/pixkit-ml.hpp
+	${PIXKIT_HEADER}
     DESTINATION
     ${PIXKIT_INCLUDE_PREFIX}
 )
@@ -139,7 +149,6 @@ install(FILES
     DESTINATION
     ${PIXKIT_TEST_PREFIX}
 )
-
 
 
 # ============================================================================ #
