@@ -140,7 +140,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\attack.cpp" />
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\comp.cpp" />
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\enhancement.cpp" />
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\filtering.cpp" />
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\halftoning.cpp" />
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\qualityassessment.cpp" />
     <ClCompile Include="example_MaryKim2008.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\modules\pixkit-image\include\pixkit-image.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

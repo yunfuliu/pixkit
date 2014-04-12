@@ -325,9 +325,9 @@ bool pixkit::enhancement::local::YuBajaj2004(const cv::Mat &src,cv::Mat &dst,con
 			}
 			avgv	/=	(float)	avgv_count;
 
-			maxmap.data[i*maxmap.cols+j]	=	maxv;
-			minmap.data[i*minmap.cols+j]	=	minv;
-			avgmap.data[i*avgmap.cols+j]	=	avgv;		
+			maxmap.data[i*maxmap.cols+j]	=	static_cast<uchar>(maxv);
+			minmap.data[i*minmap.cols+j]	=	static_cast<uchar>(minv);
+			avgmap.data[i*avgmap.cols+j]	=	static_cast<uchar>(avgv);		
 
 		}
 	}
@@ -405,7 +405,7 @@ bool pixkit::enhancement::local::YuBajaj2004(const cv::Mat &src,cv::Mat &dst,con
 			if(tempv<0.){
 				tempv=0.;
 			}
-			tdst.data[i*tdst.cols+j]	=	(uchar)	tempv+0.5;
+			tdst.data[i*tdst.cols+j]	=	static_cast<uchar>(cvRound(tempv));
 		}
 	}
 
@@ -518,7 +518,7 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 	dst.create(src.size(),src.type());
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			dst.data[i*dst.cols+j]	=	tdst[i][j];
+			dst.data[i*dst.cols+j]	=	static_cast<uchar>(tdst[i][j]);
 		}
 	}
 
@@ -659,7 +659,7 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 				tempv=1.;
 			}
 			assert(tempv>=0.&&tempv<=1.);
-			tdst.data[i*src.cols+j]=tempv*(nColors-1.);	// 程┑甶255		
+			tdst.data[i*src.cols+j]=static_cast<uchar>(tempv*(nColors-1.));	// 程┑甶255		
 
 		}
 	}
@@ -801,7 +801,7 @@ bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Si
 			float t = (double)src.data[i*src.cols+j]/(nColors-1);
 			float o = t + K1*t/(1.0-exp(K1*(K2+t)));
 
-			temp.data[i*temp.cols+j] = o*(nColors-1);
+			temp.data[i*temp.cols+j] = static_cast<uchar>(o*(nColors-1));
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1159,7 +1159,7 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 				tempv=1.;
 			}
 			assert(tempv>=0.&&tempv<=1.);
-			tdst.data[i*src.cols+j]=tempv*(nColors-1.);	// 程┑甶255			
+			tdst.data[i*src.cols+j]=static_cast<uchar>(tempv*(nColors-1.));	// 程┑甶255			
 		}
 	}
 
