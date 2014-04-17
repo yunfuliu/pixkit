@@ -4,12 +4,13 @@
 // Authors: Yun-Fu Liu (1), Jing-Ming Guo (2)
 // Institutions: National Taiwan University of Science and Technology
 // Date: Dec. 27, 2013
-// Email: yunfuliu@gmail.com
+// Email: yunfuliu@gmail.com, jmguo@seed.net.tw
 // Paper: Yun-Fu Liu and Jing-Ming Guo, "New class tiling design for 
 //        dot-diffused halftoning," IEEE Trans. Image Processing, 
 //        vol. 22, no. 3, pp. 1199-1208, March 2013.
 //
-// NADD Halftoning Copyright (c) 2013, Yun-Fu Liu, all rights reserved.
+// NADD Halftoning Copyright (c) 2013, Multimedia Signal Processing
+// Lab., National Taiwan University of Science and Technology, all rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, 
 // are permitted provided that the following conditions are met:
@@ -175,7 +176,7 @@ bool change_cm_type(int type_num,int *src,int *dst,int &CM_Size){
 
 	return true;
 }
-bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order_type/*7¥ª¤W6¥ª5¥ª¤U4¤U3¥k¤U*/,int order_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,CLOAD &order,int x,int y,int &CM_Size,bool check_diagonal=false){
+bool same_cm_point(int *src,int src_corner_num/*1ï¿½kï¿½W3ï¿½kï¿½U5ï¿½ï¿½ï¿½U7ï¿½ï¿½ï¿½W*/,int order_type/*7ï¿½ï¿½ï¿½W6ï¿½ï¿½5ï¿½ï¿½ï¿½U4ï¿½U3ï¿½kï¿½U*/,int order_corner_num/*1ï¿½kï¿½W3ï¿½kï¿½U5ï¿½ï¿½ï¿½U7ï¿½ï¿½ï¿½W*/,CLOAD &order,int x,int y,int &CM_Size,bool check_diagonal=false){
 
 	//////////////////////////////////////////////////////////////////////////get src corner position
 	int	src_x,src_y;
@@ -234,7 +235,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 	switch(order_type){
 	case 3:
 		if(x+CM_Size+src_x>=order.m_Width||y-CM_Size+src_y<0){
-			return false;	// ¥k¤UµLcm
+			return false;	// ï¿½kï¿½Uï¿½Lcm
 		}else{
 			order_x=x+CM_Size+src_x;
 			order_y=y-CM_Size+src_y;
@@ -242,7 +243,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 		break;
 	case 4:
 		if(y-CM_Size+src_y<0){
-			return false;	// ¤UµLcm
+			return false;	// ï¿½Uï¿½Lcm
 		}else{
 			order_x=x+src_x;
 			order_y=y-CM_Size+src_y;
@@ -250,7 +251,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 		break;
 	case 5:
 		if(x-CM_Size+src_x<0||y-CM_Size+src_y<0){
-			return false;	// ¥ª¤UµLcm
+			return false;	// ï¿½ï¿½ï¿½Uï¿½Lcm
 		}else{
 			order_x=x-CM_Size+src_x;
 			order_y=y-CM_Size+src_y;
@@ -258,7 +259,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 		break;
 	case 6:
 		if(x-CM_Size+src_x<0){
-			return false;	// ¥ªµLcm
+			return false;	// ï¿½ï¿½ï¿½Lcm
 		}else{
 			order_x=x-CM_Size+src_x;
 			order_y=y+src_y;
@@ -266,7 +267,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 		break;
 	case 7:
 		if(x-CM_Size+src_x<0||y+CM_Size+src_y>=order.m_Height){
-			return false;	// ¥ª¤WµLcm
+			return false;	// ï¿½ï¿½ï¿½Wï¿½Lcm
 		}else{
 			order_x=x-CM_Size+src_x;
 			order_y=y+CM_Size+src_y;
@@ -281,7 +282,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 
 	// compare
 	if(check_diagonal){	
-		//////////////////////////////////////////////////////////////////////////check ¹ï¨¤¼Æ
+		//////////////////////////////////////////////////////////////////////////check ï¿½ï¨¤ï¿½ï¿½
 		int	dia_pair1_1=src[0]			,dia_pair1_2=src[(CM_Size-1)*CM_Size+(CM_Size-1)];
 		int	dia_pair2_1=src[CM_Size-1]	,dia_pair2_2=src[(CM_Size-1)*CM_Size];
 
@@ -294,7 +295,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 		}
 
 	}else{
-		//////////////////////////////////////////////////////////////////////////check ¬Û¦P¼Æ
+		//////////////////////////////////////////////////////////////////////////check ï¿½Û¦Pï¿½ï¿½
 		if(src_num==order_num){
 			return true;
 		}else{
@@ -305,7 +306,7 @@ bool same_cm_point(int *src,int src_corner_num/*1¥k¤W3¥k¤U5¥ª¤U7¥ª¤W*/,int order
 bool check_cm_type(int *src,CLOAD &order,int x,int y,int &CM_Size){
 
 	//////////////////////////////////////////////////////////////////////////common
-	// check »P¥ªcm¤§¾F¨¤
+	// check ï¿½Pï¿½ï¿½cmï¿½ï¿½ï¿½Fï¿½ï¿½
 	if(same_cm_point(&src[0],7,6,1,order,x,y,CM_Size)){
 		//		printf("E1 ");
 		return false;
@@ -314,18 +315,18 @@ bool check_cm_type(int *src,CLOAD &order,int x,int y,int &CM_Size){
 		//		printf("E2 ");
 		return false;
 	}
-	// check ©M¥ªÃäcm¤§¬Û¦ü
+	// check ï¿½Mï¿½ï¿½ï¿½ï¿½cmï¿½ï¿½ï¿½Û¦ï¿½
 	if(same_cm_point(&src[0],5,6,5,order,x,y,CM_Size)&&same_cm_point(&src[0],7,6,7,order,x,y,CM_Size)){
 		//		printf("E3 ");
 		return false;
 	}
-	// check ©M¥ªÃäcm¤£¥i¦P­±¬Û³s
+	// check ï¿½Mï¿½ï¿½ï¿½ï¿½cmï¿½ï¿½ï¿½iï¿½Pï¿½ï¿½ï¿½Û³s
 	if(same_cm_point(&src[0],5,6,1,order,x,y,CM_Size)&&same_cm_point(&src[0],7,6,3,order,x,y,CM_Size)){
 		//		printf("E4 ");
 		return false;
 	}
 
-	// Á×§K»P¬Û¾FÃþ§O¯x°}¦¨­û©P³ò¦³¬Û¦Pªº¦¨­û(¥ª¤U)
+	// ï¿½×§Kï¿½Pï¿½Û¾Fï¿½ï¿½ï¿½Oï¿½xï¿½}ï¿½ï¿½ï¿½ï¿½ï¿½Pï¿½ò¦³¬Û¦Pï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½U)
 	if(y-1>=0&&((x+CM_Size/2-1)<order.m_Width)&&(y-CM_Size>=0)){
 		if((src[0]==order.m_Image[y-1][x+CM_Size/2-1])&&(src[(CM_Size-1)*CM_Size]==order.m_Image[y-CM_Size][x+CM_Size/2-1])){
 			//			printf("E5 ");
@@ -333,7 +334,7 @@ bool check_cm_type(int *src,CLOAD &order,int x,int y,int &CM_Size){
 		}
 	}
 
-	// Á×§K»P¬Û¾FÃþ§O¯x°}¦¨­û©P³ò¦³¬Û¦Pªº¦¨­û(¥k¤U)
+	// ï¿½×§Kï¿½Pï¿½Û¾Fï¿½ï¿½ï¿½Oï¿½xï¿½}ï¿½ï¿½ï¿½ï¿½ï¿½Pï¿½ò¦³¬Û¦Pï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(ï¿½kï¿½U)
 	if(y-1>=0&&((x+CM_Size/2)<order.m_Width)&&(y-CM_Size>=0)){
 		if((src[CM_Size-1]==order.m_Image[y-1][x+CM_Size/2])&&(src[(CM_Size-1)*CM_Size+(CM_Size-1)]==order.m_Image[y-CM_Size][x+CM_Size/2])){
 			//			printf("E6 ");
