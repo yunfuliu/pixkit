@@ -4,12 +4,13 @@
 // Authors: Yun-Fu Liu (1), Jing-Ming Guo (2), Bo-Syun Lai (3), Jiann-Der Lee (4)
 // Institutions: National Taiwan University of Science and Technology
 // Date: May 26, 2013
-// Email: yunfuliu@gmail.com
+// Email: yunfuliu@gmail.com, jmguo@seed.net.tw
 // Paper: Yun-Fu Liu, Jing-Ming Guo, Bo-Syun Lai, and Jiann-Der Lee, "High efficient 
 //        contrast enhancement using parametric approximation," IEEE Trans. 
 //        Image Processing, pp. 2444-2448, 26-31 May 2013.
 //
-// POHE Image Contrast Enhancement Copyright (c) 2013, Yun-Fu Liu, all rights reserved.
+// POHE Image Contrast Enhancement Copyright (c) 2013, Multimedia Signal Processing
+// Lab., National Taiwan University of Science and Technology, all rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, 
 // are permitted provided that the following conditions are met:
