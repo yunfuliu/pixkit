@@ -1131,6 +1131,10 @@ bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv
 }
 bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst){
 
+	if(src.type()!=CV_8UC1){
+		CV_Assert(CV_StsUnmatchedFormats,"[pixkit::enhancement::global::GlobalHistogramEqualization1992] src should be CV_8UC1.");
+	}
+
 	const int nColors	=	256;
 
 	std::vector<double>	hist(nColors,0);	// initialize histogram 
