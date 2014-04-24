@@ -9,8 +9,8 @@
 //        dot-diffused halftoning," IEEE Trans. Image Processing, 
 //        vol. 22, no. 3, pp. 1199-1208, March 2013.
 //
-// NADD Halftoning Copyright (c) 2013, Multimedia Signal Processing
-// Lab., National Taiwan University of Science and Technology, all rights reserved.
+// NADD Halftoning Copyright (c) 2013, Yun-Fu Liu and Jing-Ming Guo, 
+// all rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, 
 // are permitted provided that the following conditions are met:
