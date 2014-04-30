@@ -14,7 +14,7 @@ void main(){
 	src	=	cv::imread("../../../data/lena.bmp",CV_LOAD_IMAGE_GRAYSCALE);
 	if(!src.empty()){
 		// process
-		if(pixkit::enhancement::global::MaryKim2008(src,dst,2)){
+		if(pixkit::enhancement::local::Lal2014(src,dst,cv::Size(41,41),0.03)){
 			// write output
 			cv::imwrite("output.bmp",dst);
 			// show image
