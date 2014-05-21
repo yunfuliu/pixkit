@@ -14,7 +14,7 @@ void main(){
 	src	=	cv::imread("2.bmp",CV_LOAD_IMAGE_GRAYSCALE);
 	if(!src.empty()){
 		// process
-		if(pixkit::enhancement::local::CLAHE1987(src,dst,cv::Size(33,33),1)){
+		if(pixkit::enhancement::global::MaryKim2008(src,dst,2)){
 			// write output
 			cv::imwrite("output.bmp",dst);
 			// show image
