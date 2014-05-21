@@ -669,7 +669,7 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 
 	return true;
 }
-bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L ){
+bool pixkit::enhancement::local::CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nblock, float L ){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
 		return false;
@@ -678,34 +678,34 @@ bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::
 		return false;
 	}
 
-	if(title.height > (src.rows/4) || title.width > (src.cols/4)){
+	if(nblock.height > (src.rows/4) || nblock.width > (src.cols/4)){
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	const int nColors = 256;
-	int x = src.cols/title.width, y = src.rows/title.height;
+	int x = src.cols/nblock.width, y = src.rows/nblock.height;
 
 	dst = cvCreateMat(src.rows,src.cols,src.type());
 
-	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //儲存每個title的轉移函式
+	std::vector<std::vector<float>> hist(nblock.height*nblock.width,std::vector<float> (nColors,0)); //儲存每個title的轉移函式
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//計算每個title的轉移函式
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	for(int m = 0;m<title.height;m++)
-		for(int n = 0;n<title.width;n++)
+	for(int m = 0;m<nblock.height;m++)
+		for(int n = 0;n<nblock.width;n++)
 		{
 			int i,j,i1=(m+1)*y,j1=(n+1)*x;
 
-			if( (m+1) == title.height )
+			if( (m+1) == nblock.height )
 				i1 = src.rows;
-			if((n+1) == title.width )
+			if((n+1) == nblock.width )
 				j1 = src.cols;
 
 			int Count = 0;
 			for(i=m*y;i<i1;i++)
 				for(j=n*x;j<j1;j++)
 				{
-					hist[m*title.width+n][(int)src.data[i*src.cols+j]]++;
+					hist[m*nblock.width+n][(int)src.data[i*src.cols+j]]++;
 					Count++;
 				}
 
@@ -715,10 +715,10 @@ bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::
 				for(int k=0;k<256;k++)
 				{
 
-					if(hist[m*title.width+n][k] > limt)
+					if(hist[m*nblock.width+n][k] > limt)
 					{
-						over_limit += (hist[m*title.width+n][k]-limt);
-						hist[m*title.width+n][k] = limt;
+						over_limit += (hist[m*nblock.width+n][k]-limt);
+						hist[m*nblock.width+n][k] = limt;
 					}
 				}
 
@@ -726,12 +726,12 @@ bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::
 
 				for(int k=0;k<256;k++)
 				{
-					hist[m*title.width+n][k] += over_limit;
-					hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
+					hist[m*nblock.width+n][k] += over_limit;
+					hist[m*nblock.width+n][k] = (hist[m*nblock.width+n][k]/Count)*(nColors-1);
 				}
 
 				for(int k=1;k<256;k++)
-					hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
+					hist[m*nblock.width+n][k] += hist[m*nblock.width+n][k-1];
 		}
 	//////////////////////////////////////////////////////////////////////////
 	//計算輸出
@@ -747,32 +747,91 @@ bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::
 				a1=a2;
 				a2+=x;
 
-				if(a2/x == title.width)
+				if(a2/x == nblock.width)
 					a2 = src.cols-1;
 			}
 			if(i>b2)
 			{
 				b1 = b2;
 				b2 += y;
-				if(b2/y == title.height)
+				if(b2/y == nblock.height)
 					b2 = src.rows-1;
 			}
 
 			int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
-			if(p2 >= title.width)
-				p2 = title.width-1;
-			if(q2 >= title.height)
-				q2 = title.height-1;
+			if(p2 >= nblock.width)
+				p2 = nblock.width-1;
+			if(q2 >= nblock.height)
+				q2 = nblock.height-1;
 
 			float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
 			int v = (int)src.data[i*src.cols+j];
 
-			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
+			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*nblock.width+p1][v] + (1-a)*hist[q1*nblock.width+p2][v]) + (1-b)*(a*hist[q2*nblock.width+p1][v] + (1-a)*hist[q2*nblock.width+p2][v]));
 		}
 	}
 
 	return true;
 }
+
+bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size Block, float L){
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	if(src.type()!=CV_8UC1){
+		return false;
+	}
+	if(L>1 || L<=0){
+		return false;
+	}
+
+	if(Block.height > src.rows-1 || Block.width > src.cols-1){
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	int limt = (int) (Block.height*Block.width*L + 0.5);
+	int x = Block.width/2, y = Block.height/2;
+
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+
+	for(int i=0;i<dst.rows;i++)
+		for(int j=0;j<dst.cols;j++)
+		{
+			std::vector<float> hist(256,0);
+
+			float Total = 0;
+			for(int m=i-y;m<=i+y;m++)
+				for(int n=j-x;n<=j+x;n++)
+				{
+					if(m>=0 && m<dst.rows && n>=0 && n<dst.cols)
+					{
+						hist[(int)src.data[m*src.cols+n]]++;
+						Total++;
+					}
+				}
+
+				float over_limit = 0;
+				for(int k=0;k<256;k++)
+				{
+					if(hist[k] > limt)
+					{
+						over_limit += (hist[k]-limt);
+						hist[k] = limt;
+					}
+				}
+
+				over_limit /= 256;
+
+				for(int k=0;k<256;k++)
+					hist[k] += over_limit;
+
+				for(int k=1;k<256;k++)
+					hist[k] += hist[k-1];
+
+				dst.data[i*dst.cols+j] = (unsigned char) ( (hist[(int)src.data[i*src.cols+j]]*255.0/Total + 0.5) ); 
+		}
+
+	return true;
+}
+
 bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){

@@ -11,10 +11,10 @@
 
 void main(){
 	cv::Mat	src,dst;
-	src	=	cv::imread("../../../data/lena.bmp",CV_LOAD_IMAGE_GRAYSCALE);
+	src	=	cv::imread("2.bmp",CV_LOAD_IMAGE_GRAYSCALE);
 	if(!src.empty()){
 		// process
-		if(pixkit::enhancement::local::Lal2014(src,dst,cv::Size(41,41),0.03)){
+		if(pixkit::enhancement::local::CLAHE1987(src,dst,cv::Size(33,33),1)){
 			// write output
 			cv::imwrite("output.bmp",dst);
 			// show image
