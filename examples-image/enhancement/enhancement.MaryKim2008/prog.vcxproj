@@ -145,7 +145,6 @@
     <ClCompile Include="..\..\..\modules\pixkit-image\src\enhancement.cpp" />
     <ClCompile Include="..\..\..\modules\pixkit-image\src\filtering.cpp" />
     <ClCompile Include="..\..\..\modules\pixkit-image\src\halftoning.cpp" />
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\POHE2013\pohe.cpp" />
     <ClCompile Include="..\..\..\modules\pixkit-image\src\qualityassessment.cpp" />
     <ClCompile Include="example_MaryKim2008.cpp" />
   </ItemGroup>
