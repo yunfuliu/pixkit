@@ -773,7 +773,7 @@ bool pixkit::enhancement::local::CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, c
 
 	return true;
 }
-bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size Block, float L){
+bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blocksize, float L){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
 		return false;
@@ -782,12 +782,12 @@ bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::
 		return false;
 	}
 
-	if(Block.height > src.rows-1 || Block.width > src.cols-1){
+	if(blocksize.height > src.rows-1 || blocksize.width > src.cols-1){
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////
-	int limt = (int) (Block.height*Block.width*L + 0.5);
-	int x = Block.width/2, y = Block.height/2;
+	int limt = (int) (blocksize.height*blocksize.width*L + 0.5);
+	int x = blocksize.width/2, y = blocksize.height/2;
 
 	dst = cvCreateMat(src.rows,src.cols,src.type());
 
