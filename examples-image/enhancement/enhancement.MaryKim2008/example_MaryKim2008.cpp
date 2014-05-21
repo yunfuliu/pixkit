@@ -11,7 +11,7 @@
 
 void main(){
 	cv::Mat	src,dst;
-	src	=	cv::imread("2.bmp",CV_LOAD_IMAGE_GRAYSCALE);
+	src	=	cv::imread("../../../data/lena.bmp",CV_LOAD_IMAGE_GRAYSCALE);
 	if(!src.empty()){
 		// process
 		if(pixkit::enhancement::global::MaryKim2008(src,dst,2)){
