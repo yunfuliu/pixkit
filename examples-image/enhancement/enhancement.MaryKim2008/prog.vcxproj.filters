@@ -20,7 +20,6 @@
     <ClCompile Include="..\..\..\modules\pixkit-image\src\qualityassessment.cpp">
       <Filter>lib</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\POHE2013\pohe.cpp">
       <Filter>lib</Filter>
     </ClCompile>
   </ItemGroup>
