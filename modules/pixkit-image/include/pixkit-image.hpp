@@ -279,7 +279,7 @@ namespace pixkit{
 			*/
 			bool LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize);
 
-			bool CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBbock, float L = 0.03);
+			bool CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L = 0.03);
 
 			bool CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L = 0.03);
 
