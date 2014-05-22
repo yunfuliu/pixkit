@@ -20,6 +20,8 @@
     <ClCompile Include="..\..\..\modules\pixkit-image\src\qualityassessment.cpp">
       <Filter>lib</Filter>
     </ClCompile>
+      <Filter>lib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lib">
