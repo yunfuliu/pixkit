@@ -33,13 +33,16 @@ Also, `/modules/pixkit-ml` involves the following function groups:
 
 ** **clustering**: Data clustering.
 
+** **labeling**: Image labeling.
+
 For users
 ---------
 See [manual](https://github.com/yunfuliu/pixkit/blob/master/MANUAL.md) for details.
 
 For contributors
 ----------------
-Please read [CONTRIBUTING.md](https://github.com/yunfuliu/pixkit/blob/master/CONTRIBUTING.md) in this directory.
+Please read [CONTRIBUTING.md](https://github.com/yunfuliu/pixkit/blob/master/CONTRIBUTING.md) in this directory.  
+Many thanks to our [contributors](https://github.com/yunfuliu/pixkit/graphs/contributors).
 
 Bugs
 ----

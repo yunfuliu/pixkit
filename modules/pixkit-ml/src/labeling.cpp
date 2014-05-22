@@ -2,7 +2,6 @@
 
 using namespace std;
 
-
 bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset){
 
 	//////////////////////////////////////////////////////////////////////////
@@ -27,9 +26,11 @@ bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset)
 	/*第一次掃描*/
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			min = src.rows*src.cols;
+			
 			C[0] = tdst.ptr<int>(i)[j];
-
+			if(C[0]<128)
+				continue;
+			min = src.rows*src.cols;
 			if(j-1 <0){
 				C[1] = 0;
 			}else{
@@ -51,21 +52,19 @@ bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset)
 				C[4] = tdst.ptr<int>(i-1)[j+1];
 			}
 
-			if (C[0] >=128){ //有物件
-
-				if(C[1] ==0 && C[2] ==0 && C[3] ==0 && C[4] ==0){
-					C[0] = LableNumber;
-					LableNumber++;
-				}else{
-					for(int k=1;k<=4;k++){
-						if(C[k]<min && C[k] != 0){
-							min = C[k];
-						}
+			if(C[1] ==0 && C[2] ==0 && C[3] ==0 && C[4] ==0){
+				C[0] = LableNumber;
+				LableNumber++;
+			}else{
+				for(int k=1;k<=4;k++){
+					if(C[k]<min && C[k] != 0){
+						min = C[k];
 					}
-					C[0] = min;
 				}
-				tdst.ptr<int>(i)[j] = C[0];
+				C[0] = min;
 			}
+			tdst.ptr<int>(i)[j] = C[0];
+
 		}
 	}
 
@@ -74,10 +73,13 @@ bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset)
 	LableNumber == 1 代表無前景物件
 	使用動態新增Table記憶體*/
 	bool **Table = NULL;
+	int *refTeble = NULL;
 	if(LableNumber != 1){
 		Table = new bool *[LableNumber];
+		refTeble = new int [LableNumber];
 		for(int i=0;i<LableNumber;i++){
 			Table[i] = new bool [LableNumber];
+			refTeble[i] = 0;
 			for(int j=0;j<LableNumber;j++){
 				Table[i][j] = 0;
 			}
@@ -89,6 +91,9 @@ bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset)
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){	
 			S = tdst.ptr<int>(i)[j];
+
+			if(S == 0)
+				continue;
 
 			if(i-1<0){
 				W = 0;
@@ -111,21 +116,20 @@ bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset)
 				E = tdst.ptr<int>(i-1)[j+1];
 			}
 
-			if(S !=0){
-				if(S != W && W != 0){
-					Table[S][W] = 1;
-					Table[W][S] = 1;
-				}else if(S!=A && A!=0){
-					Table[S][A] = 1;
-					Table[A][S] = 1;
-				}else if(S!=Q && Q!=0){
-					Table[S][Q] = 1;
-					Table[Q][S] = 1;
-				}else if (S!=E && E!=0){
-					Table[S][E] = 1;
-					Table[E][S] = 1;
-				}
-			}						
+			Table[S][S] = 1;
+			if(S != W && W != 0){
+				Table[S][W] = 1;
+				Table[W][S] = 1;
+			}else if(S!=A && A!=0){
+				Table[S][A] = 1;
+				Table[A][S] = 1;
+			}else if(S!=Q && Q!=0){
+				Table[S][Q] = 1;
+				Table[Q][S] = 1;
+			}else if (S!=E && E!=0){
+				Table[S][E] = 1;
+				Table[E][S] = 1;
+			}					
 		}
 	}
 	//Equivalent Table
@@ -141,27 +145,32 @@ bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset)
 			}
 		}
 	}
-	//Refine
+	/*建立比對對照表*/
+	for(int i=1;i<LableNumber;i++){
+		for (int j=1;j<LableNumber;j++){
+			if(Table[i][j] != 0){
+				refTeble[i] = j;
+				break;
+			}
+		}
+	}
+
+	/*利用對照表去Refine*/
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
 			temp = tdst.ptr<int>(i)[j];
-			if(temp != 0){
-				for(int ii=1;ii<LableNumber;ii++){
-					if (Table[temp][ii] !=0){
-						tdst.ptr<int>(i)[j] = ii/*+offset*/;
-						break;
-					}
-				}
-			}
+			if(temp != 0)
+				tdst.ptr<int>(i)[j] = refTeble[temp];
 		}
 	}
 	//LableNumber != 1 代表有前景物件存在
 	//刪除Table記憶體
-	if(LableNumber != 1){
-		for(int i=0;i<LableNumber;i++){
+	if(LableNumber != 1)
+	{
+		for(int i=0;i<LableNumber;i++)
 			delete []Table[i];
-		}
 		delete []Table;
+		delete []refTeble;
 	}
 
 	int labelValue = 0,labelIndex = 0;
@@ -175,32 +184,21 @@ bool pixkit::labeling::twoPass(const cv::Mat &src,cv::Mat &dst,const int offset)
 				if(ObjectIndex.size() == 0){
 					ObjectIndex.push_back(labelValue);
 					labelIndex++;
+					tdst.ptr<int>(i)[j] = offset;
 				}else{
 					flag = true;
-					for(int k=0;k<ObjectIndex.size();k++){
+					int k = 0;
+					for(k=0;k<ObjectIndex.size();k++){
 						if(ObjectIndex[k] == labelValue){
 							flag = false;
+							tdst.ptr<int>(i)[j] = k+offset;
 							break;
 						}
 					}
 					if(flag == true){
 						ObjectIndex.push_back(labelValue);
 						labelIndex++;
-					}
-				}
-			}
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	/*重新回填標籤值*/
-	for(int i=0;i<src.rows;i++){
-		for (int j=0;j<src.cols;j++){
-			if(tdst.ptr<int>(i)[j] != 0){
-				for(int k=0;k<ObjectIndex.size();k++){
-					if(tdst.ptr<int>(i)[j] == ObjectIndex[k]){
 						tdst.ptr<int>(i)[j] = k+offset;
-						break;
 					}
 				}
 			}

@@ -8,10 +8,12 @@
 //////////////////////////////////////////////////////////////////////////
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
 #include <cmath>
 #include <iostream>
 #include <vector>
 #include <fstream>
+
 
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
@@ -87,6 +89,17 @@ namespace pixkit{
 	/// Halftoning related
 	namespace halftoning{
 
+		/// Error Diffusion related
+		namespace errordiffusion{ 
+			bool			Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
+			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);		
+		}
+
+		/// Ordered Dither related
+		namespace ordereddithering{
+			bool			KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
+		}
+
 		/// Dot diffusion related
 		namespace dotdiffusion{
 
@@ -131,9 +144,23 @@ namespace pixkit{
 			* @return		bool: true: successful, false: failure
 			*/ 
 			bool GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
-
+			
+			/**
+			* @brief		paper: S. Lippens and W. Philips, ��Green-noise halftoning with dot diffusion,�� in Proc. SPIE/IS&T - The International Society for Optical Engineering, vol. 6497, no. 64970V, 2007.
+			*
+			* @author		Yunfu Liu (yunfuliu@gmail.com)
+			* @date			Feb 25, 2014
+			* @version		1.0
+			* 
+			* @param		src: input image (grayscale only)
+			* @param		dst: output image
+			*
+			* @return		bool: true: successful, false: failure
+			*/ 
+			bool LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
 
 		}
+
 
 	}
 
@@ -252,7 +279,9 @@ namespace pixkit{
 			*/
 			bool LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize);
 
-			bool Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03);
+			bool CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L = 0.03);
+
+			bool CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L = 0.03);
 
             bool Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
 
@@ -351,12 +380,15 @@ namespace pixkit{
 		*/
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
 
+ 		/**
+  		* @brief		derive PSNR
+  		*/
+  		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
 		/**
-		* @brief		derive PSNR
-		*/
-		float	PSNR(const cv::Mat &src1,const cv::Mat &src2);
-
+  		* @brief		derive HPSNR (for halftoning image quality assessment) ver. 1
+  		*/
+		float	HPSNR(const cv::Mat &src1, const cv::Mat &src2);
 	}
 
 }
