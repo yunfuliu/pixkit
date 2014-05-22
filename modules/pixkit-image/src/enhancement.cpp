@@ -116,7 +116,7 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 	if((int)tempv2!=tempv2){
 		tempv2	=	(int)	tempv2+1.;
 	}
-	cv::Size	blocksize((int)tempv1,(int)tempv2);
+	cv::Size	blockSize((int)tempv1,(int)tempv2);
 	tempv1	=	(float)src.cols/S.width;
 	tempv2	=	(float)src.rows/S.height;
 	if((int)tempv1!=tempv1){
@@ -129,10 +129,10 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(blocksize.height>src.rows||blocksize.width>src.cols||blocksize.height==1||blocksize.width==1){	// block size should be even (S3P5-Step.2)
+	if(blockSize.height>src.rows||blockSize.width>src.cols||blockSize.height==1||blockSize.width==1){	// block size should be even (S3P5-Step.2)
 		return false;
 	}
-	if(stepsize.height>blocksize.height/2||stepsize.width>blocksize.width/2){
+	if(stepsize.height>blockSize.height/2||stepsize.width>blockSize.width/2){
 		return false;
 	}
 
@@ -163,8 +163,8 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 			// computing PDF
 			std::vector<float>	pdf(nColors,0);
 			int	temp_count=0;
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						pdf[(int)src.data[(i+m)*src.cols+(j+n)]]++;
 						temp_count++;
@@ -238,8 +238,8 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 	// enhancement
 	for(int i=0;i<src.rows;i+=stepsize.height){
 		for(int j=0;j<src.cols;j+=stepsize.width){
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						tdst[i+m][j+n]	+=	Tinput[i/stepsize.height][j/stepsize.width][(int)src.data[(i+m)*src.cols+(j+n)]]	*	((float)nColors-1);
 						accu_count[i+m][j+n]	++;
@@ -420,15 +420,15 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 	// initialization
 	const	short	nColors	=	256;	// �v�����C���ƶq.
 	// transformation
-	cv::Size	blocksize	=	cv::Size(src.cols/B.width,src.rows/B.height);
+	cv::Size	blockSize	=	cv::Size(src.cols/B.width,src.rows/B.height);
 	cv::Size	stepsize	=	cv::Size(src.cols/S.width,src.rows/S.height);
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(blocksize.height>src.rows||blocksize.width>src.cols||blocksize.height==1||blocksize.width==1){	// block size should be even (S3P5-Step.2)
+	if(blockSize.height>src.rows||blockSize.width>src.cols||blockSize.height==1||blockSize.width==1){	// block size should be even (S3P5-Step.2)
 		return false;
 	}
-	if(stepsize.height>blocksize.height/2||stepsize.width>blocksize.width/2){
+	if(stepsize.height>blockSize.height/2||stepsize.width>blockSize.width/2){
 		return false;
 	}
 
@@ -442,8 +442,8 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 			// get pdf
 			std::vector<float>	pdf(nColors,0.);
 			int	temp_count	=	0;
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						pdf[(int)src.data[(i+m)*src.cols+(j+n)]]++;
 						temp_count++;
@@ -467,8 +467,8 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 			}
 
 			// get enhanced result and accumulate 
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						tdst[i+m][j+n]	+=	(float)cdf[(int)src.data[(i+m)*src.cols+(j+n)]]*(nColors-1);
 						accu_count[i+m][j+n]++;
@@ -613,13 +613,13 @@ bool pixkit::enhancement::local::Stark2000(const cv::Mat &src,cv::Mat &dst,const
 
 	return true;
 }
-bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize){
+bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize){
 
 	//////////////////////////////////////////////////////////////////////////
-	if(blocksize.height%2==0){
+	if(blockSize.height%2==0){
 		return false;
 	}
-	if(blocksize.width%2==0){
+	if(blockSize.width%2==0){
 		return false;
 	}
 
@@ -636,8 +636,8 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 
 			// �i���έp
 			int temp_count=0;
-			for(int m=-blocksize.height/2;m<=blocksize.height/2;m++){
-				for(int n=-blocksize.width/2;n<=blocksize.width/2;n++){
+			for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+				for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						Histogram[(int)(src.data[(i+m)*src.cols+(j+n)])]++;
 						temp_count++;
@@ -773,7 +773,7 @@ bool pixkit::enhancement::local::CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, c
 
 	return true;
 }
-bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blocksize, float L){
+bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
 		return false;
@@ -782,12 +782,12 @@ bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::
 		return false;
 	}
 
-	if(blocksize.height > src.rows-1 || blocksize.width > src.cols-1){
+	if(blockSize.height > src.rows-1 || blockSize.width > src.cols-1){
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////
-	int limt = (int) (blocksize.height*blocksize.width*L + 0.5);
-	int x = blocksize.width/2, y = blocksize.height/2;
+	int limt = (int) (blockSize.height*blockSize.width*L + 0.5);
+	int x = blockSize.width/2, y = blockSize.height/2;
 
 	dst = cvCreateMat(src.rows,src.cols,src.type());
 
