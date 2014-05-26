@@ -27,30 +27,8 @@ namespace pixkit{
 			float		conf;	// confidence
 		};
 
-		/*
-		*	@brief		Non-maximum suppression
-		*	@paper		PAMI2010 https://github.com/rbgirshick/voc-dpm/blob/be212abac26859986a0ae16fdf040aa3f9c64a09/test/nms.m
-		*				Felzenszwalb, P.F., Girshick, R.B., McAllester, D.A., Ramanan, D.: Object detection with
-		*				discriminatively trained part-based models. PAMI 32(9) (2010)
-		*	@abbr		pairwise max (PM).
-		*
-		*	@param		boxes: Detection bounding boxes
-		*	@param		overlap: Overlap threshold for suppression. For a selected box Bi, all boxes Bj that are covered by
-		*				more than overlap are suppressed. Note that 'covered' is |Bi \cap Bj| / |Bj|, not the PASCAL intersection over
-		*				union measure.
-		*/
 		bool	nms_PairwiseMax_2010(std::vector<CBBs> &boxes,float overlap=0.5);
 
-		/*
-		*	@brief		Non-maximum suppression
-		*	@paper		P. Dollar, Z. Tu, P. Perona, and S. Belongie, "Integral Channel Features," Proc. British Machine Vision Conf., 2009.
-		*	@abbr		pairwise max star (PM*).
-		*
-		*	@param		boxes: Detection bounding boxes
-		*	@param		overlap: Overlap threshold for suppression. For a selected box Bi, all boxes Bj that are covered by
-		*				more than overlap are suppressed. Note that 'covered' is |Bi \cap Bj| / |Bi \cup Bj|, is the PASCAL intersection over
-		*				union measure.
-		*/
 		bool	nms_PairwiseMaxStar_2009(std::vector<CBBs> &boxes,float overlap=0.6);
 
 	}
