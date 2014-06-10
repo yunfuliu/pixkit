@@ -1,9 +1,10 @@
-#pragma once
-
 // system related headers
 #include <iostream>
 #include <vector>
 #include <fstream>
+
+#ifndef __PIXKIT_FILE_HPP__
+#define __PIXKIT_FILE_HPP__
 
 typedef const std::string	CStr;
 typedef std::vector<std::string>	vecS;
@@ -16,3 +17,5 @@ vecS loadStrList(CStr &fName){
 		strs.push_back(line);
 	return strs;
 }
+
+#endif
