@@ -1,36 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\enhancement.cpp" />
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\qualityassessment.cpp" />
     <ClCompile Include="example_MaryKim2008.cpp" />
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\attack.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\comp.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\enhancement.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\filtering.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\halftoning.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\modules\pixkit-image\src\qualityassessment.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-      <Filter>lib</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="lib">
-      <UniqueIdentifier>{0f2c8797-74b1-46f9-9d86-c54be34419ea}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\modules\pixkit-image\include\pixkit-image.hpp">
-      <Filter>lib</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
