@@ -1,5 +1,9 @@
 #include "edgedetection.cpp"
 #include "../include/pixkit-image.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
+
+using namespace cv;
+
 //////////////////////////////////////////////////////////////////////////
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
 
@@ -269,4 +273,35 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 	}	
 	mse /= (src1.rows * src1.cols);
 	return static_cast<float>(20*log10(255/sqrt(mse)));
+}
+
+
+bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){
+
+	cv::Mat	src1	=	_src1.getMat();
+	cv::Mat	src2	=	_src2.getMat();
+
+	// Gaussian blur
+	cv::Mat	dst1,dst2;
+	cv::GaussianBlur(src1,dst1,cv::Size(0,0),sd);
+	cv::GaussianBlur(src2,dst2,cv::Size(0,0),sd);
+
+	// get difference
+	dst1.convertTo(dst1,CV_32FC1);
+	dst2.convertTo(dst2,CV_32FC1);
+	Mat	diff=dst1-dst2;
+	diff=diff*10+128;
+
+	// show images
+	dst1.convertTo(dst1,CV_8UC1);
+	dst2.convertTo(dst2,CV_8UC1);
+	diff.convertTo(diff,CV_8UC1);
+	imshow("Blurred original image",dst1);
+	imshow("Blurred halftone image",dst2);
+	imshow("Difference image (G(a)-G(b))*10+128",diff);
+	waitKey(0);
+
+	imwrite("a.bmp",diff);
+
+	return true;
 }
