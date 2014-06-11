@@ -2,6 +2,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <ctime>
 
+using namespace	cv;
+
 ////////////////////////////////////////////////////////////////////////
 //	error diffusion
 //////////////////////////////////////////////////////////////////////////
@@ -512,6 +514,48 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 
 		}
 	}
+	return true;
+}
+bool pixkit::halftoning::errordiffusion::FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst){
+
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::ZhouFang2003] accepts only grayscale image");
+	}
+
+	Mat	tdst1f	=	src.clone();
+	tdst1f.convertTo(tdst1f,CV_32FC1);
+
+	double	err;
+	for(int i=src.rows-1;i>=0;i--){
+		for(int j=0;j<src.cols;j++){
+			// get error
+			if(tdst1f.ptr<float>(i)[j]<128.){
+				err=tdst1f.ptr<float>(i)[j];
+				tdst1f.ptr<float>(i)[j]=0.;
+			}else{
+				err=tdst1f.ptr<float>(i)[j]-255.;
+				tdst1f.ptr<float>(i)[j]=255.;
+			}
+			// diffuse
+			if(j+1<src.cols){
+				tdst1f.ptr<float>(i)[j+1]+=err*	0.4375;
+			}
+			if((i-1>=0)&&(j-1>=0)){
+				tdst1f.ptr<float>(i-1)[j-1]+=err*	0.1875;
+			}
+			if(i-1>=0){
+				tdst1f.ptr<float>(i-1)[j]+=err*	0.3125;
+			}
+			if((i-1>=0)&&(j+1<src.cols)){
+				tdst1f.ptr<float>(i-1)[j+1]+=err*	0.0625;
+			}
+		}
+	}
+
+	tdst1f.convertTo(dst,CV_8UC1);
+
 	return true;
 }
 

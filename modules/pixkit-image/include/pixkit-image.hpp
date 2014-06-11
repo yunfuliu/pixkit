@@ -100,7 +100,8 @@ namespace pixkit{
 		/// Error Diffusion related
 		namespace errordiffusion{ 
 			bool			Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
-			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);		
+			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);
+			bool			FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst);
 		}
 
 		/// Ordered Dither related
@@ -372,6 +373,16 @@ namespace pixkit{
 		*						2: get power spectrum
 		*/
 		bool getDFTInfo(cv::InputArray &_src,cv::OutputArray &_dst,short mode);
+
+		/**
+		*	@brief		Get averaged 
+		*
+		*	@paper		M. S. Bartlett, "The spectral analysis of two-dimensional point processes," Biometrika, Dec. 1964.
+		*	
+		*	@Note		1. Input should be generated from a constant grayscale.
+		*				2. _src should be 256x(256x10), and output (_dst) will be 256x256.
+		*/
+		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst);
 
 	}
 
