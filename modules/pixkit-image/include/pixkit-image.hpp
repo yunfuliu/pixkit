@@ -357,10 +357,21 @@ namespace pixkit{
 		float HPSNR(const cv::Mat &src1, const cv::Mat &src2);
 
 		/**
+		*	@brief		Display the difference of two Gaussian blurred images.
+		*
 		*	@paper		C. Schmaltz, P. Gwosdek, A. Bruhn, and J. Weickert, “Electrostatic halftoning,” Computer Graphics Forum, vol. 29, no. 8, pp. 2313-2327, 2010.
 		*/
 		bool GaussianDiff(cv::InputArray &_src1,cv::InputArray &_src2,double sd=1.);
 
+		/**
+		*	@brief		Get mag or power spectrum of a image by DFT.
+		*
+		*	@paper		Daniel L. Lau and Gonzalo R. Arce, Modern Digital Halftoning, Second Edition, April 24, 2008.
+		*
+		*	@param		mode:	1: get mag
+		*						2: get power spectrum
+		*/
+		bool getDFTInfo(cv::InputArray &_src,cv::OutputArray &_dst,short mode);
 
 	}
 
