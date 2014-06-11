@@ -329,43 +329,81 @@ bool pixkit::qualityassessment::getDFTInfo(cv::InputArray &_src,cv::OutputArray 
 	// => log(1 + sqrt(Re(DFT(I))^2 + Im(DFT(I))^2))
 	split(complexI, planes);                   // planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
 	magnitude(planes[0], planes[1], planes[0]);// planes[0] = magnitude
-	Mat magI = planes[0];
+	Mat tdst1f = planes[0];
 	if(mode==1){	// calc mag
 		// do nothing
 	}else if(mode==2){	// calc power spectrum
-		magI	=	abs(magI);
-		magI	=	magI.mul(magI)	/	magI.total();
+ 		tdst1f	=	abs(tdst1f);
+ 		tdst1f	=	tdst1f.mul(tdst1f)/	tdst1f.total();
 	}else{
 		CV_Error(CV_StsBadArg,"this function suppport only mode = 1 or 2.");
 	}
-	magI += Scalar::all(1);                    // switch to logarithmic scale
-	log(magI, magI);
+	tdst1f.ptr<float>(0)[0]	=	0;	// eliminate the DC value
+	tdst1f += Scalar::all(1);       // switch to logarithmic scale
+	log(tdst1f, tdst1f);
 
 	// crop	the spectrum, if it has an odd number of rows or columns
-	magI = magI(Rect(0, 0, magI.cols & -2, magI.rows & -2));
+	tdst1f = tdst1f(Rect(0, 0, tdst1f.cols & -2, tdst1f.rows & -2));
 
-	// rearrange the quadrants of Fourier image  so that the origin is at the image center
-	int cx = magI.cols/2;
-	int cy = magI.rows/2;
-	Mat q0(magI, Rect(0, 0, cx, cy));   // Top-Left - Create a ROI per quadrant
-	Mat q1(magI, Rect(cx, 0, cx, cy));  // Top-Right
-	Mat q2(magI, Rect(0, cy, cx, cy));  // Bottom-Left
-	Mat q3(magI, Rect(cx, cy, cx, cy)); // Bottom-Right
-	Mat tmp;                           // swap quadrants (Top-Left with Bottom-Right)
-	q0.copyTo(tmp);
-	q3.copyTo(q0);
-	tmp.copyTo(q3);
-	q1.copyTo(tmp);                    // swap quadrant (Top-Right with Bottom-Left)
-	q2.copyTo(q1);
-	tmp.copyTo(q2);
+	if(mode==1){
+		// rearrange the quadrants of Fourier image  so that the origin is at the image center
+		int cx = tdst1f.cols/2;
+		int cy = tdst1f.rows/2;
+		Mat q0(tdst1f, Rect(0, 0, cx, cy));   // Top-Left - Create a ROI per quadrant
+		Mat q1(tdst1f, Rect(cx, 0, cx, cy));  // Top-Right
+		Mat q2(tdst1f, Rect(0, cy, cx, cy));  // Bottom-Left
+		Mat q3(tdst1f, Rect(cx, cy, cx, cy)); // Bottom-Right
+		Mat tmp;                           // swap quadrants (Top-Left with Bottom-Right)
+		q0.copyTo(tmp);
+		q3.copyTo(q0);
+		tmp.copyTo(q3);
+		q1.copyTo(tmp);                    // swap quadrant (Top-Right with Bottom-Left)
+		q2.copyTo(q1);
+		tmp.copyTo(q2);
+	}else if(mode==2){
+		// do nothing
+	}
 
-	normalize(magI, magI, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
+	normalize(tdst1f, tdst1f, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
 	// viewable image form (float between values 0 and 1).
 
 	// copy
-	_dst.create(src.size(),magI.type());
+	_dst.create(src.size(),tdst1f.type());
 	cv::Mat	dst	=	_dst.getMat();
-	magI.copyTo(dst);
+	tdst1f.copyTo(dst);
+
+	return true;
+}
+bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst){
+
+	Mat	src	=	_src.getMat();
+	const	int	unitsize	=	256;
+
+	if(src.size()!=cv::Size(unitsize,unitsize*10)){
+		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] src's image size should be 256x2560");
+	}
+	
+	const	int	rounds		=	10;
+
+	Mat	tdst1f(cv::Size(unitsize,unitsize),CV_32FC1);
+	tdst1f.setTo(0);
+	for(int k=0;k<rounds;k++){
+
+		Rect	roi(0,unitsize*k,unitsize,unitsize);
+		Mat	tsrc	=	src(roi);
+
+		Mat	tps;	// temp power spectrum
+		getDFTInfo(tsrc,tps,2);	// get power spectrum
+
+		tdst1f	=	tdst1f	+	tps;
+
+	}
+
+	tdst1f	=	tdst1f	/	static_cast<float>(rounds);
+
+	_dst.create(tdst1f.size(),tdst1f.type());
+	Mat	dst	=	_dst.getMat();
+	tdst1f.copyTo(dst);
 
 	return true;
 }
