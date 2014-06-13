@@ -302,7 +302,7 @@ bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2
 
 	return true;
 }
-bool pixkit::qualityassessment::getDFTInfo(cv::InputArray &_src,cv::OutputArray &_dst,short mode){
+bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst){
 // Original code: http://docs.opencv.org/doc/tutorials/core/discrete_fourier_transform/discrete_fourier_transform.html
 	
 	cv::Mat	src=_src.getMat();
@@ -330,39 +330,32 @@ bool pixkit::qualityassessment::getDFTInfo(cv::InputArray &_src,cv::OutputArray 
 	split(complexI, planes);                   // planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
 	magnitude(planes[0], planes[1], planes[0]);// planes[0] = magnitude
 	Mat tdst1f = planes[0];
-	if(mode==1){	// calc mag
-		// do nothing
-	}else if(mode==2){	// calc power spectrum
- 		tdst1f	=	abs(tdst1f);
- 		tdst1f	=	tdst1f.mul(tdst1f)/	tdst1f.total();
-	}else{
-		CV_Error(CV_StsBadArg,"this function suppport only mode = 1 or 2.");
-	}
-	tdst1f.ptr<float>(0)[0]	=	0;	// eliminate the DC value
-	tdst1f += Scalar::all(1);       // switch to logarithmic scale
-	log(tdst1f, tdst1f);
+	// power spectrum
+	tdst1f	=	abs(tdst1f);
+	tdst1f	=	tdst1f.mul(tdst1f)/	((float)tdst1f.total());
+	// eliminate the DC value
+	tdst1f.ptr<float>(0)[0]	=	(tdst1f.ptr<float>(0)[1]	+	tdst1f.ptr<float>(1)[0]	+	tdst1f.ptr<float>(1)[1])	/	3.;	
+	// scale 
+ 	tdst1f += Scalar::all(1);       // switch to logarithmic scale
+ 	log(tdst1f, tdst1f);
 
 	// crop	the spectrum, if it has an odd number of rows or columns
 	tdst1f = tdst1f(Rect(0, 0, tdst1f.cols & -2, tdst1f.rows & -2));
 
-	if(mode==1){
-		// rearrange the quadrants of Fourier image  so that the origin is at the image center
-		int cx = tdst1f.cols/2;
-		int cy = tdst1f.rows/2;
-		Mat q0(tdst1f, Rect(0, 0, cx, cy));   // Top-Left - Create a ROI per quadrant
-		Mat q1(tdst1f, Rect(cx, 0, cx, cy));  // Top-Right
-		Mat q2(tdst1f, Rect(0, cy, cx, cy));  // Bottom-Left
-		Mat q3(tdst1f, Rect(cx, cy, cx, cy)); // Bottom-Right
-		Mat tmp;                           // swap quadrants (Top-Left with Bottom-Right)
-		q0.copyTo(tmp);
-		q3.copyTo(q0);
-		tmp.copyTo(q3);
-		q1.copyTo(tmp);                    // swap quadrant (Top-Right with Bottom-Left)
-		q2.copyTo(q1);
-		tmp.copyTo(q2);
-	}else if(mode==2){
-		// do nothing
-	}
+	// rearrange the quadrants of Fourier image  so that the origin is at the image center
+	int cx = tdst1f.cols/2;
+	int cy = tdst1f.rows/2;
+	Mat q0(tdst1f, Rect(0, 0, cx, cy));   // Top-Left - Create a ROI per quadrant
+	Mat q1(tdst1f, Rect(cx, 0, cx, cy));  // Top-Right
+	Mat q2(tdst1f, Rect(0, cy, cx, cy));  // Bottom-Left
+	Mat q3(tdst1f, Rect(cx, cy, cx, cy)); // Bottom-Right
+	Mat tmp;                           // swap quadrants (Top-Left with Bottom-Right)
+	q0.copyTo(tmp);
+	q3.copyTo(q0);
+	tmp.copyTo(q3);
+	q1.copyTo(tmp);                    // swap quadrant (Top-Right with Bottom-Left)
+	q2.copyTo(q1);
+	tmp.copyTo(q2);
 
 	normalize(tdst1f, tdst1f, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
 	// viewable image form (float between values 0 and 1).
@@ -393,7 +386,7 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 		Mat	tsrc	=	src(roi);
 
 		Mat	tps;	// temp power spectrum
-		getDFTInfo(tsrc,tps,2);	// get power spectrum
+		PowerSpectrumDensity(tsrc,tps);	// get power spectrum
 
 		tdst1f	=	tdst1f	+	tps;
 
