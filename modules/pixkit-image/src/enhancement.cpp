@@ -1020,138 +1020,6 @@ bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, 
 	return true;
 }
 
-bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N){
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	if(src.type()!=CV_8UC1){
-		return false;
-	}
-
-	if(N<0 || N>12){
-		return false;
-	}
-
-	if(B.height > (src.rows-1) || B.width > (src.cols-1)){
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	std::vector <std::vector<std::vector<float>>> Ob( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
-	std::vector <std::vector<std::vector<float>>> Cb( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
-
-	int h = B.height, w = B.width;
-	const int nColors = 256;
-	dst = cvCreateMat(src.rows,src.cols,src.type());
-
-	//計算各個旋轉影像
-	for(int k=0;k<N;k++){
-		cv::Mat t_src,t_OP,t_CL,t_ob,t_cb; 
-		double degree = -180.0*k/N; // rotate degree
-
-		cv::Mat map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);
-		cv::warpAffine(src,t_src,map_matrix,cv::Size(src.cols, src.rows));
-
-		cv::Mat element = getStructuringElement(cv::MORPH_RECT,B);
-		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,element);
-		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,element);
-
-		map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);
-		cv::warpAffine(t_OP,t_ob,map_matrix,cv::Size(src.cols, src.rows));
-		cv::warpAffine(t_CL,t_cb,map_matrix,cv::Size(src.cols, src.rows));
-
-		for(int i=0;i<src.rows;i++)
-			for(int j=0;j<src.cols;j++){
-				Ob[k][i][j] = t_ob.data[i*t_ob.cols+j];
-				Cb[k][i][j] = t_cb.data[i*t_cb.cols+j];
-			}
-	}
-
-	//RMP計算Top-hat增強
-	std::vector <std::vector<float>> WTH(src.rows,std::vector<float> (src.cols,0));
-	std::vector <std::vector<float>> BTH(src.rows,std::vector<float> (src.cols,0));
-
-	for(int i=0;i<src.rows;i++)
-		for(int j=0;j<src.cols;j++){
-
-			WTH[i][j] = Ob[0][i][j];
-			BTH[i][j] = Cb[0][i][j];
-
-
-			for(int k=1;k<N;k++){
-
-				if(Ob[k][i][j] > WTH[i][j]){
-					WTH[i][j] = Ob[k][i][j];
-				}
-
-				if(Cb[k][i][j] > BTH[i][j]){
-					BTH[i][j] = Cb[k][i][j];
-				}
-			}
-
-
-			WTH[i][j] = src.data[i*src.cols+j] - WTH[i][j];
-			BTH[i][j] = BTH[i][j] -  src.data[i*src.cols+j];
-
-			if(WTH[i][j] > nColors-1)
-				WTH[i][j] = (float)(nColors-1);
-
-			if(BTH[i][j] > nColors-1)
-				BTH[i][j] = (float)(nColors-1);
-
-			if(WTH[i][j] < 0)
-				WTH[i][j] = 0.0;
-
-			if(BTH[i][j] < 0)
-				BTH[i][j] = 0.0;
-		}
-
-		//直方圖等化
-		std::vector<float> WTH_hist(nColors,0);
-		std::vector<float> BTH_hist(nColors,0);
-
-		for(int i=0;i<src.rows;i++)
-			for(int j=0;j<src.cols;j++){
-				WTH_hist[(int)(WTH[i][j]+0.5)]++;
-				BTH_hist[(int)(BTH[i][j]+0.5)]++;
-			}
-			//計算CDF
-			for(int k=1;k<nColors;k++){
-				WTH_hist[k] += WTH_hist[k-1];
-				BTH_hist[k] += BTH_hist[k-1];
-			}
-			//正歸化CDF
-			for(int k=0;k<nColors;k++){
-				WTH_hist[k] /= (src.rows*src.cols);
-				BTH_hist[k] /= (src.rows*src.cols);
-			}
-
-			for(int i=0;i<src.rows;i++)
-				for(int j=0;j<src.cols;j++){
-					WTH[i][j] = (WTH_hist[(int)WTH[i][j]]-WTH_hist[0])/(WTH_hist[nColors-1]-WTH_hist[0])*(nColors-1); 
-					BTH[i][j] = (BTH_hist[(int)BTH[i][j]]-BTH_hist[0])/(BTH_hist[nColors-1]-BTH_hist[0])*(nColors-1); 
-				}
-
-				//--------------------------------------------------------
-				cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
-				cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
-
-				for(int i=0;i<src.rows;i++)
-					for(int j=0;j<src.cols;j++){
-						float temp = src.data[i*src.cols+j]+WTH[i][j] - BTH[i][j];
-
-						if(temp >= nColors-1)
-							temp = nColors - 1;
-						if(temp < 0)
-							temp = 0;
-
-						dst.data[i*dst.cols+j] = temp;
-
-
-						t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
-						t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
-
-					}
-
-					return true;
-}
 
 //////////////////////////////////////////////////////////////////////////
 ///// Global contrast enhancement
@@ -1369,7 +1237,7 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 
 	return true;
 }
-bool pixkit::enhancement::global::KimChung2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r){
+bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r){
 
 	//////////////////////////////////////////////////////////////////////////
 	//	exception process
@@ -1532,4 +1400,3 @@ bool pixkit::enhancement::global::KimChung2008(const cv::Mat &src, cv::Mat &dst,
 
 	return true;
 }
-
