@@ -1400,3 +1400,4 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 
 	return true;
 }
+

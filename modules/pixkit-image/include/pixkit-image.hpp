@@ -293,6 +293,7 @@ namespace pixkit{
             bool Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
 
 			bool Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
+
 		}
 
 		/// Global methods
@@ -338,6 +339,18 @@ namespace pixkit{
 			*/
 			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
 
+			/**
+			* @brief		global contrast enhancement
+			* @brief		paper: T. Celik and T. Tjahjadi, “Automatic image equalization and contrast enhancement using Gaussian mixture modeling,” IEEE Trans. Image Process., vol. 21, no. 1, pp. 145-156, Jan. 2012.
+			*
+			* @author		JC Yu
+			* @date			June 26, 2014
+			*
+			* @param        N: 給予初始的高斯數量
+			*
+			* @return		bool: true: successful, false: failure
+			*/
+			bool  CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
 		}
 
 	}
