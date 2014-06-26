@@ -4,5 +4,6 @@
     <ClCompile Include="..\..\..\modules\pixkit-image\src\enhancement.cpp" />
     <ClCompile Include="..\..\..\modules\pixkit-image\src\qualityassessment.cpp" />
     <ClCompile Include="example_MaryKim2008.cpp" />
+    <ClCompile Include="..\..\..\modules\pixkit-image\src\CelikTjahjadi2012\CelikTjahjadi2012.cpp" />
   </ItemGroup>
 </Project>
