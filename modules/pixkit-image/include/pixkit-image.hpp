@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -293,6 +294,9 @@ namespace pixkit{
             bool Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
 
 			bool Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
+
+			bool Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
+
 		}
 
 		/// Global methods
@@ -338,6 +342,7 @@ namespace pixkit{
 			*/
 			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
 
+			bool  CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
 		}
 
 	}
