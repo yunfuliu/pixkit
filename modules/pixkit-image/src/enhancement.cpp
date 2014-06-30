@@ -1357,7 +1357,7 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 
 	return true;
 }
-bool pixkit::enhancement::global::KimChung2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r){
+bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r){
 
 	//////////////////////////////////////////////////////////////////////////
 	//	exception process
