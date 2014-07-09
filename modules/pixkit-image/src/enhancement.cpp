@@ -104,7 +104,7 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 
 	//////////////////////////////////////////////////////////////////////////
 	// initialization
-	const	short	nColors	=	256;	// ¼v¹³¤§ÃC¦â¼Æ¶q.
+	const	short	nColors	=	256;	// ï¿½vï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½Æ¶q.
 
 	//////////////////////////////////////////////////////////////////////////
 	// transformation (block size)
@@ -116,7 +116,7 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 	if((int)tempv2!=tempv2){
 		tempv2	=	(int)	tempv2+1.;
 	}
-	cv::Size	blocksize((int)tempv1,(int)tempv2);
+	cv::Size	blockSize((int)tempv1,(int)tempv2);
 	tempv1	=	(float)src.cols/S.width;
 	tempv2	=	(float)src.rows/S.height;
 	if((int)tempv1!=tempv1){
@@ -129,10 +129,10 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(blocksize.height>src.rows||blocksize.width>src.cols||blocksize.height==1||blocksize.width==1){	// block size should be even (S3P5-Step.2)
+	if(blockSize.height>src.rows||blockSize.width>src.cols||blockSize.height==1||blockSize.width==1){	// block size should be even (S3P5-Step.2)
 		return false;
 	}
-	if(stepsize.height>blocksize.height/2||stepsize.width>blocksize.width/2){
+	if(stepsize.height>blockSize.height/2||stepsize.width>blockSize.width/2){
 		return false;
 	}
 
@@ -163,8 +163,8 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 			// computing PDF
 			std::vector<float>	pdf(nColors,0);
 			int	temp_count=0;
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						pdf[(int)src.data[(i+m)*src.cols+(j+n)]]++;
 						temp_count++;
@@ -238,8 +238,8 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 	// enhancement
 	for(int i=0;i<src.rows;i+=stepsize.height){
 		for(int j=0;j<src.cols;j+=stepsize.width){
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						tdst[i+m][j+n]	+=	Tinput[i/stepsize.height][j/stepsize.width][(int)src.data[(i+m)*src.cols+(j+n)]]	*	((float)nColors-1);
 						accu_count[i+m][j+n]	++;
@@ -325,9 +325,9 @@ bool pixkit::enhancement::local::YuBajaj2004(const cv::Mat &src,cv::Mat &dst,con
 			}
 			avgv	/=	(float)	avgv_count;
 
-			maxmap.data[i*maxmap.cols+j]	=	maxv;
-			minmap.data[i*minmap.cols+j]	=	minv;
-			avgmap.data[i*avgmap.cols+j]	=	avgv;		
+			maxmap.data[i*maxmap.cols+j]	=	static_cast<uchar>(maxv);
+			minmap.data[i*minmap.cols+j]	=	static_cast<uchar>(minv);
+			avgmap.data[i*avgmap.cols+j]	=	static_cast<uchar>(avgv);		
 
 		}
 	}
@@ -405,7 +405,7 @@ bool pixkit::enhancement::local::YuBajaj2004(const cv::Mat &src,cv::Mat &dst,con
 			if(tempv<0.){
 				tempv=0.;
 			}
-			tdst.data[i*tdst.cols+j]	=	(uchar)	tempv+0.5;
+			tdst.data[i*tdst.cols+j]	=	static_cast<uchar>(cvRound(tempv));
 		}
 	}
 
@@ -418,17 +418,17 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 
 	//////////////////////////////////////////////////////////////////////////
 	// initialization
-	const	short	nColors	=	256;	// ¼v¹³¤§ÃC¦â¼Æ¶q.
+	const	short	nColors	=	256;	// ï¿½vï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½Æ¶q.
 	// transformation
-	cv::Size	blocksize	=	cv::Size(src.cols/B.width,src.rows/B.height);
+	cv::Size	blockSize	=	cv::Size(src.cols/B.width,src.rows/B.height);
 	cv::Size	stepsize	=	cv::Size(src.cols/S.width,src.rows/S.height);
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(blocksize.height>src.rows||blocksize.width>src.cols||blocksize.height==1||blocksize.width==1){	// block size should be even (S3P5-Step.2)
+	if(blockSize.height>src.rows||blockSize.width>src.cols||blockSize.height==1||blockSize.width==1){	// block size should be even (S3P5-Step.2)
 		return false;
 	}
-	if(stepsize.height>blocksize.height/2||stepsize.width>blocksize.width/2){
+	if(stepsize.height>blockSize.height/2||stepsize.width>blockSize.width/2){
 		return false;
 	}
 
@@ -442,8 +442,8 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 			// get pdf
 			std::vector<float>	pdf(nColors,0.);
 			int	temp_count	=	0;
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						pdf[(int)src.data[(i+m)*src.cols+(j+n)]]++;
 						temp_count++;
@@ -467,8 +467,8 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 			}
 
 			// get enhanced result and accumulate 
-			for(int m=0;m<blocksize.height;m++){
-				for(int n=0;n<blocksize.width;n++){
+			for(int m=0;m<blockSize.height;m++){
+				for(int n=0;n<blockSize.width;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						tdst[i+m][j+n]	+=	(float)cdf[(int)src.data[(i+m)*src.cols+(j+n)]]*(nColors-1);
 						accu_count[i+m][j+n]++;
@@ -518,7 +518,7 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 	dst.create(src.size(),src.type());
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			dst.data[i*dst.cols+j]	=	tdst[i][j];
+			dst.data[i*dst.cols+j]	=	static_cast<uchar>(tdst[i][j]);
 		}
 	}
 
@@ -569,7 +569,7 @@ bool pixkit::enhancement::local::Stark2000(const cv::Mat &src,cv::Mat &dst,const
 			}
 
 			//////////////////////////////////////////////////////////////////////////
-			// ­pºâ¿é¥X­È  ps. »İ¥¿³W¤Æ -1/2~1/2
+			// ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½ï¿½  ps. ï¿½İ¥ï¿½ï¿½Wï¿½ï¿½ -1/2~1/2
 			double normalizedinput=((float)src.data[i*src.cols+j]/255.)-0.5;
 			assert(normalizedinput>=-0.5&&normalizedinput<=0.5);	
 			double output	=	0.;
@@ -613,13 +613,13 @@ bool pixkit::enhancement::local::Stark2000(const cv::Mat &src,cv::Mat &dst,const
 
 	return true;
 }
-bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize){
+bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize){
 
 	//////////////////////////////////////////////////////////////////////////
-	if(blocksize.height%2==0){
+	if(blockSize.height%2==0){
 		return false;
 	}
-	if(blocksize.width%2==0){
+	if(blockSize.width%2==0){
 		return false;
 	}
 
@@ -632,12 +632,12 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
 
-			std::vector<double>	Histogram(nColors,0);	// 256­Ó¦Ç¶¥­È
+			std::vector<double>	Histogram(nColors,0);	// 256ï¿½Ó¦Ç¶ï¿½ï¿½ï¿½
 
-			// ¶i¦æ²Î­p
+			// ï¿½iï¿½ï¿½ï¿½Î­p
 			int temp_count=0;
-			for(int m=-blocksize.height/2;m<=blocksize.height/2;m++){
-				for(int n=-blocksize.width/2;n<=blocksize.width/2;n++){
+			for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+				for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
 					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
 						Histogram[(int)(src.data[(i+m)*src.cols+(j+n)])]++;
 						temp_count++;
@@ -648,18 +648,18 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 				Histogram[graylevel]/=(double)(temp_count);
 			}
 
-			// ±NHistogram§ï¬°²Ö¿n¤À°t¨ç¼Æ
+			// ï¿½NHistogramï¿½ï¬°ï¿½Ö¿nï¿½ï¿½ï¿½tï¿½ï¿½ï¿½ï¿½
 			for(int graylevel=1;graylevel<nColors;graylevel++){
 				Histogram[graylevel]+=Histogram[graylevel-1];
 			}
 
-			// ¨ú±o·sªº¿é¥X­È
+			// ï¿½ï¿½ï¿½oï¿½sï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½ï¿½
 			double	tempv	=	Histogram[(int)(src.data[i*src.cols+j])];
 			if(tempv>1){
 				tempv=1.;
 			}
 			assert(tempv>=0.&&tempv<=1.);
-			tdst.data[i*src.cols+j]=tempv*(nColors-1.);	// ³Ì¦h©µ®i¨ì255		
+			tdst.data[i*src.cols+j]=static_cast<uchar>(tempv*(nColors-1.));	// ï¿½Ì¦hï¿½ï¿½ï¿½iï¿½ï¿½255		
 
 		}
 	}
@@ -669,7 +669,7 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 
 	return true;
 }
-bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L ){
+bool pixkit::enhancement::local::CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L ){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
 		return false;
@@ -678,97 +678,159 @@ bool pixkit::enhancement::local::Pizer1987(const cv::Mat &src,cv::Mat &dst, cv::
 		return false;
 	}
 
-	if(title.height > (src.rows/4) || title.width > (src.cols/4)){
+	if(nBlock.height > (src.rows/4) || nBlock.width > (src.cols/4)){
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	const int nColors = 256;
-	int x = src.cols/title.width, y = src.rows/title.height;
+	int x = src.cols/nBlock.width, y = src.rows/nBlock.height;
 
 	dst = cvCreateMat(src.rows,src.cols,src.type());
 
-	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //Àx¦s¨C­ÓtitleªºÂà²¾¨ç¦¡
+	std::vector<std::vector<float>> hist(nBlock.height*nBlock.width,std::vector<float> (nColors,0)); //å„²å­˜æ¯å€‹titleçš„è½‰ç§»å‡½å¼
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//­pºâ¨C­ÓtitleªºÂà²¾¨ç¦¡
+	//è¨ˆç®—æ¯å€‹titleçš„è½‰ç§»å‡½å¼
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	for(int m = 0;m<title.height;m++){
-		for(int n = 0;n<title.width;n++){
+	for(int m = 0;m<nBlock.height;m++)
+		for(int n = 0;n<nBlock.width;n++)
+		{
 			int i,j,i1=(m+1)*y,j1=(n+1)*x;
 
-			if( (m+1) == title.height ){
+			if( (m+1) == nBlock.height )
 				i1 = src.rows;
-			}
-			if((n+1) == title.width ){
+			if((n+1) == nBlock.width )
 				j1 = src.cols;
-			}
 
 			int Count = 0;
-			for(i=m*y;i<i1;i++){
-				for(j=n*x;j<j1;j++){
-					hist[m*title.width+n][(int)src.data[i*src.cols+j]]++;
+			for(i=m*y;i<i1;i++)
+				for(j=n*x;j<j1;j++)
+				{
+					hist[m*nBlock.width+n][(int)src.data[i*src.cols+j]]++;
 					Count++;
 				}
-			}
 
-			int limt = (int) (Count*L + 0.5);  //­pºâ»İ­nµô¤Áªº­­¨î
+				int limt = (int) (Count*L + 0.5);  //è¨ˆç®—éœ€è¦è£åˆ‡çš„é™åˆ¶
 
-			float over_limit = 0;
-			for(int k=1;k<256;k++){
-				if(hist[m*title.width+n][k] > limt){
-					over_limit += (hist[m*title.width+n][k]-limt);
-					hist[m*title.width+n][k] = limt;
+				float over_limit = 0;
+				for(int k=0;k<256;k++)
+				{
+
+					if(hist[m*nBlock.width+n][k] > limt)
+					{
+						over_limit += (hist[m*nBlock.width+n][k]-limt);
+						hist[m*nBlock.width+n][k] = limt;
+					}
 				}
-			}
 
-			over_limit /= nColors;
+				over_limit /= nColors;
 
-			for(int k=0;k<256;k++){
-				hist[m*title.width+n][k] += over_limit;
-				hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
-			}
+				for(int k=0;k<256;k++)
+				{
+					hist[m*nBlock.width+n][k] += over_limit;
+					hist[m*nBlock.width+n][k] = (hist[m*nBlock.width+n][k]/Count)*(nColors-1);
+				}
 
-			for(int k=1;k<256;k++){
-				hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
-			}
+				for(int k=1;k<256;k++)
+					hist[m*nBlock.width+n][k] += hist[m*nBlock.width+n][k-1];
 		}
-	}
 	//////////////////////////////////////////////////////////////////////////
-	//­pºâ¿é¥X
+	//è¨ˆç®—è¼¸å‡º
 	///////////////////////////////////////////////////////////////////////
-	int a1=0,a2=x/2,b1=0,b2=y/2;  //aªí¥Üx¶b¤è¦V.bªí¥Üy¶b¤è¦V
-	for(int i=0;i<src.rows;i++){
+	int a1=0,a2=x/2,b1=0,b2=y/2;  //aè¡¨ç¤ºxè»¸æ–¹å‘.bè¡¨ç¤ºyè»¸æ–¹å‘
+	for(int i=0;i<src.rows;i++)
+	{
 		a2 = x/2 , a1 = 0;
-		for(int j=0;j<src.cols;j++){
-			if(j>a2){
+		for(int j=0;j<src.cols;j++)
+		{
+			if(j>a2)
+			{
 				a1=a2;
 				a2+=x;
 
-				if(a2>=src.cols)
+				if(a2/x == nBlock.width)
 					a2 = src.cols-1;
 			}
-			if(i>b2){
+			if(i>b2)
+			{
 				b1 = b2;
 				b2 += y;
-				if(b2>=src.rows)
+				if(b2/y == nBlock.height)
 					b2 = src.rows-1;
 			}
 
 			int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
-			if(p2 >= title.width){
-				p2 = title.width-1;
-			}
-			if(q2 >= title.height){
-				q2 = title.height-1;
-			}
+			if(p2 >= nBlock.width)
+				p2 = nBlock.width-1;
+			if(q2 >= nBlock.height)
+				q2 = nBlock.height-1;
 
 			float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
 			int v = (int)src.data[i*src.cols+j];
-			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
+
+			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*nBlock.width+p1][v] + (1-a)*hist[q1*nBlock.width+p2][v]) + (1-b)*(a*hist[q2*nBlock.width+p1][v] + (1-a)*hist[q2*nBlock.width+p2][v]));
 		}
 	}
 
 	return true;
 }
+bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L){
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	if(src.type()!=CV_8UC1){
+		return false;
+	}
+	if(L>1 || L<=0){
+		return false;
+	}
+
+	if(blockSize.height > src.rows-1 || blockSize.width > src.cols-1){
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	int limt = (int) (blockSize.height*blockSize.width*L + 0.5);
+	int x = blockSize.width/2, y = blockSize.height/2;
+
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+
+	for(int i=0;i<dst.rows;i++)
+		for(int j=0;j<dst.cols;j++)
+		{
+			std::vector<float> hist(256,0);
+
+			float Total = 0;
+			for(int m=i-y;m<=i+y;m++)
+				for(int n=j-x;n<=j+x;n++)
+				{
+					if(m>=0 && m<dst.rows && n>=0 && n<dst.cols)
+					{
+						hist[(int)src.data[m*src.cols+n]]++;
+						Total++;
+					}
+				}
+
+				float over_limit = 0;
+				for(int k=0;k<256;k++)
+				{
+					if(hist[k] > limt)
+					{
+						over_limit += (hist[k]-limt);
+						hist[k] = limt;
+					}
+				}
+
+				over_limit /= 256;
+
+				for(int k=0;k<256;k++)
+					hist[k] += over_limit;
+
+				for(int k=1;k<256;k++)
+					hist[k] += hist[k-1];
+
+				dst.data[i*dst.cols+j] = (unsigned char) ( (hist[(int)src.data[i*src.cols+j]]*255.0/Total + 0.5) ); 
+		}
+
+	return true;
+}
+
 bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
@@ -792,94 +854,97 @@ bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Si
 
 	dst = cvCreateMat(src.rows,src.cols,src.type());
 	cv::Mat temp = cvCreateMat(src.rows,src.cols,src.type());
-	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //Àx¦s¨C­ÓtitleªºÂà²¾¨ç¦¡
+	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //ï¿½xï¿½sï¿½Cï¿½ï¿½titleï¿½ï¿½ï¿½à²¾ï¿½ç¦¡
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//­pºâSigmoidÂà´«
+	//ï¿½pï¿½ï¿½Sigmoidï¿½à´«
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	for(int i=0;i<temp.rows;i++){
 		for(int j=0;j<temp.cols;j++){
 			float t = (double)src.data[i*src.cols+j]/(nColors-1);
 			float o = t + K1*t/(1.0-exp(K1*(K2+t)));
 
-			temp.data[i*temp.cols+j] = o*(nColors-1);
+			temp.data[i*temp.cols+j] = static_cast<uchar>(o*(nColors-1));
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//­pºâ¨C­ÓtitleªºÂà²¾¨ç¦¡
+	//ï¿½pï¿½ï¿½ï¿½Cï¿½ï¿½titleï¿½ï¿½ï¿½à²¾ï¿½ç¦¡
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	for(int m = 0;m<title.height;m++){
-		for(int n = 0;n<title.width;n++){
+	for(int m = 0;m<title.height;m++)
+		for(int n = 0;n<title.width;n++)
+		{
 			int i,j,i1=(m+1)*y,j1=(n+1)*x;
 
-			if( (m+1) == title.height ){
+			if( (m+1) == title.height )
 				i1 = src.rows;
-			}
-			if((n+1) == title.width ){
+			if((n+1) == title.width )
 				j1 = src.cols;
-			}
+
 			int Count = 0;
-			for(i=m*y;i<i1;i++){
-				for(j=n*x;j<j1;j++){
+			for(i=m*y;i<i1;i++)
+				for(j=n*x;j<j1;j++)
+				{
 					hist[m*title.width+n][(int)temp.data[i*temp.cols+j]]++;
 					Count++;
 				}
-			}
 
-			int limt = (int) (Count*L + 0.5);  //­pºâ»İ­nµô¤Áªº­­¨î
+				int limt = (int) (Count*L + 0.5);  //ï¿½pï¿½ï¿½ï¿½İ­nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-			float over_limit = 0;
-			for(int k=1;k<256;k++){
+				float over_limit = 0;
+				for(int k=0;k<256;k++)
+				{
 
-				if(hist[m*title.width+n][k] > limt){
-					over_limit += (hist[m*title.width+n][k]-limt);
-					hist[m*title.width+n][k] = limt;
+					if(hist[m*title.width+n][k] > limt)
+					{
+						over_limit += (hist[m*title.width+n][k]-limt);
+						hist[m*title.width+n][k] = limt;
+					}
 				}
-			}
 
-			over_limit /= nColors;
+				over_limit /= nColors;
 
-			for(int k=0;k<256;k++){
-				hist[m*title.width+n][k] += over_limit;
-				hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
-			}
+				for(int k=0;k<256;k++)
+				{
+					hist[m*title.width+n][k] += over_limit;
+					hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
+				}
 
-			for(int k=1;k<256;k++){
-				hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
-			}
+				for(int k=1;k<256;k++)
+					hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
 		}
-	}
-
 	//////////////////////////////////////////////////////////////////////////
-	//­pºâ¿é¥X
+	//ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½X
 	///////////////////////////////////////////////////////////////////////
-	int a1=0,a2=x/2,b1=0,b2=y/2;  //aªí¥Üx¶b¤è¦V.bªí¥Üy¶b¤è¦V
-	for(int i=0;i<src.rows;i++){
+	int a1=0,a2=x/2,b1=0,b2=y/2;  //aï¿½ï¿½ï¿½ï¿½xï¿½bï¿½ï¿½ï¿½V.bï¿½ï¿½ï¿½ï¿½yï¿½bï¿½ï¿½ï¿½V
+	for(int i=0;i<src.rows;i++)
+	{
 		a2 = x/2 , a1 = 0;
-		for(int j=0;j<src.cols;j++){
-			if(j>a2){
+		for(int j=0;j<src.cols;j++)
+		{
+			if(j>a2)
+			{
 				a1=a2;
 				a2+=x;
 
-				if(a2>=src.cols)
+				if(a2/x == title.width)
 					a2 = src.cols-1;
 			}
-			if(i>b2){
+			if(i>b2)
+			{
 				b1 = b2;
 				b2 += y;
-				if(b2>=src.rows)
+				if(b2/y == title.height)
 					b2 = src.rows-1;
 			}
 
 			int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
-			if(p2 >= title.width){
+			if(p2 >= title.width)
 				p2 = title.width-1;
-			}
-			if(q2 >= title.height){
+			if(q2 >= title.height)
 				q2 = title.height-1;
-			}
 
 			float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
 			int v = (int)src.data[i*src.cols+j];
+
 			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
 		}
 	}
@@ -924,9 +989,9 @@ bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, 
 			}
 
 			//////////////////////////////////////////////////////////////////////////
-			//½Õ¾ãHistogram
+			//ï¿½Õ¾ï¿½Histogram
 			//////////////////////////////////////////////////////////////////////////
-			float u = Total/256.0; //¥Nªí§¡¤Ã¤À¥¬
+			float u = Total/256.0; //ï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½Ã¤ï¿½ï¿½ï¿½
 			for(int k=0;k<256;k++){
 				hist[k] = (1.0/(1.0+phi))*hist[k] + (phi/(1+phi))*u;
 			}
@@ -953,6 +1018,126 @@ bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, 
 		}
 	}
 	return true;
+}
+
+bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N){
+	std::vector <std::vector<std::vector<float>>> Ob( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
+	std::vector <std::vector<std::vector<float>>> Cb( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
+
+	int h = B.height, w = B.width;
+	const int nColors = 256;
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+
+	//è¨ˆç®—å„å€‹æ—‹è½‰å½±åƒ
+	for(int k=0;k<N;k++){
+		cv::Mat t_src,t_OP,t_CL,t_ob,t_cb; 
+		double degree = -180.0*k/N; // rotate degree
+
+		cv::Mat map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);
+		cv::warpAffine(src,t_src,map_matrix,cv::Size(src.cols, src.rows));
+
+		cv::Mat element = getStructuringElement(cv::MORPH_RECT,B);
+		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,element);
+		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,element);
+
+		map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);
+		cv::warpAffine(t_OP,t_ob,map_matrix,cv::Size(src.cols, src.rows));
+		cv::warpAffine(t_CL,t_cb,map_matrix,cv::Size(src.cols, src.rows));
+
+		for(int i=0;i<src.rows;i++)
+			for(int j=0;j<src.cols;j++){
+				Ob[k][i][j] = t_ob.data[i*t_ob.cols+j];
+				Cb[k][i][j] = t_cb.data[i*t_cb.cols+j];
+			}
+	}
+
+	//RMPè¨ˆç®—Top-hatå¢å¼·
+	std::vector <std::vector<float>> WTH(src.rows,std::vector<float> (src.cols,0));
+	std::vector <std::vector<float>> BTH(src.rows,std::vector<float> (src.cols,0));
+
+	for(int i=0;i<src.rows;i++)
+		for(int j=0;j<src.cols;j++){
+
+			WTH[i][j] = Ob[0][i][j];
+			BTH[i][j] = Cb[0][i][j];
+
+
+			for(int k=1;k<N;k++){
+
+				if(Ob[k][i][j] > WTH[i][j]){
+					WTH[i][j] = Ob[k][i][j];
+				}
+
+				if(Cb[k][i][j] > BTH[i][j]){
+					BTH[i][j] = Cb[k][i][j];
+				}
+			}
+
+
+		WTH[i][j] = src.data[i*src.cols+j] - WTH[i][j];
+		BTH[i][j] = BTH[i][j] -  src.data[i*src.cols+j];
+
+		if(WTH[i][j] > nColors-1)
+			WTH[i][j] = (float)(nColors-1);
+
+		if(BTH[i][j] > nColors-1)
+			BTH[i][j] = (float)(nColors-1);
+
+		if(WTH[i][j] < 0)
+			WTH[i][j] = 0.0;
+
+		if(BTH[i][j] < 0)
+			BTH[i][j] = 0.0;
+	}
+
+	//ç›´æ–¹åœ–ç­‰åŒ–
+	std::vector<float> WTH_hist(nColors,0);
+	std::vector<float> BTH_hist(nColors,0);
+
+	for(int i=0;i<src.rows;i++)
+		for(int j=0;j<src.cols;j++){
+			WTH_hist[(int)(WTH[i][j]+0.5)]++;
+			BTH_hist[(int)(BTH[i][j]+0.5)]++;
+		}
+		//è¨ˆç®—CDF
+		for(int k=1;k<nColors;k++){
+			WTH_hist[k] += WTH_hist[k-1];
+			BTH_hist[k] += BTH_hist[k-1];
+		}
+		//æ­£æ­¸åŒ–CDF
+		for(int k=0;k<nColors;k++){
+			WTH_hist[k] /= (src.rows*src.cols);
+			BTH_hist[k] /= (src.rows*src.cols);
+		}
+
+		for(int i=0;i<src.rows;i++)
+			for(int j=0;j<src.cols;j++){
+				WTH[i][j] = (WTH_hist[(int)WTH[i][j]]-WTH_hist[0])/(WTH_hist[nColors-1]-WTH_hist[0])*(nColors-1); 
+				BTH[i][j] = (BTH_hist[(int)BTH[i][j]]-BTH_hist[0])/(BTH_hist[nColors-1]-BTH_hist[0])*(nColors-1); 
+			}
+
+		//--------------------------------------------------------
+		cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
+		cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
+
+		for(int i=0;i<src.rows;i++)
+			for(int j=0;j<src.cols;j++){
+				float temp = src.data[i*src.cols+j]+WTH[i][j] - BTH[i][j];
+
+				if(temp >= nColors-1)
+					temp = nColors - 1;
+				if(temp < 0)
+					temp = 0;
+
+				dst.data[i*dst.cols+j] = temp;
+
+
+				t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
+				t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
+
+			}
+
+		return true;
 }
 
 
@@ -992,9 +1177,9 @@ bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv
 	}
 	//	get minima for sub-histogram
 	int	count=0;				//	pointer of minima array.
-	int	minima[256]={0};		//	Àx¦s³Ì¤p­È
-	bool PartitionFlag=false;	//	true:¶i¦æhistogram¤À°Ï, ¨Ã§PÂ_¬O§_²Å¦X°ª´µªº68.3%¤À¥¬
-	bool SubHistFlag=false;		//	true:histogram¤À°Ï«á, low ´«¨ì high histogram ªº68.3%§PÂ_
+	int	minima[256]={0};		//	ï¿½xï¿½sï¿½Ì¤pï¿½ï¿½
+	bool PartitionFlag=false;	//	true:ï¿½iï¿½ï¿½histogramï¿½ï¿½ï¿½ï¿½, ï¿½Ã§Pï¿½_ï¿½Oï¿½_ï¿½Å¦Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½68.3%ï¿½ï¿½ï¿½ï¿½
+	bool SubHistFlag=false;		//	true:histogramï¿½ï¿½ï¿½Ï«ï¿½, low ï¿½ï¿½ï¿½ï¿½ high histogram ï¿½ï¿½68.3%ï¿½Pï¿½_
 	bool SubHistFlag2=false;
 	double sumFactor=0.;			//	sum of factor.
 	double range[256]={0};
@@ -1018,10 +1203,10 @@ bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv
 			count++;
 			PartitionFlag=true;
 		}
-		if (count==1){					//	²Ä¤@­Óminima¤£¶i¦æ¤À°Ï
+		if (count==1){					//	ï¿½Ä¤@ï¿½ï¿½minimaï¿½ï¿½ï¿½iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			PartitionFlag=false;
 		}
-		if (minima[0]==minima[1]){		//	­×¥¿¤W­±§PÂ_BUG
+		if (minima[0]==minima[1]){		//	ï¿½×¥ï¿½ï¿½Wï¿½ï¿½ï¿½Pï¿½_BUG
 			count=1;
 			PartitionFlag=false;
 		}
@@ -1046,7 +1231,7 @@ bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv
 			}
 			temp/=sum;
 			if (temp>=0.683){
-				if (SubHistFlag){		//	(mean+sd) ¦Ü high-minimaªº°ª´µ¤À¥¬§P©w
+				if (SubHistFlag){		//	(mean+sd) ï¿½ï¿½ high-minimaï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Pï¿½w
 					if(SubHistFlag2){
 						count+=3;
 						SubHistFlag2=false;
@@ -1058,7 +1243,7 @@ bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv
 				}else{
 					PartitionFlag=false;
 				}					
-			}else{						//	low-minima ¦Ü (mean-sd)ªº°ª´µ¤À¥¬§P©w.
+			}else{						//	low-minima ï¿½ï¿½ (mean-sd)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Pï¿½w.
 				if(a>0){
 					for (int m=0;m<=a;m++){
 						minima[count+m+2]=minima[count+m];
@@ -1131,11 +1316,15 @@ bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv
 }
 bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst){
 
+	if(src.type()!=CV_8UC1){
+		CV_Assert(CV_StsUnmatchedFormats,"[pixkit::enhancement::global::GlobalHistogramEqualization1992] src should be CV_8UC1.");
+	}
+
 	const int nColors	=	256;
 
 	std::vector<double>	hist(nColors,0);	// initialize histogram 
 
-	// ¶i¦æ²Î­p
+	// ï¿½iï¿½ï¿½ï¿½Î­p
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
 			hist[(int)(src.data[i*src.cols+j])]++;
@@ -1145,12 +1334,12 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 		hist[graylevel]/=(double)(src.rows*src.cols);
 	}
 
-	// ±NHistogram§ï¬°²Ö¿n¤À°t¨ç¼Æ
+	// ï¿½NHistogramï¿½ï¬°ï¿½Ö¿nï¿½ï¿½ï¿½tï¿½ï¿½ï¿½ï¿½
 	for(int graylevel=1;graylevel<nColors;graylevel++){
 		hist[graylevel]+=hist[graylevel-1];
 	}
 
-	// ¨ú±o·sªº¿é¥X­È
+	// ï¿½ï¿½ï¿½oï¿½sï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½ï¿½
 	cv::Mat	tdst(src.size(),src.type());
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
@@ -1159,7 +1348,7 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 				tempv=1.;
 			}
 			assert(tempv>=0.&&tempv<=1.);
-			tdst.data[i*src.cols+j]=tempv*(nColors-1.);	// ³Ì¦h©µ®i¨ì255			
+			tdst.data[i*src.cols+j]=static_cast<uchar>(tempv*(nColors-1.));	// ï¿½Ì¦hï¿½ï¿½ï¿½iï¿½ï¿½255			
 		}
 	}
 
@@ -1186,7 +1375,7 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 	float Pmax = 0,Pmin = 1.0, Xm=0 , Xg=0 ,Beta=0;
 	std::vector <float> pdf(nColors,0),cdf(nColors,0);
 
-	//²Î­p¦Ç¶¥¤À§Gpdf
+	//ï¿½Î­pï¿½Ç¶ï¿½ï¿½ï¿½ï¿½Gpdf
 	cv::Mat	tdst(src.size(),src.type());
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
@@ -1194,7 +1383,7 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 		}
 	}
 
-	//­pºâ¥X¥­§¡­È,¨Ã§ä¥X¿n²v¤À§G¤¤ªº³Ì¤j³Ì¤p­È
+	//ï¿½pï¿½ï¿½ï¿½Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½Ã§ï¿½ï¿½Xï¿½nï¿½vï¿½ï¿½ï¿½Gï¿½ï¿½ï¿½ï¿½ï¿½Ì¤jï¿½Ì¤pï¿½ï¿½
 	for(int i=0;i<nColors;i++){
 		pdf[i] /= (float)(src.rows*src.rows);
 		Xm += i*pdf[i];
@@ -1207,9 +1396,9 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 			Pmin = pdf[i];
 		}
 	}
-	//¼v¹³¦Ç¶¥­Èªº¤¤¦ì¼Æ
+	//ï¿½vï¿½ï¿½ï¿½Ç¶ï¿½ï¿½Èªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	Xg = (0+nColors-1)/2.0;
-	//­pºâBeta,¥Î¨Ó§ó·sÅv­«
+	//ï¿½pï¿½ï¿½Beta,ï¿½Î¨Ó§ï¿½ï¿½sï¿½vï¿½ï¿½
 	Beta = Pmax*abs(Xm-Xg)/(nColors-1);
 
 	std::vector <int> segmentation(pow(2,(double)r)+1,0);
@@ -1219,7 +1408,7 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 	/////////////////////////////////////////////////////////////////////////////////////////
 	//Histogram Segmentation Module
 	/////////////////////////////////////////////////////////////////////////////////////////////
-	if(MorD == 1){//¥Î¥­§¡­È¤À³Î
+	if(MorD == 1){//ï¿½Î¥ï¿½ï¿½ï¿½ï¿½È¤ï¿½ï¿½ï¿½
 
 		int Xl,Xu;
 
@@ -1241,7 +1430,7 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 				location += 2*interval;
 			}
 		}
-	}else if(MorD == 2){//¥Î¤¤¦ì¼Æ¤À³Î
+	}else if(MorD == 2){//ï¿½Î¤ï¿½ï¿½ï¿½ï¿½Æ¤ï¿½ï¿½ï¿½
 
 		for(int i=0;i<nColors;i++){
 			cdf[i] = pdf[i];
@@ -1273,7 +1462,7 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 		}
 	}
 	/////////////////////////////////////////////////////////////
-	//Åv­«§ó·s¼Ò²Õ
+	//ï¿½vï¿½ï¿½ï¿½ï¿½ï¿½sï¿½Ò²ï¿½
 	/////////////////////////////////////////////////////////////
 	for(int i=0;i<pow(2,(double)r);i++){
 		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
@@ -1288,7 +1477,7 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 			pdf[j] =  Pmax*pow((pdf[j]-Pmin)/(Pmax-Pmin),alpha)+Beta;
 		}
 	}
-	//±NÅv­«°µ¥¿³W¹º
+	//ï¿½Nï¿½vï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½ï¿½
 	float sum = 0;
 	for(int i=0;i<nColors;i++){
 		sum += pdf[i];
@@ -1298,12 +1487,12 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 		pdf[i] /= sum;
 	}
 	/////////////////////////////////////////////////////////////////////
-	//±N¨C¤@°Ï¬q§@­È¤è¹Ïµ¥¤Æ
+	//ï¿½Nï¿½Cï¿½@ï¿½Ï¬qï¿½@ï¿½È¤ï¿½ï¿½Ïµï¿½ï¿½ï¿½
 	////////////////////////////////////////////////////////////////////////
 	for(int i=0;i<pow(2,(double)r);i++){
 		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
 		float t_weight=0,D_range=Xu-Xl;
-		//±N¨C­Ó°Ï¬qªºCDF¥¿³W¹º¨ì1
+		//ï¿½Nï¿½Cï¿½Ó°Ï¬qï¿½ï¿½CDFï¿½ï¿½ï¿½Wï¿½ï¿½ï¿½ï¿½1
 		for(int j=Xl;j<=Xu;j++){
 			t_weight += pdf[j];
 		}
@@ -1331,3 +1520,4 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 
 	return true;
 }
+

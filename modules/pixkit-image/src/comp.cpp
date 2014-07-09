@@ -58,7 +58,7 @@ bool pixkit::comp::BTC(const cv::Mat &src,cv::Mat &dst,int blockSize){
 					}
 				}
 			}
-			int		m_q=tCount-q;
+			int		m_q=static_cast<int>(tCount-q);
 			double	a=moment1-sd*sqrt((double)q/m_q),
 					b=moment1+sd*sqrt((double)m_q/q);
 			if(a>255){
@@ -79,9 +79,9 @@ bool pixkit::comp::BTC(const cv::Mat &src,cv::Mat &dst,int blockSize){
 				for(int l=0;l<blockSize;l++){
 					if(i+k<src.rows&&j+l<src.cols){
 						if(tdst.data[(i+k)*tdst.cols+(j+l)]>=moment1){
-							tdst.data[(i+k)*tdst.cols+(j+l)]=b;
+							tdst.data[(i+k)*tdst.cols+(j+l)]=static_cast<uchar>(b);
 						}else{
-							tdst.data[(i+k)*tdst.cols+(j+l)]=a;
+							tdst.data[(i+k)*tdst.cols+(j+l)]=static_cast<uchar>(a);
 						}
 					}
 				}
@@ -171,10 +171,10 @@ bool pixkit::comp::EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYP
 					if(i+k<src.rows&&j+l<src.cols){
 						if(ori[i+k][j+l]>mean){
 							error=ori[i+k][j+l]-max;
-							tdst.data[(i+k)*tdst.cols+(j+l)]=max;							
+							tdst.data[(i+k)*tdst.cols+(j+l)]=static_cast<uchar>(max);							
 						}else{
 							error=ori[i+k][j+l]-min;
-							tdst.data[(i+k)*tdst.cols+(j+l)]=min;						
+							tdst.data[(i+k)*tdst.cols+(j+l)]=static_cast<uchar>(min);						
 						}
 					}
 					// diffusion
@@ -463,9 +463,9 @@ bool pixkit::comp::ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYP
 				for(int l=0;l<blockSize;l++){
 					if(i+k<src.rows&&j+l<src.cols){				
 						if(tdst.data[(i+k)*tdst.cols+(j+l)]<temp_coe[k][l]){
-							tdst.data[(i+k)*tdst.cols+(j+l)]=min;
+							tdst.data[(i+k)*tdst.cols+(j+l)]=static_cast<uchar>(min);
 						}else{
-							tdst.data[(i+k)*tdst.cols+(j+l)]=max;
+							tdst.data[(i+k)*tdst.cols+(j+l)]=static_cast<uchar>(max);
 						}
 					}
 				}
@@ -613,10 +613,10 @@ bool pixkit::comp::DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize){
 					double	error;
 					if(Tempmap[ni][nj]<mean){
 						error=Tempmap[ni][nj]-minv;
-						tdst.data[ni*tdst.cols+nj]=minv;
+						tdst.data[ni*tdst.cols+nj]=static_cast<uchar>(minv);
 					}else{
 						error=Tempmap[ni][nj]-maxv;
-						tdst.data[ni*tdst.cols+nj]=maxv;
+						tdst.data[ni*tdst.cols+nj]=static_cast<uchar>(maxv);
 					}
 					DoMap[ni][nj]=true;
 
@@ -638,7 +638,7 @@ bool pixkit::comp::DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize){
 						for(int n=-hDM_Size;n<=hDM_Size;n++){
 							if(ni+m>=0&&ni+m<src.rows&&nj+n>=0&&nj+n<src.cols){
 								if(DoMap[ni+m][nj+n]==false){
-									Tempmap[ni+m][nj+n]+=error*DM[m+hDM_Size][n+hDM_Size]/fm;
+									Tempmap[ni+m][nj+n]+=static_cast<float>(error*DM[m+hDM_Size][n+hDM_Size]/fm);
 								}
 							}
 						}

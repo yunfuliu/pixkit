@@ -4,12 +4,13 @@
 // Authors: Yun-Fu Liu (1), Jing-Ming Guo (2), Bo-Syun Lai (3), Jiann-Der Lee (4)
 // Institutions: National Taiwan University of Science and Technology
 // Date: May 26, 2013
-// Email: yunfuliu@gmail.com
+// Email: yunfuliu@gmail.com, jmguo@seed.net.tw
 // Paper: Yun-Fu Liu, Jing-Ming Guo, Bo-Syun Lai, and Jiann-Der Lee, "High efficient 
 //        contrast enhancement using parametric approximation," IEEE Trans. 
 //        Image Processing, pp. 2444-2448, 26-31 May 2013.
 //
-// POHE Image Contrast Enhancement Copyright (c) 2013, Yun-Fu Liu, all rights reserved.
+// POHE Image Contrast Enhancement Copyright (c) 2013, Yun-Fu Liu, Jing-Ming Guo, 
+// Bo-Syun Lai, and Jiann-Der Lee, all rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification, 
 // are permitted provided that the following conditions are met:
@@ -49,10 +50,10 @@ inline double calcCDF_Gaussian(double &src,double &mean,double &sd){
 	double x=(src-mean)/(sqrt(2.)*sd);
 	double t=1./(1.+0.3275911*fabs(x));
 	double erf=		0.254829592	*t
-		-	0.284496736	*t*t
-		+	1.421413741	*t*t*t
-		-	1.453152027	*t*t*t*t
-		+	1.061405429	*t*t*t*t*t;
+				-	0.284496736	*t*t
+				+	1.421413741	*t*t*t
+				-	1.453152027	*t*t*t*t
+				+	1.061405429	*t*t*t*t*t;
 	erf=1.-erf*exp(-(x*x));
 	return 0.5*(1+(x<0?-erf:erf));	
 }
@@ -204,8 +205,7 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 			CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] both sum and sqsum should be CV_64FC1");
 		}
 	}
-
-
+	
 	//////////////////////////////////////////////////////////////////////////
 	// initialization
 	cv::Mat	tdst;	// temp dst. To avoid that when src == dst occur.
@@ -213,8 +213,7 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 	const int &height=src.rows;
 	const int &width=src.cols;
 
-
-	////////////////////////////////////////////////////////////////////////// ok
+	//////////////////////////////////////////////////////////////////////////
 	///// create integral images
 	cv::Mat	tsum,tsqsum;
 	if(sum.empty()||sqsum.empty()){
@@ -224,17 +223,15 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 		tsqsum	=	sqsum;
 	}
 
-
 	//////////////////////////////////////////////////////////////////////////
 	///// process
 	for(int i=0;i<height;i++){
 		for(int j=0;j<width;j++){
 			
-			////////////////////////////////////////////////////////////////////////// ok
+			//////////////////////////////////////////////////////////////////////////
 			///// get mean and sd
 			double	mean,sd;
 			calcAreaMean(src,cv::Point(j,i),blockSize,tsum,&mean,tsqsum,&sd);
-
 
 			//////////////////////////////////////////////////////////////////////////
 			// get current src value
@@ -247,34 +244,31 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 				assert(false);
 			}
 
-
 			//////////////////////////////////////////////////////////////////////////
 			// calc Gaussian's cdf
 			double	cdf	=	calcCDF_Gaussian(current_src_value,mean,sd);
-
 
 			//////////////////////////////////////////////////////////////////////////
 			// get output
 			if(tdst.type()==CV_8UC1){
 				if(current_src_value >= mean-1.885*sd){
-					tdst.ptr<uchar>(i)[j]=	cdf*255;
+					tdst.data[i*width+j]	=	cvRound(cdf*255.);
 				}else{
-					tdst.ptr<uchar>(i)[j]=	0;
+					tdst.data[i*width+j]	=	0;
 				}
 				CV_DbgAssert(((uchar*)tdst.data)[i*width+j]>=0.&&((uchar*)tdst.data)[i*width+j]<=255.);
 			}else if(tdst.type()==CV_32FC1){
 				if(current_src_value >= mean-1.885*sd){
-					tdst.ptr<float>(i)[j]=	cdf*255;
+					((float*)tdst.data)[i*width+j]	=	cvRound(cdf*255.);
 				}else{
-					tdst.ptr<float>(i)[j]=	0;
+					((float*)tdst.data)[i*width+j]	=	0;
 				}
 				CV_DbgAssert(((float*)tdst.data)[i*width+j]>=0.&&((float*)tdst.data)[i*width+j]<=255.);
 			}else{
-				assert(false);
+				CV_Assert(false);
 			}
 		}
 	}
-
 
 	dst	=	tdst.clone();
 	return true;
