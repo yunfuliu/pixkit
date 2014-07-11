@@ -57,5 +57,11 @@ namespace pixkit{
 		bool KMeans(std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, int K, int iter, pixkit::clustering::KM_TYPE type = KM_RANDPOS);
 	}
 
+	namespace classification{
+
+
+
+	}
+
 }
 #endif
