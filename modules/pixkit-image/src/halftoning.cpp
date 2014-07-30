@@ -559,7 +559,305 @@ bool pixkit::halftoning::errordiffusion::FloydSteinberg1976(const cv::Mat &src,c
 	return true;
 }
 
-////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+// direct binary search
+//////////////////////////////////////////////////////////////////////////
+
+bool pixkit::halftoning::directbinarysearch::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize){
+
+	//////////////////////////////////////////////////////////////////////////
+	/// exceptions
+	if(src1b.type()!=CV_8UC1){
+		assert(false);
+	}
+	if(FilterSize==1){
+		assert(false);
+	}else if(FilterSize%2==0){
+		assert(false);
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	/// initialization
+	int	m_Height	=	src1b.rows;
+	int	m_Width		=	src1b.cols;
+	Mat	dst1f;
+	dst1f.create(src1b.size(),CV_32FC1);
+
+
+	//////////////////////////////////////////////////////////////////////////
+	/// get coe
+	double	**	coe	=	new	double	*	[FilterSize];
+	bool	UseOutSideCoe=false;
+	if(coeData==NULL){	// default filter
+		// default coe
+		double	coetemp[7][7]={	{-0.001743412,	0.001445723,	0.007113962,	0.008826460,	0.006254165,	-0.000353216,	-0.003116813},	
+								{0.000833244,	0.009929635,	0.023728512,	0.029311034,	0.022933593,	0.009711988,	0.000118289},	
+								{0.005842017,	0.023691596,	0.048267152,	0.059043883,	0.046412889,	0.023315857,	0.005651780},	
+								{0.009138026,	0.032894130,	0.064200407,	0.078773930,	0.060303292,	0.029523382,	0.007565880},	
+								{0.007942508,	0.028669495,	0.053826022,	0.065024427,	0.050496807,	0.023933323,	0.005585837},	
+								{0.002404652,	0.014542416,	0.029730907,	0.035492112,	0.027318902,	0.011351292,	0.001239805},	
+								{-0.001666554,	0.002380156,	0.009867343,	0.012292728,	0.009216210,	0.002268413,	-0.001534185}};
+		// copy coetemp to coe
+		coeData	=	new	double	[FilterSize*FilterSize];
+		for(int i=0;i<FilterSize;i++){
+			coe[i]=&coeData[i*FilterSize];
+			for(int j=0;j<FilterSize;j++){
+				coe[i][j]=coetemp[i][j];
+			}
+		}
+		UseOutSideCoe=false;
+	}else{	// use external loaded filter, rather than the above default one
+		for(int i=0;i<FilterSize;i++){
+			coe[i]=&coeData[i*FilterSize];
+		}
+		UseOutSideCoe=true;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	/// get autocorrelation	
+	int	exFS=FilterSize*2-1;
+	int	tempFS=FilterSize-1;
+	double	*	autocoeData	=	new	double		[exFS*exFS];
+	double	**	autocoe		=	new	double	*	[exFS];
+	for(int i=0;i<exFS;i++){
+		autocoe[i]=&autocoeData[i*exFS];
+		for(int j=0;j<exFS;j++){
+			autocoe[i][j]=0.;
+		}
+	}
+	for(int i=0;i<FilterSize;i++){
+		for(int j=0;j<FilterSize;j++){
+			for(int m=-tempFS;m<=tempFS;m++){
+				for(int n=-tempFS;n<=tempFS;n++){
+					if(i+m<FilterSize&&i+m>=0&&j+n<FilterSize&&j+n>=0){
+						autocoe[m+tempFS][n+tempFS]+=coe[i][j]*coe[i+m][j+n];
+					}
+				}
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	/// load original image
+	double	*	oriData	=	new	double		[m_Height*m_Width];
+	double	**	ori		=	new	double	*	[m_Height];
+	for(int i=0;i<m_Height;i++){
+		ori[i]=&oriData[i*m_Width];
+		for(int j=0;j<m_Width;j++){
+			ori[i][j]=src1b.ptr<uchar>(i)[j];
+		}
+	}
+	// get halftone image
+	srand((unsigned char)time(NULL));
+	//	srand(7);
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			double	temp=((double)rand())/32767.;
+			dst1f.ptr<float>(i)[j]=temp<0.5?0.:255.;
+		}
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	/// Change grayscale to absorb
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			ori[i][j]=1.-ori[i][j]/255.;
+			dst1f.ptr<float>(i)[j]=1.-dst1f.ptr<float>(i)[j]/255.;
+		}
+	}
+
+	/// get error matrix
+	double	*	emData	=	new	double		[m_Height*m_Width];
+	double	**	em		=	new	double	*	[m_Height];
+	for(int i=0;i<m_Height;i++){
+		em[i]=&emData[i*m_Width];
+		for(int j=0;j<m_Width;j++){
+			em[i][j]=dst1f.ptr<float>(i)[j]-ori[i][j];
+		}
+	}
+
+	/// get cross correlation
+	double	*	crosscoeData	=	new	double		[m_Height*m_Width];
+	double	**	crosscoe		=	new	double	*	[m_Height];
+	for(int i=0;i<m_Height;i++){
+		crosscoe[i]=&crosscoeData[i*m_Width];
+		for(int j=0;j<m_Width;j++){
+			crosscoe[i][j]=0.;
+			for(int m=i-tempFS;m<=i+tempFS;m++){
+				for(int n=j-tempFS;n<=j+tempFS;n++){
+					if(m>=0&&m<m_Height&&n>=0&&n<m_Width){
+						crosscoe[i][j]+=em[m][n]*autocoe[tempFS+m-i][tempFS+n-j];
+					}
+				}
+			}
+		}
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	/// DBS
+	int		BenefitPixelNumber;
+	double	dE[10],a0[10],a1[10];
+	while(1){
+		BenefitPixelNumber=0;
+		for(int i=0;i<m_Height;i++){	// entire image
+			for(int j=0;j<m_Width;j++){
+
+				// = = = = = trial part = = = = = //
+				// initialize psnr		0: original psnr, 1~8: Swap, 9: Toggel.
+				// 8 1 2
+				// 7 0 3
+				// 6 5 4	
+				for(int m=0;m<10;m++){
+					dE[m]=0.;
+					a0[m]=0.;
+					a1[m]=0.;
+				}
+				// change the delta error as per different replacement methods
+				for(int mode=1;mode<10;mode++){
+					int		m,n;
+					if(mode>=1&&mode<=8){
+						// set position
+						if(mode==1){
+							m=1;	n=0;
+						}else if(mode==2){
+							m=1;	n=1;
+						}else if(mode==3){
+							m=0;	n=1;
+						}else if(mode==4){
+							m=-1;	n=1;
+						}else if(mode==5){
+							m=-1;	n=0;
+						}else if(mode==6){
+							m=-1;	n=-1;
+						}else if(mode==7){
+							m=0;	n=-1;
+						}else if(mode==8){
+							m=1;	n=-1;
+						}
+						// get dE
+						if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){							
+							if(dst1f.ptr<float>(i)[j]==1){
+								a0[mode]=-1;
+							}else{
+								a0[mode]=1;
+							}
+							if(dst1f.ptr<float>(i+m)[j+n]==1){
+								a1[mode]=-1;
+							}else{
+								a1[mode]=1;
+							}
+							if(dst1f.ptr<float>(i)[j]!=dst1f.ptr<float>(i+m)[j+n]){
+								dE[mode]=(a0[mode]*a0[mode]+a1[mode]*a1[mode])*autocoe[tempFS][tempFS]+2.*a0[mode]*crosscoe[i][j]+2.*a1[mode]*crosscoe[i+m][j+n]+2.*a0[mode]*a1[mode]*autocoe[tempFS+m][tempFS+n];
+							}
+						}
+					}else if(mode==9){
+						if(dst1f.ptr<float>(i)[j]==1){
+							a0[mode]=-1;
+						}else{
+							a0[mode]=1;
+						}
+						dE[mode]=autocoe[tempFS][tempFS]+2.*a0[mode]*crosscoe[i][j];
+					}
+				}
+				// get minimum delta error and its position
+				int		tempMinNumber	=0;
+				double	tempMindE		=dE[0];
+				for(int x=1;x<10;x++){
+					if(dE[x]<tempMindE){
+						tempMindE		=dE[x];
+						tempMinNumber	=x;
+					}
+				}
+
+				// = = = = = update part = = = = = //
+				if(tempMindE<0){	// error is reduce
+					// update hft image
+					dst1f.ptr<float>(i)[j]	=1.-dst1f.ptr<float>(i)[j];
+					if(tempMinNumber>=1&&tempMinNumber<=8){
+						// get position
+						int nm,nn;
+						if(tempMinNumber==1){
+							nm=1;	nn=0;
+						}else if(tempMinNumber==2){
+							nm=1;	nn=1;
+						}else if(tempMinNumber==3){
+							nm=0;	nn=1;
+						}else if(tempMinNumber==4){
+							nm=-1;	nn=1;
+						}else if(tempMinNumber==5){
+							nm=-1;	nn=0;
+						}else if(tempMinNumber==6){
+							nm=-1;	nn=-1;
+						}else if(tempMinNumber==7){
+							nm=0;	nn=-1;
+						}else if(tempMinNumber==8){
+							nm=1;	nn=-1;
+						}
+						// update hft image
+						dst1f.ptr<float>(i+nm)[j+nn]	=1.-dst1f.ptr<float>(i+nm)[j+nn];
+						// update cross correlation
+						for(int m=-tempFS;m<=tempFS;m++){
+							for(int n=-tempFS;n<=tempFS;n++){
+								if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){
+									crosscoe[i+m][j+n]+=a0[tempMinNumber]*autocoe[tempFS+m][tempFS+n];
+								}
+								if(i+m+nm>=0&&i+m+nm<m_Height&&j+n+nn>=0&&j+n+nn<m_Width){
+									crosscoe[i+m+nm][j+n+nn]+=a1[tempMinNumber]*autocoe[tempFS+m][tempFS+n];
+								}
+							}
+						}
+					}else if(tempMinNumber==9){
+						// update cross correlation
+						for(int m=-tempFS;m<=tempFS;m++){
+							for(int n=-tempFS;n<=tempFS;n++){
+								if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){
+									crosscoe[i+m][j+n]+=a0[tempMinNumber]*autocoe[tempFS+m][tempFS+n];
+								}
+							}
+						}
+					}
+					BenefitPixelNumber++;
+				}
+			}
+		}
+		if(BenefitPixelNumber==0){
+			break;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	/// Change absorb to grayscale
+	dst1b.create(src1b.size(),CV_8UC1);
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			dst1b.ptr<uchar>(i)[j]=(1.-dst1f.ptr<float>(i)[j])*255.;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	/// release space
+	delete	[]	crosscoeData;
+	delete	[]	crosscoe;
+	delete	[]	emData;
+	delete	[]	em;
+	delete	[]	oriData;
+	delete	[]	ori;
+	delete	[]	autocoe;
+	delete	[]	autocoeData;
+	delete	[]	coe;
+	if(UseOutSideCoe==false){
+		delete	[]	coeData;		
+	}
+	
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
 //	ordered dithering
 //////////////////////////////////////////////////////////////////////////
 
