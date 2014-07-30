@@ -105,6 +105,12 @@ namespace pixkit{
 			bool			FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst);
 		}
 
+		/// Direct binary search
+		namespace directbinarysearch{
+			// efficient DBS
+			bool			LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7);
+		}
+
 		/// Ordered Dither related
 		namespace ordereddithering{
 			bool			KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
