@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 2.6)
 
 set(PIXKIT_VERSION_MAJOR 0)
 set(PIXKIT_VERSION_MINOR 5)
-set(PIXKIT_VERSION_PATCH 0)
+set(PIXKIT_VERSION_PATCH 1)
 set(PIXKIT_VERSION_STRING ${PIXKIT_VERSION_MAJOR}${PIXKIT_VERSION_MINOR}${PIXKIT_VERSION_PATCH})
 
 
@@ -97,7 +97,34 @@ target_link_libraries(pixkit_timer ${OpenCV_LIBS})
 install(TARGETS	pixkit_timer	
 	DESTINATION	"${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
 
+# ***********************************************************
+# Install projects (pixkit-file)
+include_directories("modules/pixkit-file/")
 
+# pixkit-timer libraries
+file(GLOB PIXKIT_FILE_FILES
+	"modules/pixkit-file/include/*.hpp"	"modules/pixkit-file/src/*.cpp")
+add_library(pixkit_file ${PIXKIT_FILE_FILES})
+target_link_libraries(pixkit_file ${OpenCV_LIBS})
+install(TARGETS	pixkit_file	
+	DESTINATION	"${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
+
+# ***********************************************************
+# Install projects (pixkit-cv)
+include_directories("modules/pixkit-cv/")
+
+# pixkit-timer libraries
+file(GLOB PIXKIT_CV_FILES
+	"modules/pixkit-cv/include/*.hpp"	"modules/pixkit-cv/src/*.cpp")
+add_library(pixkit_cv ${PIXKIT_CV_FILES})
+target_link_libraries(pixkit_cv ${OpenCV_LIBS})
+install(TARGETS	pixkit_cv	
+	DESTINATION	"${PIXKIT_INSTALL_PREFIX}/${PIXKIT_ENV}/${PIXKIT_COMPILER}")
+	
+
+# -----------------------------------------------------------
+# Other part
+# -----------------------------------------------------------
 # ============================================================================ #
 # Sample programs (image/halftoning)
 add_executable(image_halftoning_dotdiffusion_GuoLiu2009

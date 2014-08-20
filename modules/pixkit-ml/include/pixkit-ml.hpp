@@ -17,14 +17,7 @@
 #define __PIXKIT_ML_HPP__
 
 namespace pixkit{
-
-	namespace labeling{
-
-		// Two-pass connected-component labeling
-		bool twoPass(const cv::Mat &src,cv::Mat &dst,const int offset);
-
-	}
-
+	
 	namespace clustering{
 
 		/**
@@ -62,6 +55,12 @@ namespace pixkit{
 		*/
 		enum KM_TYPE{KM_USERDEFINEPOS, KM_RANDPOS};
 		bool KMeans(std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, int K, int iter, pixkit::clustering::KM_TYPE type = KM_RANDPOS);
+	}
+
+	namespace classification{
+
+
+
 	}
 
 }

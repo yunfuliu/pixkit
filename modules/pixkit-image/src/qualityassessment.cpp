@@ -1,5 +1,9 @@
 #include "edgedetection.cpp"
 #include "../include/pixkit-image.hpp"
+#include <opencv2/imgproc/imgproc.hpp>
+
+using namespace cv;
+
 //////////////////////////////////////////////////////////////////////////
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
 
@@ -183,7 +187,6 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	// = = = = = Return PSNR = = = = = //
 	return 10*log10((double)(src1.cols)*(src1.rows)*(255.)*(255.)/total_err);
 }
-
 float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 {
 	
@@ -269,4 +272,131 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 	}	
 	mse /= (src1.rows * src1.cols);
 	return static_cast<float>(20*log10(255/sqrt(mse)));
+}
+bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){
+
+	cv::Mat	src1	=	_src1.getMat();
+	cv::Mat	src2	=	_src2.getMat();
+
+	// Gaussian blur
+	cv::Mat	dst1,dst2;
+	cv::GaussianBlur(src1,dst1,cv::Size(0,0),sd);
+	cv::GaussianBlur(src2,dst2,cv::Size(0,0),sd);
+
+	// get difference
+	dst1.convertTo(dst1,CV_32FC1);
+	dst2.convertTo(dst2,CV_32FC1);
+	Mat	diff=dst1-dst2;
+	diff=diff*10+128;
+
+	// show images
+	dst1.convertTo(dst1,CV_8UC1);
+	dst2.convertTo(dst2,CV_8UC1);
+	diff.convertTo(diff,CV_8UC1);
+	imshow("Blurred original image",dst1);
+	imshow("Blurred halftone image",dst2);
+	imshow("Difference image (G(a)-G(b))*10+128",diff);
+	waitKey(0);
+
+	imwrite("a.bmp",diff);
+
+	return true;
+}
+bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst){
+// Original code: http://docs.opencv.org/doc/tutorials/core/discrete_fourier_transform/discrete_fourier_transform.html
+	
+	cv::Mat	src=_src.getMat();
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exception 
+	if(src.type()!=CV_8UC1){
+		CV_Assert(false);
+	}
+	
+	//////////////////////////////////////////////////////////////////////////
+	///// calculation
+	Mat padded;                            //expand input image to optimal size
+	int m = getOptimalDFTSize( src.rows );
+	int n = getOptimalDFTSize( src.cols ); // on the border add zero values
+	copyMakeBorder(src, padded, 0, m - src.rows, 0, n - src.cols, BORDER_CONSTANT, Scalar::all(0));
+
+	Mat planes[] = {Mat_<float>(padded), Mat::zeros(padded.size(), CV_32F)};
+	Mat complexI;
+	merge(planes, 2, complexI);         // Add to the expanded another plane with zeros
+	dft(complexI, complexI);            // this way the result may fit in the source matrix
+
+	// compute the magnitude and switch to logarithmic scale
+	// => log(1 + sqrt(Re(DFT(I))^2 + Im(DFT(I))^2))
+	split(complexI, planes);                   // planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
+	magnitude(planes[0], planes[1], planes[0]);// planes[0] = magnitude
+	Mat tdst1f = planes[0];
+	// power spectrum
+	tdst1f	=	abs(tdst1f);
+	tdst1f	=	tdst1f.mul(tdst1f)/	((float)tdst1f.total());
+	// eliminate the DC value
+	tdst1f.ptr<float>(0)[0]	=	(tdst1f.ptr<float>(0)[1]	+	tdst1f.ptr<float>(1)[0]	+	tdst1f.ptr<float>(1)[1])	/	3.;	
+	// scale 
+ 	tdst1f += Scalar::all(1);       // switch to logarithmic scale
+ 	log(tdst1f, tdst1f);
+
+	// crop	the spectrum, if it has an odd number of rows or columns
+	tdst1f = tdst1f(Rect(0, 0, tdst1f.cols & -2, tdst1f.rows & -2));
+
+	// rearrange the quadrants of Fourier image  so that the origin is at the image center
+	int cx = tdst1f.cols/2;
+	int cy = tdst1f.rows/2;
+	Mat q0(tdst1f, Rect(0, 0, cx, cy));   // Top-Left - Create a ROI per quadrant
+	Mat q1(tdst1f, Rect(cx, 0, cx, cy));  // Top-Right
+	Mat q2(tdst1f, Rect(0, cy, cx, cy));  // Bottom-Left
+	Mat q3(tdst1f, Rect(cx, cy, cx, cy)); // Bottom-Right
+	Mat tmp;                           // swap quadrants (Top-Left with Bottom-Right)
+	q0.copyTo(tmp);
+	q3.copyTo(q0);
+	tmp.copyTo(q3);
+	q1.copyTo(tmp);                    // swap quadrant (Top-Right with Bottom-Left)
+	q2.copyTo(q1);
+	tmp.copyTo(q2);
+
+	normalize(tdst1f, tdst1f, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
+	// viewable image form (float between values 0 and 1).
+
+	// copy
+	_dst.create(src.size(),tdst1f.type());
+	cv::Mat	dst	=	_dst.getMat();
+	tdst1f.copyTo(dst);
+
+	return true;
+}
+bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst){
+
+	Mat	src	=	_src.getMat();
+	const	int	unitsize	=	256;
+
+	if(src.size()!=cv::Size(unitsize,unitsize*10)){
+		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] src's image size should be 256x2560");
+	}
+	
+	const	int	rounds		=	10;
+
+	Mat	tdst1f(cv::Size(unitsize,unitsize),CV_32FC1);
+	tdst1f.setTo(0);
+	for(int k=0;k<rounds;k++){
+
+		Rect	roi(0,unitsize*k,unitsize,unitsize);
+		Mat	tsrc	=	src(roi);
+
+		Mat	tps;	// temp power spectrum
+		PowerSpectrumDensity(tsrc,tps);	// get power spectrum
+
+		tdst1f	=	tdst1f	+	tps;
+
+	}
+
+	tdst1f	=	tdst1f	/	static_cast<float>(rounds);
+
+	_dst.create(tdst1f.size(),tdst1f.type());
+	Mat	dst	=	_dst.getMat();
+	tdst1f.copyTo(dst);
+
+	return true;
 }

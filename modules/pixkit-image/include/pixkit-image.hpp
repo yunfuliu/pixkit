@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -19,6 +20,14 @@
 #define __PIXKIT_IMAGE_HPP__
 
 namespace pixkit{
+
+	//////////////////////////////////////////////////////////////////////////
+	/// Thresholding
+	namespace thresholding{
+
+		bool LAT2011(const cv::Mat &src,cv::Mat &dst,int windowSize, double k);
+
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Attack
@@ -92,7 +101,14 @@ namespace pixkit{
 		/// Error Diffusion related
 		namespace errordiffusion{ 
 			bool			Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
-			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);		
+			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);
+			bool			FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst);
+		}
+
+		/// Direct binary search
+		namespace directbinarysearch{
+			// efficient DBS
+			bool			LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7);
 		}
 
 		/// Ordered Dither related
@@ -160,8 +176,6 @@ namespace pixkit{
 			bool LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
 
 		}
-
-
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -286,6 +300,9 @@ namespace pixkit{
             bool Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
 
 			bool Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
+
+			bool Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
+
 		}
 
 		/// Global methods
@@ -331,6 +348,7 @@ namespace pixkit{
 			*/
 			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
 
+			bool  CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
 		}
 
 	}
@@ -339,56 +357,40 @@ namespace pixkit{
 	/// IQA related 
 	namespace qualityassessment{
 
-		/**
-		* @brief		usually used to estimate contrast of an image, and it can evaluate naturalness and uniform lighting 
-		* @brief		paper: original: S. S. Agaian, K. Panetta, and A. M. Grigoryan, "A new measure of image enhancement," in Proc. Intl. Conf. Signal Processing Communication, 2000.
-		* @brief		another representation: (this is the one used in this implementation) S. S. Agaian, B. Silver, and K. A. Panetta, "Transform coefficient histogram-based image enhancement algorithms using contrast entropy," TIP, 2007. 
-		* @brief		nickname: measure of enhancement (EME) or measure of improvement
-		* 
-		* @author		Yunfu Liu (yunfuliu@gmail.com)
-		* @date			Sept. 4, 2013
-		*
-		* @param		nBlocks: number of blocks at either x or y axis; this size should be odd since this is just like a filter as defined in the paper
-		* @param		mode: 1: standard mode: use the local max and min to evaluate the eme; 2: ab mode: use BTC's a and b to represent a block's contrast
-		*
-		* @return		float: return the value of EME
-		*/
+		// for contrast evaluation
 		float EME(const cv::Mat &src,const cv::Size nBlocks,const short mode=1);
-
-		/**
-		* @brief		it is able to describe whether some artificial texture appear or not
-		* @brief		paper: L. Jiao, Z. Sun, and A. Sha, "Improvement of image contrast with local adaptation," in Proc. Intl. Conf. Multimedia and Informatin Technology, 2010.
-		* @brief		(this paper used this TEN in their paper, and the original one is published in 1970 as in their reference list)
-		* @brief		nickname: TEN
-		*
-		* @author		Yunfu Liu (yunfuliu@gmail.com)
-		* @date			Sept. 4, 2013
-		*
-		* @return		float: return the value of TEN
-		*/
 		float TEN(const cv::Mat &src);
-
-		/**
-		* @brief		used to estimate the difference between two images (!!!the lower the better)
-		* @brief		paper: N. Phanthuna, F. Cheevasuvit, and S. Chitwong, "Contrast enhancement for minimum mean brightness error from histogram partitioning," ASPRS Conf. 2009.
-		* @brief		nickname: absolute mean brightness error (AMBE)
-		*
-		* @author		Yunfu Liu (yunfuliu@gmail.com)
-		* @date			Sept. 4, 2013
-		*
-		* @return		float: return the value of AMBE
-		*/
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
 
- 		/**
-  		* @brief		derive PSNR
-  		*/
+		// signal similarity 
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
+		// for halftone images
+		float HPSNR(const cv::Mat &src1, const cv::Mat &src2);
+
 		/**
-  		* @brief		derive HPSNR (for halftoning image quality assessment) ver. 1
-  		*/
-		float	HPSNR(const cv::Mat &src1, const cv::Mat &src2);
+		*	@brief		Display the difference of two Gaussian blurred images.
+		*
+		*	@paper		C. Schmaltz, P. Gwosdek, A. Bruhn, and J. Weickert, “Electrostatic halftoning,” Computer Graphics Forum, vol. 29, no. 8, pp. 2313-2327, 2010.
+		*/
+		bool GaussianDiff(cv::InputArray &_src1,cv::InputArray &_src2,double sd=1.);
+
+		/**
+		*	@brief		Get the power spectrum density by DFT.
+		*
+		*/
+		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);
+
+		/**
+		*	@brief		Get averaged 
+		*
+		*	@paper		M. S. Bartlett, "The spectral analysis of two-dimensional point processes," Biometrika, Dec. 1964.
+		*	
+		*	@Note		1. Input should be generated from a constant grayscale.
+		*				2. _src should be 256x(256x10), and output (_dst) will be 256x256.
+		*/
+		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst);
+
 	}
 
 }
