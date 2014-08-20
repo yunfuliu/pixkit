@@ -9,32 +9,6 @@ In addition to above implementations, some frequently utilized tools, i.e., atta
 
 The repo, OpenCV, is used to build up all the pixkit functions: <https://github.com/Itseez/opencv>
 
-Functions
----------
-By far, the current version, `/modules/pixkit-image` involves the following function groups:
-
-** **attack**: Usually used to simulate attack for "watermarking".
-
-** **comp**: Image compression.
-
-** **filtering**: Image filtering.
-
-** **edgedetection**: Edge detection.
-
-** **halftoning**: Image halftoning. Turn images into binary (halftone) form.
-
-** **enhancement::local**: Image contrast enhancement methods, regional methods.
-
-** **enhancement::global**: Image contrast enhancement methods, global methods.
-
-** **qualityassessment**: Image quality assessment.
-
-Also, `/modules/pixkit-ml` involves the following function groups:
-
-** **clustering**: Data clustering.
-
-** **labeling**: Image labeling.
-
 For users
 ---------
 See [manual](https://github.com/yunfuliu/pixkit/blob/master/MANUAL.md) for details.
