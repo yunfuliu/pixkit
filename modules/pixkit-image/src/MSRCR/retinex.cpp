@@ -244,7 +244,7 @@ void gausssmooth( float *in, float *out, int size, int rowstride, gauss3_coefs *
  * (a)  Filterings at several scales and sumarize the results.  
  * (b)  Calculation of the final values.  
  */   
-void MSRCR( unsigned char * src, int width, int height, int bytes )   
+void MSRCR_Main( unsigned char * src, int width, int height, int bytes )   
 {   
   int           scale, row, col;   
   int           i, j;   
@@ -422,70 +422,68 @@ void MSRCR( unsigned char * src, int width, int height, int bytes )
       
 
     
-bool pixkit::enhancement::local::MSRCR_Process( cv::Mat &src,cv::Mat &out )   
-{   
-	
-	IplImage * orig=& IplImage(src); 
-	
+bool pixkit::enhancement::local::MSRCR(const cv::Mat &src,cv::Mat &dst){   
 
-    IplImage * dst = NULL;   
+	/////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(src.type()!=CV_8UC3){
+		CV_Assert(false);
+	}
 
-    unsigned char * sImage, * dImage;   
-    int x, y;   
-    int nWidth, nHeight, step;  
+	IplImage * orig=& IplImage(src);
+	IplImage * out = NULL;   
 
+	unsigned char * sImage, * dImage;   
+	int x, y;   
+	int nWidth, nHeight, step;  
 
-    if ( orig == NULL )   
-    {   
-        printf( "Could not get image. Program exits!\n" );  
-		return 0; 
-    }   
-    nWidth = orig->width;   
-    nHeight = orig->height;   
-    step = orig->widthStep/sizeof( unsigned char );   
-    dst = cvCreateImage( cvSize(nWidth,nHeight), IPL_DEPTH_8U, 3 );  
-    sImage = new unsigned char[nHeight*nWidth*3];  
-    dImage = new unsigned char[nHeight*nWidth*3];   
- 
-   
-    if ( orig->nChannels == 3 )   
-    {   
-        for ( y = 0; y < nHeight; y++ )   
-            for ( x = 0; x < nWidth; x++ )   
-            {   
-                sImage[(y*nWidth+x)*orig->nChannels] = orig->imageData[y*step+x*orig->nChannels];   
-                sImage[(y*nWidth+x)*orig->nChannels+1] = orig->imageData[y*step+x*orig->nChannels+1];   
-                sImage[(y*nWidth+x)*orig->nChannels+2] = orig->imageData[y*step+x*orig->nChannels+2];   
-            }   
-    }   
-    memcpy( dImage, sImage, nWidth*nHeight*orig->nChannels );   
-    
-    MSRCR( dImage, nWidth, nHeight, orig->nChannels );   
-    printf( "MSRCR parameters:\n" );   
-    printf( "number of scales: \t\t%d\n", rvals.nscales );   
-    printf( "each scale is respectively: \t\t" );   
-    for ( int i = 0; i < rvals.nscales; i++ )   
-        printf( "[scale_%d] = %7.4f ", i+1, RetinexScales[i] );   
-    printf( "\n" );   
-       
-    for ( y = 0; y < nHeight; y++ )   
-        for ( x = 0; x < nWidth; x++ )   
-        {   
-            dst->imageData[y*step+x*3] = dImage[(y*nWidth+x)*3];   
-            dst->imageData[y*step+x*3+1] = dImage[(y*nWidth+x)*3+1];   
-            dst->imageData[y*step+x*3+2] = dImage[(y*nWidth+x)*3+2];   
-        }   
+	if ( orig == NULL )	{   
+		printf( "Could not get image. Program exits!\n" );  
+		CV_Assert(false);
+	}   
+	nWidth = orig->width;   
+	nHeight = orig->height;   
+	step = orig->widthStep/sizeof( unsigned char );   
+	out = cvCreateImage( cvSize(nWidth,nHeight), IPL_DEPTH_8U, 3 );  
+	sImage = new unsigned char[nHeight*nWidth*3];  
+	dImage = new unsigned char[nHeight*nWidth*3];   
 
+	if ( orig->nChannels == 3 ){   
+		for ( y = 0; y < nHeight; y++ ){   
+			for ( x = 0; x < nWidth; x++ )   
+			{   
+				sImage[(y*nWidth+x)*orig->nChannels] = orig->imageData[y*step+x*orig->nChannels];   
+				sImage[(y*nWidth+x)*orig->nChannels+1] = orig->imageData[y*step+x*orig->nChannels+1];   
+				sImage[(y*nWidth+x)*orig->nChannels+2] = orig->imageData[y*step+x*orig->nChannels+2];   
+			} 
+		}
+	}   
+	memcpy( dImage, sImage, nWidth*nHeight*orig->nChannels );   
 
-		cv::Mat mat(dst, 0);
-		out=mat.clone();
-  
-		
-  //  cvReleaseImage( &orig );   
-   cvReleaseImage( &dst );   
-    delete [] sImage;
-    delete [] dImage;   
-	return 1;
+	MSRCR_Main( dImage, nWidth, nHeight, orig->nChannels );   
+	printf( "MSRCR parameters:\n" );   
+	printf( "number of scales: \t\t%d\n", rvals.nscales );   
+	printf( "each scale is respectively: \t\t" );   
+	for ( int i = 0; i < rvals.nscales; i++ ){   
+		printf( "[scale_%d] = %7.4f ", i+1, RetinexScales[i] );   
+	}
+	printf( "\n" );   
+
+	for ( y = 0; y < nHeight; y++ ){   
+		for ( x = 0; x < nWidth; x++ ){   
+			out->imageData[y*step+x*3] = dImage[(y*nWidth+x)*3];   
+			out->imageData[y*step+x*3+1] = dImage[(y*nWidth+x)*3+1];   
+			out->imageData[y*step+x*3+2] = dImage[(y*nWidth+x)*3+2];   
+		}   
+	}
+
+	cv::Mat mat(out, 0);
+	dst=mat.clone();
+
+	cvReleaseImage( &out );   
+	delete [] sImage;
+	delete [] dImage;   
+	return true;
 }   
    
 
