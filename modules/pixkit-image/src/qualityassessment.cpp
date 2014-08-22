@@ -187,41 +187,44 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	// = = = = = Return PSNR = = = = = //
 	return 10*log10((double)(src1.cols)*(src1.rows)*(255.)*(255.)/total_err);
 }
-float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
+float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2, int HVSsize)
 {
-	
 	double  mse = 0;
-	const int height = 15;
-	const int width = 15;
-	int  wd_size = static_cast<int>(height/2*2);;
-	
+	int HalfSize = HVSsize/2;
+	int wd_size = static_cast<int>(HVSsize/2*2);
+
 	if(src1.empty()||src2.empty()){
 		CV_Error(CV_HeaderIsNull,"[qualityassessment::HPSNR] image is empty");
 	}
-	if(src1.type()!=src2.type()){
-		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] both types of image do not match");
+	if(src1.cols != src2.cols || src1.rows != src2.rows){
+		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] sizes of two images are not equal");
 	}
 	if(src1.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[qualityassessment::HPSNR] image should be grayscale");
 	}
+	if(src1.type()!=src2.type()){
+		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] both types of image do not match");
+	}
 
-	double gaussianFilter[15][15] = {
-	0,	0,	0,	0,	0.000001,	0.000002,	0.000003,	0.000004,	0.000003,	0.000002,	0.000001,	0,	0,	0,	0,
-	0,	0,	0,	0.000002,	0.000008,	0.000021,	0.000039,	0.000048,	0.000039,	0.000021,	0.000008,	0.000002,	0,	0,	0,
-	0,	0,	0.000003,	0.000017,	0.000071,	0.000193,	0.000351,	0.000429,	0.000351,	0.000193,	0.000071,	0.000017,	0.000003,	0,	0,
-	0,	0.000002,	0.000017,	0.000106,	0.000429,	0.001166,	0.002125,	0.002595,	0.002125,	0.001166,	0.000429,	0.000106,	0.000017,	0.000002,	0,
-	0.000001,	0.000008,	0.000071,	0.000429,	0.001739,	0.004728,	0.008616,	0.010523,	0.008616,	0.004728,	0.001739,	0.000429,	0.000071,	0.000008,	0.000001,
-	0.000002,	0.000021,	0.000193,	0.001166,	0.004728,	0.012853,	0.02342,	0.028605,	0.02342,	0.012853,	0.004728,	0.001166,	0.000193,	0.000021,	0.000002,
-	0.000003,	0.000039,	0.000351,	0.002125,	0.008616,	0.02342,	0.042674,	0.052122,	0.042674,	0.02342,	0.008616,	0.002125,	0.000351,	0.000039,	0.000003,
-	0.000004,	0.000048,	0.000429,	0.002595,	0.010523,	0.028605,	0.052122,	0.063662,	0.052122,	0.028605,	0.010523,	0.002595,	0.000429,	0.000048,	0.000004,
-	0.000003,	0.000039,	0.000351,	0.002125,	0.008616,	0.02342,	0.042674,	0.052122,	0.042674,	0.02342,	0.008616,	0.002125,	0.000351,	0.000039,	0.000003,
-	0.000002,	0.000021,	0.000193,	0.001166,	0.004728,	0.012853,	0.02342,	0.028605,	0.02342,	0.012853,	0.004728,	0.001166,	0.000193,	0.000021,	0.000002,
-	0.000001,	0.000008,	0.000071,	0.000429,	0.001739,	0.004728,	0.008616,	0.010523,	0.008616,	0.004728,	0.001739,	0.000429,	0.000071,	0.000008,	0.000001,
-	0,	0.000002,	0.000017,	0.000106,	0.000429,	0.001166,	0.002125,	0.002595,	0.002125,	0.001166,	0.000429,	0.000106,	0.000017,	0.000002,	0,
-	0,	0,	0.000003,	0.000017,	0.000071,	0.000193,	0.000351,	0.000429,	0.000351,	0.000193,	0.000071,	0.000017,	0.000003,	0,	0,
-	0,	0,	0,	0.000002,	0.000008,	0.000021,	0.000039,	0.000048,	0.000039,	0.000021,	0.000008,	0.000002,	0,	0,	0,
-	0,	0,	0,	0,	0.000001,	0.000002,	0.000003,	0.000004,	0.000003,	0.000002,	0.000001,	0,	0,	0,	0
-	};
+	///////////////////////////////////////////////////
+	// HVS filter
+	std::vector< std::vector<double> > gaussianFilter( HVSsize, std::vector<double>(HVSsize) );
+	double sum = 0, STD = static_cast<double>(HVSsize-1)/6 ;
+
+	for (int i=-HalfSize; i<=HalfSize; i++){
+		for (int j=-HalfSize; j<=HalfSize; j++){	
+			gaussianFilter[i+HalfSize][j+HalfSize] = exp( -1 * (i*i+j*j) / (2*STD*STD) );
+			sum += gaussianFilter[i+HalfSize][j+HalfSize];
+		}
+	}
+
+	// Normalize to 0~1
+	for (int i=-HalfSize; i<=HalfSize; i++){
+		for (int j=-HalfSize; j<=HalfSize; j++){	
+			gaussianFilter[i+HalfSize][j+HalfSize] /= sum;
+		}
+	}
+	/////////////////////////////////////////////////////
 
 	cv::Mat OriImageWd, ResImageWd;
 
@@ -229,7 +232,7 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 	//wd_reg memory((IW+wd_size)*(IL+wd_size))
 	OriImageWd.create(src1.rows+wd_size, src1.cols+wd_size, 0);
 	ResImageWd.create(src2.rows+wd_size, src2.cols+wd_size, 0);
-	
+
 	//WdImage((Height+wd_size)x(Width+wd_size)) <- Input(HeightxWidth)
 	for(int i=0; i<src1.rows; i++){
 		for(int j=0; j<src1.cols; j++){
@@ -262,8 +265,8 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 	for(int i=0; i<src1.rows; i++){
 		for(int j=0; j<src1.cols; j++){
 			double temp = 0.0;
-			for(int x=0; x<height; x++){
-				for(int y=0; y<width; y++){
+			for(int x=0; x<HVSsize; x++){
+				for(int y=0; y<HVSsize; y++){
 					temp += (ResImageWd.data[(i+x)*ResImageWd.cols + (j+y)] - OriImageWd.data[(i+x)*OriImageWd.cols + (j+y)]) * gaussianFilter[x][y];
 				}
 			}
@@ -273,6 +276,7 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 	mse /= (src1.rows * src1.cols);
 	return static_cast<float>(20*log10(255/sqrt(mse)));
 }
+ 
 bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){
 
 	cv::Mat	src1	=	_src1.getMat();
