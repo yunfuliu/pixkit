@@ -404,3 +404,141 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 
 	return true;
 }
+
+float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src1.empty()||src2.empty()){
+		CV_Error(CV_HeaderIsNull,"[qualityassessment::SSIM] image is empty");
+	}
+	if(src1.cols != src2.cols || src1.rows != src2.rows){
+		CV_Error(CV_StsBadArg,"[qualityassessment::SSIM] sizes of two images are not equal");
+	}
+	if(src1.type()!=CV_8U || src2.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[qualityassessment::SSIM] image should be grayscale");
+	}
+	//////////////////////////////////////////////////////////////////////////
+
+	const int L =255;
+	double C1 = (0.01*L)*(0.01*L);		//C1 = (K1*L)^2, K1=0.01, L=255(for 8-bit grayscale)
+	double C2 = (0.03*L)*(0.03*L);		//C1 = (K2*L)^2, K2=0.03, L=255(for 8-bit grayscale)
+	double C3 = C2 / 2.0;
+	double mean_x = 0, mean_y = 0, mean2_x = 0, mean2_y = 0, STDx = 0, STDy = 0, variance_xy = 0;
+	float SSIMresult = 0; 
+
+	//mean X, mean Y
+	for (int i=0; i<src1.rows; i++){
+		for (int j=0; j< src1.cols; j++){
+			mean_x += src1.data[i*src1.cols + j];
+			mean_y += src2.data[i*src2.cols + j];
+			mean2_x += (src1.data[i*src1.cols + j] * src1.data[i*src1.cols + j]);
+			mean2_y += (src2.data[i*src2.cols + j] * src2.data[i*src2.cols + j]);
+		}
+	}
+	mean_x /= (src1.rows * src1.cols);
+	mean_y /= (src2.rows * src2.cols);
+	mean2_x /= (src1.rows * src1.cols);
+	mean2_y /= (src2.rows * src2.cols);
+
+	//STD X, STD Y
+	STDx = sqrt(mean2_x - mean_x * mean_x);
+	STDy = sqrt(mean2_y - mean_y * mean_y);
+
+	//variance_xy
+	for (int i=0; i<src1.rows; i++){
+		for (int j=0; j< src1.cols; j++){
+			variance_xy += (src1.data[i*src1.cols + j]-mean_x) * (src2.data[i*src2.cols + j] - mean_y);	
+		}
+	}
+	variance_xy /= (src1.rows * src1.cols);
+
+	SSIMresult = static_cast<float>( ((2*mean_x*mean_y + C1) * (2*variance_xy + C2)) / ((mean_x*mean_x + mean_y*mean_y + C1) * (STDx*STDx + STDy*STDy + C2)) );
+
+	// return result of SSIM
+	return SSIMresult;
+}
+
+float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src1.empty()||src2.empty()){
+		CV_Error(CV_HeaderIsNull,"[qualityassessment::MSSIM] image is empty");
+	}
+	if(src1.cols != src2.cols || src1.rows != src2.rows){
+		CV_Error(CV_StsBadArg,"[qualityassessment::MSSIM] sizes of two images are not equal");
+	}
+	if(src1.type()!=CV_8U || src2.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[qualityassessment::MSSIM] image should be grayscale");
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	const int L =255;
+	double C1 = (0.01*L)*(0.01*L);		//C1 = (K1*L)^2, K1=0.01, L=255(for 8-bit grayscale)
+	double C2 = (0.03*L)*(0.03*L);		//C1 = (K2*L)^2, K2=0.03, L=255(for 8-bit grayscale)
+	double C3 = C2 / 2.0;
+	int HalfSize = static_cast<int>(HVSsize/2);
+
+	// gaussian filter
+	///////////////////////////////////////////////////
+	// HVS filter
+	std::vector< std::vector<double> > gaussianFilter( HVSsize, std::vector<double>(HVSsize) );
+	double sum = 0, STD = 1.5 ;
+
+	for (int i=-HalfSize; i<=HalfSize; i++){
+		for (int j=-HalfSize; j<=HalfSize; j++){	
+			gaussianFilter[i+HalfSize][j+HalfSize] = exp( -1 * (i*i+j*j) / (2*STD*STD) );
+			sum += gaussianFilter[i+HalfSize][j+HalfSize];
+		}
+	}
+
+	// Normalize to 0~1
+	for (int i=-HalfSize; i<=HalfSize; i++){
+		for (int j=-HalfSize; j<=HalfSize; j++){	
+			gaussianFilter[i+HalfSize][j+HalfSize] /= sum;
+		}
+	}
+	/////////////////////////////////////////////////////
+
+	double luminance=0, contrast=0, structure=0, SSIMresult = 0;
+
+	for (int i=0; i<src1.rows; i++){
+		for (int j=0; j<src1.cols; j++){
+			double mean_x = 0, mean_y = 0, STDx = 0, STDy = 0, variance_xy = 0;
+
+			// mean
+			for (int x=-HalfSize; x<=HalfSize; x++){
+				for (int y=-HalfSize; y<=HalfSize; y++){
+					if (i+x<0 || j+y<0 || i+x>=src1.rows || j+y>=src1.cols){
+						continue;
+					} 
+					else{
+						mean_x += src1.data[(i+x)*src1.cols + (j+y)] * gaussianFilter[x+HalfSize][y+HalfSize];
+						mean_y += src2.data[(i+x)*src2.cols + (j+y)] * gaussianFilter[x+HalfSize][y+HalfSize];
+					}			
+				}
+			}			
+
+			// STD
+			for (int x=-HalfSize; x<=HalfSize; x++){
+				for (int y=-HalfSize; y<=HalfSize; y++){
+					if (i+x<0 || j+y<0 || i+x>=src1.rows || j+y>=src1.cols){
+						continue;
+					} 
+					else{
+						STDx += ((src1.data[(i+x)*src1.cols + (j+y)] - mean_x) * (src1.data[(i+x)*src1.cols + (j+y)] - mean_x) * gaussianFilter[x+HalfSize][y+HalfSize]);
+						STDy += ((src2.data[(i+x)*src2.cols + (j+y)] - mean_y) * (src2.data[(i+x)*src2.cols + (j+y)] - mean_y) * gaussianFilter[x+HalfSize][y+HalfSize]);
+						variance_xy += ((src1.data[(i+x)*src1.cols + (j+y)] - mean_x) * (src2.data[(i+x)*src2.cols + (j+y)] - mean_y) * gaussianFilter[x+HalfSize][y+HalfSize]);
+					}
+				}
+			}
+			STDx = sqrt(STDx);
+			STDy = sqrt(STDy);
+
+			SSIMresult += ((2*mean_x*mean_y + C1) * (2*variance_xy + C2)) / ((mean_x*mean_x + mean_y*mean_y + C1) * (STDx*STDx + STDy*STDy + C2));		
+		}
+	}
+	SSIMresult /= (src1.rows * src1.cols);
+	return SSIMresult;			
+}

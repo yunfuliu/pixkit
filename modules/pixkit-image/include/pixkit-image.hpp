@@ -369,7 +369,7 @@ namespace pixkit{
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
 		// for halftone images
-		float HPSNR(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
+		float HPSNR(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=15);
 
 		/**
 		*	@brief		Display the difference of two Gaussian blurred images.
@@ -394,6 +394,9 @@ namespace pixkit{
 		*/
 		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst);
 
+		float SSIM(const cv::Mat &src1, const cv::Mat &src2);
+
+		float MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
 	}
 
 }
