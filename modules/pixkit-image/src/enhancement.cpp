@@ -613,7 +613,7 @@ bool pixkit::enhancement::local::Stark2000(const cv::Mat &src,cv::Mat &dst,const
 
 	return true;
 }
-bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize){
+bool pixkit::enhancement::local::AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize){
 
 	//////////////////////////////////////////////////////////////////////////
 	if(blockSize.height%2==0){
@@ -622,50 +622,52 @@ bool pixkit::enhancement::local::LocalHistogramEqualization1992(const cv::Mat &s
 	if(blockSize.width%2==0){
 		return false;
 	}
+	if(src1b.type()!=CV_8UC1){
+		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::AHE1974] allows only grayscale image.");
+	}
 
 	//////////////////////////////////////////////////////////////////////////
-	cv::Mat	tdst(src.size(),src.type());
+	cv::Mat	tdst1b(src1b.size(),src1b.type());
 	const int nColors	=	256;
 
 	//////////////////////////////////////////////////////////////////////////
 	// processing
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
+	for(int i=0;i<src1b.rows;i++){
+		for(int j=0;j<src1b.cols;j++){
 
-			std::vector<double>	Histogram(nColors,0);	// 256�ӦǶ���
+			std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
+			auto	&currv	=	src1b.ptr<uchar>(i)[j];
 
-			// �i���έp
-			int temp_count=0;
+			// get pdf hist
+			int nNeighbors=0;
 			for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
 				for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
-					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
-						Histogram[(int)(src.data[(i+m)*src.cols+(j+n)])]++;
-						temp_count++;
+					if(i+m>=0&&i+m<src1b.rows&&j+n>=0&&j+n<src1b.cols){
+						auto	&neiv	=	src1b.ptr<uchar>(i+m)[j+n];
+						hist[neiv]++;
+						nNeighbors++;
 					}					
 				}
 			}
-			for(int graylevel=0;graylevel<nColors;graylevel++){
-				Histogram[graylevel]/=(double)(temp_count);
+
+			// get cdf hist
+			for(int graylevel=1;graylevel<=currv;graylevel++){	// calc only to the current value rather than the theoretical maximum for saving complexity. 
+				hist[graylevel]+=hist[graylevel-1];
 			}
 
-			// �NHistogram�אּ�ֿn���t����
-			for(int graylevel=1;graylevel<nColors;graylevel++){
-				Histogram[graylevel]+=Histogram[graylevel-1];
+			// get enhanced pixel value
+			double	cdf	=	(double)hist[currv]/nNeighbors;	// cdf hist to cdf
+			if(cdf>1){
+				cdf=1.;
 			}
-
-			// ���o�s�����X��
-			double	tempv	=	Histogram[(int)(src.data[i*src.cols+j])];
-			if(tempv>1){
-				tempv=1.;
-			}
-			assert(tempv>=0.&&tempv<=1.);
-			tdst.data[i*src.cols+j]=static_cast<uchar>(tempv*(nColors-1.));	// �̦h���i��255		
+			CV_Assert(cdf>=0.&&cdf<=1.);
+			tdst1b.ptr<uchar>(i)[j]	=	cvRound((double)cdf*(nColors-1));
 
 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	dst	=	tdst.clone();
+	dst1b	=	tdst1b.clone();
 
 	return true;
 }
@@ -830,7 +832,6 @@ bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::
 
 	return true;
 }
-
 bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
@@ -1019,7 +1020,6 @@ bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, 
 	}
 	return true;
 }
-
 bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N){
 	std::vector <std::vector<std::vector<float>>> Ob( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
 	std::vector <std::vector<std::vector<float>>> Cb( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
@@ -1139,7 +1139,6 @@ bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B
 
 		return true;
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 ///// Global contrast enhancement

@@ -291,7 +291,7 @@ namespace pixkit{
 			* 
 			* @return		bool: true: successful, false: failure
 			*/
-			bool LocalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst,const cv::Size blocksize);
+			bool AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize);
 
 			bool CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L = 0.03);
 
