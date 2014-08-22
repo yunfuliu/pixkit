@@ -631,11 +631,12 @@ bool pixkit::enhancement::local::AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,con
 	const int nColors	=	256;
 
 	//////////////////////////////////////////////////////////////////////////
+	std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
 	// processing
 	for(int i=0;i<src1b.rows;i++){
 		for(int j=0;j<src1b.cols;j++){
 
-			std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
+			hist.assign(nColors,0);
 			auto	&currv	=	src1b.ptr<uchar>(i)[j];
 
 			// get pdf hist
