@@ -187,11 +187,9 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	// = = = = = Return PSNR = = = = = //
 	return 10*log10((double)(src1.cols)*(src1.rows)*(255.)*(255.)/total_err);
 }
-float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2, int HVSsize)
+float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2, double sd)
 {
 	double  mse = 0;
-	int HalfSize = HVSsize/2;
-	int wd_size = static_cast<int>(HVSsize/2*2);
 
 	if(src1.empty()||src2.empty()){
 		CV_Error(CV_HeaderIsNull,"[qualityassessment::HPSNR] image is empty");
@@ -208,12 +206,14 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,
 
 	///////////////////////////////////////////////////
 	// HVS filter
+	double sum = 0;
+	int HVSsize = static_cast<int>(sd*6+1);
 	std::vector< std::vector<double> > gaussianFilter( HVSsize, std::vector<double>(HVSsize) );
-	double sum = 0, STD = static_cast<double>(HVSsize-1)/6 ;
+	int HalfSize = HVSsize/2;
 
 	for (int i=-HalfSize; i<=HalfSize; i++){
 		for (int j=-HalfSize; j<=HalfSize; j++){	
-			gaussianFilter[i+HalfSize][j+HalfSize] = exp( -1 * (i*i+j*j) / (2*STD*STD) );
+			gaussianFilter[i+HalfSize][j+HalfSize] = exp( -1 * (i*i+j*j) / (2*sd*sd) );
 			sum += gaussianFilter[i+HalfSize][j+HalfSize];
 		}
 	}
@@ -227,6 +227,7 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,
 	/////////////////////////////////////////////////////
 
 	cv::Mat OriImageWd, ResImageWd;
+	int wd_size = static_cast<int>(HVSsize/2*2);
 
 	//boundary extension ==========================
 	//wd_reg memory((IW+wd_size)*(IL+wd_size))

@@ -369,7 +369,7 @@ namespace pixkit{
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
 		// for halftone images
-		float HPSNR(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=15);
+		float HPSNR(const cv::Mat &src1, const cv::Mat &src2, double sd=1.);
 
 		/**
 		*	@brief		Display the difference of two Gaussian blurred images.
