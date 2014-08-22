@@ -394,8 +394,21 @@ namespace pixkit{
 		*/
 		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst);
 
-		float SSIM(const cv::Mat &src1, const cv::Mat &src2);
 
+
+		/**
+		*	@brief		Structural Similarity Image Quality Assessment for grayscale images.
+		*
+		*	@paper		Zhou Wang, Eero P. Simoncelli1 and Alan C. Bovik, "Multi-scale Structural Similarity for Image Quality Assessment," in Proc. IEEE Asilomar Conf. Singals, Syst., Comput., Pacific Grove, CA, vol. 2, pp.1398-1402, Nov 2003,
+		*/
+
+		float SSIM(const cv::Mat &src1, const cv::Mat &src2);
+		
+		/**
+		*	@brief		Structural Similarity Image Quality Assessment with HVS filter for grayscale images.
+		*
+		*	@paper		Zhou Wang, Eero P. Simoncelli1 and Alan C. Bovik, "Multi-scale Structural Similarity for Image Quality Assessment," in Proc. IEEE Asilomar Conf. Singals, Syst., Comput., Pacific Grove, CA, vol. 2, pp.1398-1402, Nov 2003,
+		*/
 		float MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
 	}
 
