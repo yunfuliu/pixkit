@@ -293,6 +293,8 @@ namespace pixkit{
 			*/
 			bool AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize);
 
+			bool FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize);
+
 			bool CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L = 0.03);
 
 			bool CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L = 0.03);

@@ -616,6 +616,7 @@ bool pixkit::enhancement::local::Stark2000(const cv::Mat &src,cv::Mat &dst,const
 bool pixkit::enhancement::local::AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize){
 
 	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
 	if(blockSize.height%2==0){
 		return false;
 	}
@@ -658,6 +659,114 @@ bool pixkit::enhancement::local::AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,con
 
 			// get enhanced pixel value
 			double	cdf	=	(double)hist[currv]/nNeighbors;	// cdf hist to cdf
+			if(cdf>1){
+				cdf=1.;
+			}
+			CV_Assert(cdf>=0.&&cdf<=1.);
+			tdst1b.ptr<uchar>(i)[j]	=	cvRound((double)cdf*(nColors-1));
+
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	dst1b	=	tdst1b.clone();
+
+	return true;
+}
+bool pixkit::enhancement::local::FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(blockSize.height%2==0){
+		return false;
+	}
+	if(blockSize.width%2==0){
+		return false;
+	}
+	if(src1b.type()!=CV_8UC1){
+		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::FAHE2006] allows only grayscale image.");
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	cv::Mat	tdst1b(src1b.size(),src1b.type());
+	const int nColors	=	256;
+
+	//////////////////////////////////////////////////////////////////////////
+	std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
+	// processing
+	for(int i=0;i<src1b.rows;i++){
+
+		// assign a new hist for the current row
+		hist.assign(nColors,0);
+		int		nNeighbors=0;
+
+		// process each col
+		for(int j=0;j<src1b.cols;j++){
+
+			// init			
+			auto	&currv	=	src1b.ptr<uchar>(i)[j];
+
+			//////////////////////////////////////////////////////////////////////////
+			///// get pdf hist
+			if(j==0){	// the first column				
+				for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+					for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
+						if(i+m>=0&&i+m<src1b.rows&&j+n>=0&&j+n<src1b.cols){
+							auto	&neiv	=	src1b.ptr<uchar>(i+m)[j+n];
+							hist[neiv]++;
+							nNeighbors++;
+						}					
+					}
+				}
+			}else{		// rest columns
+
+				int	idxPreLeftCol	=	j-blockSize.width/2-1;
+				int	idxRightCol		=	j+blockSize.width/2;
+
+				// for the previous first col
+				if(idxPreLeftCol>=0){	// if the first col exists
+					for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+						if(i+m>=0&&i+m<src1b.rows){
+							auto	&neiv	=	src1b.ptr<uchar>(i+m)[idxPreLeftCol];
+							hist[neiv]--;
+							nNeighbors--;
+							CV_DbgAssert(hist[neiv]>=0);
+						}					
+					}					
+				}
+				CV_DbgAssert(nNeighbors>=0);
+
+				// for the last column
+				if(idxRightCol<src1b.cols){	// if the last col exists
+					for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+						if(i+m>=0&&i+m<src1b.rows){
+							auto	&neiv	=	src1b.ptr<uchar>(i+m)[idxRightCol];
+							hist[neiv]++;
+							nNeighbors++;
+						}
+					}					
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			///// get cdf hist
+			int	curr_g_cdf_hist;
+			if(currv<nColors/2){
+				curr_g_cdf_hist	=	0;
+				for(int graylevel=0;graylevel<=currv;graylevel++){
+					curr_g_cdf_hist+=hist[graylevel];
+				}
+			}else{
+				curr_g_cdf_hist	=	nNeighbors;
+				CV_DbgAssert(nNeighbors>=0&&nNeighbors<=(blockSize.height*blockSize.width));
+				for(int graylevel=nColors-1;graylevel>currv;graylevel--){
+					curr_g_cdf_hist-=hist[graylevel];
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			///// et enhanced pixel value
+			double	cdf	=	(double)curr_g_cdf_hist/nNeighbors;	// cdf hist to cdf
 			if(cdf>1){
 				cdf=1.;
 			}
@@ -1520,4 +1629,3 @@ bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,i
 
 	return true;
 }
-
