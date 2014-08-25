@@ -368,47 +368,17 @@ namespace pixkit{
 		// signal similarity 
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
-		// for halftone images
+		// signal similarity for halftone images
 		float HPSNR(const cv::Mat &src1, const cv::Mat &src2, double sd=1.);
 
-		/**
-		*	@brief		Display the difference of two Gaussian blurred images.
-		*
-		*	@paper		C. Schmaltz, P. Gwosdek, A. Bruhn, and J. Weickert, “Electrostatic halftoning,” Computer Graphics Forum, vol. 29, no. 8, pp. 2313-2327, 2010.
-		*/
 		bool GaussianDiff(cv::InputArray &_src1,cv::InputArray &_src2,double sd=1.);
-
-		/**
-		*	@brief		Get the power spectrum density by DFT.
-		*
-		*/
-		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);
-
-		/**
-		*	@brief		Get averaged 
-		*
-		*	@paper		M. S. Bartlett, "The spectral analysis of two-dimensional point processes," Biometrika, Dec. 1964.
-		*	
-		*	@Note		1. Input should be generated from a constant grayscale.
-		*				2. _src should be 256x(256x10), and output (_dst) will be 256x256.
-		*/
+	
+		// Get averaged power spectrum density 
+		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);	
 		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst);
 
-
-
-		/**
-		*	@brief		Structural Similarity Image Quality Assessment for grayscale images.
-		*
-		*	@paper		Zhou Wang, Eero P. Simoncelli1 and Alan C. Bovik, "Multi-scale Structural Similarity for Image Quality Assessment," in Proc. IEEE Asilomar Conf. Singals, Syst., Comput., Pacific Grove, CA, vol. 2, pp.1398-1402, Nov 2003,
-		*/
-
-		float SSIM(const cv::Mat &src1, const cv::Mat &src2);
-		
-		/**
-		*	@brief		Structural Similarity Image Quality Assessment with HVS filter for grayscale images.
-		*
-		*	@paper		Zhou Wang, Eero P. Simoncelli1 and Alan C. Bovik, "Multi-scale Structural Similarity for Image Quality Assessment," in Proc. IEEE Asilomar Conf. Singals, Syst., Comput., Pacific Grove, CA, vol. 2, pp.1398-1402, Nov 2003,
-		*/
+		// image similarity
+		float SSIM(const cv::Mat &src1, const cv::Mat &src2);	
 		float MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
 	}
 
