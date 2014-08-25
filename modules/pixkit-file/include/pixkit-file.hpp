@@ -7,5 +7,6 @@ namespace pixkit{
 	typedef const std::string	CStr;
 	typedef std::vector<std::string>	vecS;
 	vecS loadStrList(CStr &fName);
+	
 }
 #endif
