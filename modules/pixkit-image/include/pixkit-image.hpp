@@ -101,7 +101,7 @@ namespace pixkit{
 		/// Error Diffusion related
 		namespace errordiffusion{
 			enum			ScanOrder_TYPE { Raster, Serpentine };
-			bool			FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst, ScanOrder_TYPE = Raster);
+			bool			FloydSteinberg1975(const cv::Mat &src,cv::Mat &dst, ScanOrder_TYPE = Raster);
 			bool			Jarvis1976(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE = Raster);
 			bool			Stucki1981(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE = Raster);
 			bool			ShiauFan1996(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE = Raster);

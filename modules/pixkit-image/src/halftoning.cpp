@@ -9,7 +9,7 @@ using namespace	cv;
 //////////////////////////////////////////////////////////////////////////
 
 // Floyd-Steinberg halftoning processing
-bool pixkit::halftoning::errordiffusion::FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst, ScanOrder_TYPE scan_type){
+bool pixkit::halftoning::errordiffusion::FloydSteinberg1975(const cv::Mat &src,cv::Mat &dst, ScanOrder_TYPE scan_type){
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
