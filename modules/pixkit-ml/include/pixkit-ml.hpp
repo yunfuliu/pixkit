@@ -75,6 +75,5 @@ namespace pixkit{
 		void	write(std::vector<pixkit::classification::SSample>& data, const std::string file);
 		
 	}
-
 }
 #endif
