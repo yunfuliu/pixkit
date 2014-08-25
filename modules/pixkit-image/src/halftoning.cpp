@@ -8,6 +8,669 @@ using namespace	cv;
 //	error diffusion
 //////////////////////////////////////////////////////////////////////////
 
+// Floyd-Steinberg halftoning processing
+bool pixkit::halftoning::errordiffusion::FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst, ScanOrder_TYPE scan_type){
+
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::ZhouFang2003] accepts only grayscale image");
+	}
+
+	Mat	tdst1f	=	src.clone();
+	tdst1f.convertTo(tdst1f,CV_32FC1);
+
+	// processing
+	switch(scan_type){
+	case 0:		
+		//raster scan
+		for(int i=0; i<src.rows; i++){
+			for(int j=0; j<src.cols; j++){
+
+				double	error;
+				if(tdst1f.ptr<float>(i)[j] >= 128){	
+					error = tdst1f.ptr<float>(i)[j]-255;	//error value
+					tdst1f.ptr<float>(i)[j] = 255;
+				}
+				else{				
+					error = tdst1f.ptr<float>(i)[j];	//error value
+					tdst1f.ptr<float>(i)[j] = 0;
+				}
+
+				if(j+1<src.cols){
+					tdst1f.ptr<float>(i)[j+1] += error*	0.4375;
+				}
+				if((i+1<src.rows)&&(j-1>=0)){
+					tdst1f.ptr<float>(i+1)[j-1] += error*	0.1875;
+				}
+				if(i+1<src.rows){
+					tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
+				}
+				if((i+1<src.rows)&&(j+1<src.cols)){
+					tdst1f.ptr<float>(i+1)[j+1] += error*	0.0625;
+				}
+			}
+		}
+		break;
+
+	case 1:		//serpentine scan
+		for(int i=0; i<src.rows; i++){
+			if(i%2==0){
+				for(int j=0; j<src.cols; j++){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					if(j+1<src.cols){
+						tdst1f.ptr<float>(i)[j+1] += error*	0.4375;
+					}
+					if((i+1<src.rows)&&(j-1>=0)){
+						tdst1f.ptr<float>(i+1)[j-1] += error*	0.1875;
+					}
+					if(i+1<src.rows){
+						tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
+					}
+					if((i+1<src.rows)&&(j+1<src.cols)){
+						tdst1f.ptr<float>(i+1)[j+1] += error*	0.0625;
+					}
+				}
+			}
+			else{
+				for(int j=src.cols-1; j>=0; j--){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					if(j-1>0){
+						tdst1f.ptr<float>(i)[j-1] += error*	0.4375;
+					}
+					if((i+1<src.rows)&&(j-1>=0)){
+						tdst1f.ptr<float>(i+1)[j-1] += error*	0.0625;
+					}
+					if(i+1<src.rows){
+						tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
+					}
+					if((i+1<src.rows)&&(j+1<src.cols)){
+						tdst1f.ptr<float>(i+1)[j+1] += error*	0.1875;
+					}
+				}
+
+			}
+
+		}
+		break;
+
+	default:
+		//raster scan
+		for(int i=0; i<src.rows; i++){
+			for(int j=0; j<src.cols; j++){
+
+				float error;
+				if(tdst1f.ptr<float>(i)[j] >= 128){	
+					error = tdst1f.ptr<float>(i)[j]-255;	//error value
+					tdst1f.ptr<float>(i)[j] = 255;
+				}
+				else{				
+					error = tdst1f.ptr<float>(i)[j];	//error value
+					tdst1f.ptr<float>(i)[j] = 0;
+				}
+
+				if(j+1<src.cols){
+					tdst1f.ptr<float>(i)[j+1] += error*	0.4375;
+				}
+				if((i+1<src.rows)&&(j-1>=0)){
+					tdst1f.ptr<float>(i+1)[j-1] += error*	0.1875;
+				}
+				if(i+1<src.rows){
+					tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
+				}
+				if((i+1<src.rows)&&(j+1<src.cols)){
+					tdst1f.ptr<float>(i+1)[j+1] += error*	0.0625;
+				}
+			}
+		}
+	}
+	tdst1f.convertTo(dst,CV_8UC1);
+
+	return true;
+}
+
+// Jarvis halftoning processing
+bool pixkit::halftoning::errordiffusion::Jarvis1976(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE scan_type)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::NewVersion] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::NewVersion] image is empty");
+		return false;
+	}
+
+	/////////////////////////////////////////////////////////////////////////
+	const float Errorkernel_Jarvis[3][5] = {	
+		0,	0,	0,	7,	5,	
+		3,	5,	7,	5,	3,	
+		1,	3,	5,	3,	1	};
+		const int HalfSize = 2;
+
+		//copy Input to RegImage
+		cv::Mat tdst1f = src.clone();
+		tdst1f.convertTo(tdst1f, CV_32FC1);
+
+		// processing
+		switch(scan_type){
+		case 0:		
+			//raster scan
+			for(int i=0; i<src.rows; i++){
+				for(int j=0; j<src.cols; j++){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					float sum = 0;
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							sum += Errorkernel_Jarvis[x][y + HalfSize];
+						}
+					}
+
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							if(x!=0 || y!=0)
+								tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][y + HalfSize] / sum);
+						}
+					}
+				}
+			}
+			break;
+
+		case 1:		//serpentine scan
+			for(int i=0; i<src.rows; i++){
+				if(i%2==0){
+					for(int j=0; j<src.cols; j++){
+
+						float error;
+						if(tdst1f.ptr<float>(i)[j] >= 128){	
+							error = tdst1f.ptr<float>(i)[j]-255;	//error value
+							tdst1f.ptr<float>(i)[j] = 255;
+						}
+						else{				
+							error = tdst1f.ptr<float>(i)[j];	//error value
+							tdst1f.ptr<float>(i)[j] = 0;
+						}
+
+						float sum = 0;
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								sum += Errorkernel_Jarvis[x][y + HalfSize];
+							}
+						}
+
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								if(x!=0 || y!=0)
+									tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][y + HalfSize] / sum);
+							}
+						}
+					}
+				}
+				else{
+					for(int j=src.cols-1; j>=0; j--){
+
+						float error;
+						if(tdst1f.ptr<float>(i)[j] >= 128){	
+							error = tdst1f.ptr<float>(i)[j]-255;	//error value
+							tdst1f.ptr<float>(i)[j] = 255;
+						}
+						else{				
+							error = tdst1f.ptr<float>(i)[j];	//error value
+							tdst1f.ptr<float>(i)[j] = 0;
+						}
+
+						float sum = 0;
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								sum += Errorkernel_Jarvis[x][2*HalfSize - (y + HalfSize)];
+							}
+						}
+
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								if(x!=0 || y!=0)
+									tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][2*HalfSize - (y + HalfSize)] / sum);
+							}
+						}
+					}
+
+				}
+
+			}
+			break;
+
+		default:
+			//raster scan
+			for(int i=0; i<src.rows; i++){
+				for(int j=0; j<src.cols; j++){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					float sum = 0;
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							sum += Errorkernel_Jarvis[x][y + HalfSize];
+						}
+					}
+
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							if(x!=0 || y!=0)
+								tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][y + HalfSize] / sum);
+						}
+					}
+				}
+			}
+		}
+
+		tdst1f.convertTo(dst,CV_8UC1);
+		return true;
+}
+
+// Stucki halftoning processing
+bool pixkit::halftoning::errordiffusion::Stucki1981(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE scan_type)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::NewVersion] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::NewVersion] image is empty");
+		return false;
+	}
+
+	/////////////////////////////////////////////////////////////////////////
+	const float ErrorKernel_Stucki[3][5] = {	
+		0,	0,	0,	8,	4,	
+		2,	4,	8,	4,	2,	
+		1,	2,	4,	2,	1	};
+		const int HalfSize = 2;
+
+		//copy Input to RegImage
+		cv::Mat tdst1f = src.clone();
+		tdst1f.convertTo(tdst1f, CV_32FC1);
+
+		// processing
+		switch(scan_type){
+		case 0:		
+			//raster scan
+			for(int i=0; i<src.rows; i++){
+				for(int j=0; j<src.cols; j++){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					float sum = 0;
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							sum += ErrorKernel_Stucki[x][y + HalfSize];
+						}
+					}
+
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							if(x!=0 || y!=0)
+								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][y + HalfSize] / sum);
+						}
+					}
+				}
+			}
+			break;
+
+		case 1:		//serpentine scan
+			for(int i=0; i<src.rows; i++){
+				if(i%2==0){
+					for(int j=0; j<src.cols; j++){
+
+						float error;
+						if(tdst1f.ptr<float>(i)[j] >= 128){	
+							error = tdst1f.ptr<float>(i)[j]-255;	//error value
+							tdst1f.ptr<float>(i)[j] = 255;
+						}
+						else{				
+							error = tdst1f.ptr<float>(i)[j];	//error value
+							tdst1f.ptr<float>(i)[j] = 0;
+						}
+
+						float sum = 0;
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								sum += ErrorKernel_Stucki[x][y + HalfSize];
+							}
+						}
+
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								if(x!=0 || y!=0)
+									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][y + HalfSize] / sum);
+							}
+						}
+					}
+				}
+				else{
+					for(int j=src.cols-1; j>=0; j--){
+
+						float error;
+						if(tdst1f.ptr<float>(i)[j] >= 128){	
+							error = tdst1f.ptr<float>(i)[j]-255;	//error value
+							tdst1f.ptr<float>(i)[j] = 255;
+						}
+						else{				
+							error = tdst1f.ptr<float>(i)[j];	//error value
+							tdst1f.ptr<float>(i)[j] = 0;
+						}
+
+						float sum = 0;
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								sum += ErrorKernel_Stucki[x][2*HalfSize - (y + HalfSize)];
+							}
+						}
+
+						for(int x=0; x<=HalfSize; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								if(x!=0 || y!=0)
+									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][2*HalfSize - (y + HalfSize)] / sum);
+							}
+						}
+					}
+
+				}
+
+			}
+			break;
+
+		default:
+			//raster scan
+			for(int i=0; i<src.rows; i++){
+				for(int j=0; j<src.cols; j++){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					float sum = 0;
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							sum += ErrorKernel_Stucki[x][y + HalfSize];
+						}
+					}
+
+					for(int x=0; x<=HalfSize; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							if(x!=0 || y!=0)
+								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][y + HalfSize] / sum);
+						}
+					}
+				}
+			}
+		}
+
+		tdst1f.convertTo(dst,CV_8UC1);
+		return true;
+}
+
+// Shiau-Fan halftoning processing
+bool pixkit::halftoning::errordiffusion::ShiauFan1996(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE scan_type)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::NewVersion] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::NewVersion] image is empty");
+		return false;
+	}
+
+	/////////////////////////////////////////////////////////////////////////
+	const float ErrorKernel_ShiauFan[2][7] = {	
+		0,	0,	0,	0,	8,	0,	0,	
+		1,	1,	2,	4,	0,	0,	0,	};
+
+		int HalfSize = 3;
+
+		//copy Input to RegImage
+		cv::Mat tdst1f = src.clone();
+		tdst1f.convertTo(tdst1f, CV_32FC1);
+
+		// processing
+		switch(scan_type){
+		case 0:		
+			//raster scan
+			for(int i=0; i<src.rows; i++){
+				for(int j=0; j<src.cols; j++){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					float sum = 0;
+					for(int x=0; x<=1; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							sum += ErrorKernel_ShiauFan[x][y + HalfSize];
+						}
+					}
+
+					for(int x=0; x<=1; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							if(x!=0 || y!=0)
+								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][y + HalfSize] / sum);
+						}
+					}
+				}
+			}
+			break;
+
+		case 1:		//serpentine scan
+			for(int i=0; i<src.rows; i++){
+				if(i%2==0){
+					for(int j=0; j<src.cols; j++){
+
+						float error;
+						if(tdst1f.ptr<float>(i)[j] >= 128){	
+							error = tdst1f.ptr<float>(i)[j]-255;	//error value
+							tdst1f.ptr<float>(i)[j] = 255;
+						}
+						else{				
+							error = tdst1f.ptr<float>(i)[j];	//error value
+							tdst1f.ptr<float>(i)[j] = 0;
+						}
+
+						float sum = 0;
+						for(int x=0; x<=1; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								sum += ErrorKernel_ShiauFan[x][y + HalfSize];
+							}
+						}
+
+						for(int x=0; x<=1; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								if(x!=0 || y!=0)
+									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][y + HalfSize] / sum);
+							}
+						}
+					}
+				}
+				else{
+					for(int j=src.cols-1; j>=0; j--){
+
+						float error;
+						if(tdst1f.ptr<float>(i)[j] >= 128){	
+							error = tdst1f.ptr<float>(i)[j]-255;	//error value
+							tdst1f.ptr<float>(i)[j] = 255;
+						}
+						else{				
+							error = tdst1f.ptr<float>(i)[j];	//error value
+							tdst1f.ptr<float>(i)[j] = 0;
+						}
+
+						float sum = 0;
+						for(int x=0; x<=1; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								sum += ErrorKernel_ShiauFan[x][2*HalfSize - (y + HalfSize)];
+							}
+						}
+
+						for(int x=0; x<=1; x++){
+							if(i+x<0 || i+x>=src.rows)	continue;
+							for(int y=-HalfSize; y<=HalfSize; y++){
+								if(j+y<0 || j+y>=src.cols)	continue;
+								if(x!=0 || y!=0)
+									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][2*HalfSize - (y + HalfSize)] / sum);
+							}
+						}
+					}
+
+				}
+
+			}
+			break;
+
+		default:
+			//raster scan
+			for(int i=0; i<src.rows; i++){
+				for(int j=0; j<src.cols; j++){
+
+					float error;
+					if(tdst1f.ptr<float>(i)[j] >= 128){	
+						error = tdst1f.ptr<float>(i)[j]-255;	//error value
+						tdst1f.ptr<float>(i)[j] = 255;
+					}
+					else{				
+						error = tdst1f.ptr<float>(i)[j];	//error value
+						tdst1f.ptr<float>(i)[j] = 0;
+					}
+
+					float sum = 0;
+					for(int x=0; x<=1; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							sum += ErrorKernel_ShiauFan[x][y + HalfSize];
+						}
+					}
+
+					for(int x=0; x<=1; x++){
+						if(i+x<0 || i+x>=src.rows)	continue;
+						for(int y=-HalfSize; y<=HalfSize; y++){
+							if(j+y<0 || j+y>=src.cols)	continue;
+							if(x!=0 || y!=0)
+								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][y + HalfSize] / sum);
+						}
+					}
+				}
+			}
+		}
+
+		tdst1f.convertTo(dst,CV_8UC1);
+		return true;
+}
+
 // Ostromoukhov halftoning processing
 bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst){
 	
@@ -516,48 +1179,7 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 	}
 	return true;
 }
-bool pixkit::halftoning::errordiffusion::FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst){
 
-	//////////////////////////////////////////////////////////////////////////
-	// exception
-	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::ZhouFang2003] accepts only grayscale image");
-	}
-
-	Mat	tdst1f	=	src.clone();
-	tdst1f.convertTo(tdst1f,CV_32FC1);
-
-	double	err;
-	for(int i=src.rows-1;i>=0;i--){
-		for(int j=0;j<src.cols;j++){
-			// get error
-			if(tdst1f.ptr<float>(i)[j]<128.){
-				err=tdst1f.ptr<float>(i)[j];
-				tdst1f.ptr<float>(i)[j]=0.;
-			}else{
-				err=tdst1f.ptr<float>(i)[j]-255.;
-				tdst1f.ptr<float>(i)[j]=255.;
-			}
-			// diffuse
-			if(j+1<src.cols){
-				tdst1f.ptr<float>(i)[j+1]+=err*	0.4375;
-			}
-			if((i-1>=0)&&(j-1>=0)){
-				tdst1f.ptr<float>(i-1)[j-1]+=err*	0.1875;
-			}
-			if(i-1>=0){
-				tdst1f.ptr<float>(i-1)[j]+=err*	0.3125;
-			}
-			if((i-1>=0)&&(j+1<src.cols)){
-				tdst1f.ptr<float>(i-1)[j+1]+=err*	0.0625;
-			}
-		}
-	}
-
-	tdst1f.convertTo(dst,CV_8UC1);
-
-	return true;
-}
 
 //////////////////////////////////////////////////////////////////////////
 // direct binary search
@@ -858,6 +1480,77 @@ bool pixkit::halftoning::directbinarysearch::LiebermanAllebach1997(const cv::Mat
 //////////////////////////////////////////////////////////////////////////
 //	ordered dithering
 //////////////////////////////////////////////////////////////////////////
+
+bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE odtype)
+{	
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::NewVersion] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::NewVersion] image is empty");
+		return false;
+	}
+	if(src.rows%8 != 0 || src.cols%8 != 0){
+		CV_Error(CV_BadImageSize,"[halftoning::ordereddithering::NewVersion] image size is invalid for dithering array");
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	dst.create(src.size(), src.type());
+	const double classical_4[8][8] = { 0.567,	0.635,	0.608,	0.514,	0.424,	0.365,	0.392,	0.486, 	0.847,	0.878,	0.910,	0.698,	0.153,	0.122,	0.090,	0.302,	0.820,	0.969,	0.941,	0.667,	0.180,	0.031,	0.059,	0.333,	0.725,	0.788,	0.757,	0.545,	0.275,	0.212,	0.243,	0.455,	0.424,	0.365,	0.392,	0.486,	0.567,	0.635,	0.608,	0.514,	0.153,	0.122,	0.090,	0.302,	0.847,	0.878,	0.910,	0.698,	0.180,	0.031,	0.059,	0.333,	0.820,	0.969,	0.941,	0.667,	0.275,	0.212,	0.243,	0.455,	0.725,	0.788,	0.757,	0.545	};
+	const double bayer_5[8][8] = { 0.513,	0.272,	0.724,	0.483,	0.543,	0.302,	0.694,	0.453,	0.151,	0.755,	0.091,	0.966,	0.181,	0.758,	0.121,	0.936,	0.634,	0.392,	0.574,	0.332,	0.664,	0.423,	0.604,	0.362,	0.060,	0.875,	0.211,	0.815,	0.030,	0.906,	0.241,	0.845,	0.543,	0.302,	0.694,	0.453,	0.513,	0.272,	0.724,	0.483,	0.181,	0.758,	0.121,	0.936,	0.151,	0.755,	0.091,	0.966,	0.664,	0.423,	0.604,	0.362,	0.634,	0.392,	0.574,	0.332,	0.030,	0.906,	0.241,	0.845,	0.060,	0.875,	0.211,	0.815	};
+	std::string NameOfFilterFile;
+	const int sizeOfArray = 8;
+
+	std::vector< std::vector<double> > DitherArray( sizeOfArray, std::vector<double>(sizeOfArray) );
+
+	switch (odtype)
+	{
+	case 0:		//classical-4
+		for (int i=0; i<sizeOfArray; i++){
+			for (int j=0; j<sizeOfArray; j++){
+				DitherArray[i][j] = bayer_5[i][j];
+			}
+		}
+		break;
+	case 1:		//bayer-5
+		for (int i=0; i<sizeOfArray; i++){
+			for (int j=0; j<sizeOfArray; j++){
+				DitherArray[i][j] = classical_4[i][j];
+			}
+		}
+		break;
+	default:	//default condition : use dither array of classical-4
+		for (int i=0; i<sizeOfArray; i++){
+			for (int j=0; j<sizeOfArray; j++){
+				DitherArray[i][j] = bayer_5[i][j];
+			}
+		}
+	}
+
+	//Normalization of Dither Array for gray scale threshold values
+	for(int i=0; i<sizeOfArray; i++){
+		for(int j=0; j<sizeOfArray; j++){
+			DitherArray[i][j] *= 255;
+		}
+	}
+
+	//Dither processing
+	for(int i=0; i<src.rows; i+=sizeOfArray){
+		for(int j=0; j<src.cols; j+=sizeOfArray){
+			for(int m=0; m<sizeOfArray; m++){
+				for(int n=0; n<sizeOfArray; n++){
+					if(src.data[(i+m)*src.cols + (j+n)] >= DitherArray[m][n])	{dst.data[(i+m)*dst.cols + (j+n)] = 255;}
+					else														{dst.data[(i+m)*dst.cols + (j+n)] = 0;}
+				}
+			}
+		}
+	}
+	return true;
+}
 
 // Hft_OD_KackerAllebach1998 processing
 bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src, cv::Mat &dst){
