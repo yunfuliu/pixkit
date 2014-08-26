@@ -14,9 +14,14 @@ bool pixkit::halftoning::errordiffusion::FloydSteinberg1975(const cv::Mat &src,c
 	//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::ZhouFang2003] accepts only grayscale image");
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::FloydSteinberg1975] accepts only grayscale image");
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::FloydSteinberg1975] image is empty");
+		return false;
 	}
 
+	//////////////////////////////////////////////////////////////////////////
 	Mat	tdst1f	=	src.clone();
 	tdst1f.convertTo(tdst1f,CV_32FC1);
 
@@ -155,11 +160,11 @@ bool pixkit::halftoning::errordiffusion::Jarvis1976(const cv::Mat &src, cv::Mat 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::NewVersion] accepts only grayscale image");
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::Jarvis1976] accepts only grayscale image");
 		return false;
 	}
 	if(src.empty()){
-		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::NewVersion] image is empty");
+		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::Jarvis1976] image is empty");
 		return false;
 	}
 
@@ -329,11 +334,11 @@ bool pixkit::halftoning::errordiffusion::Stucki1981(const cv::Mat &src, cv::Mat 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::NewVersion] accepts only grayscale image");
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::Stucki1981] accepts only grayscale image");
 		return false;
 	}
 	if(src.empty()){
-		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::NewVersion] image is empty");
+		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::Stucki1981] image is empty");
 		return false;
 	}
 
@@ -503,11 +508,11 @@ bool pixkit::halftoning::errordiffusion::ShiauFan1996(const cv::Mat &src, cv::Ma
 	//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::NewVersion] accepts only grayscale image");
+		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::ShiauFan1996] accepts only grayscale image");
 		return false;
 	}
 	if(src.empty()){
-		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::NewVersion] image is empty");
+		CV_Error(CV_HeaderIsNull,"[halftoning::errordiffusion::ShiauFan1996] image is empty");
 		return false;
 	}
 
@@ -1486,15 +1491,15 @@ bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::
 	//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::NewVersion] accepts only grayscale image");
+		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::Ulichney1987] accepts only grayscale image");
 		return false;
 	}
 	if(src.empty()){
-		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::NewVersion] image is empty");
+		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::Ulichney1987] image is empty");
 		return false;
 	}
 	if(src.rows%8 != 0 || src.cols%8 != 0){
-		CV_Error(CV_BadImageSize,"[halftoning::ordereddithering::NewVersion] image size is invalid for dithering array");
+		CV_Error(CV_BadImageSize,"[halftoning::ordereddithering::Ulichney1987] image size is invalid for dithering array");
 		return false;
 	}
 
