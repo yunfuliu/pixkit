@@ -187,7 +187,7 @@ namespace pixkit{
 
 			bool			Knuth1987(const cv::Mat &src, cv::Mat &dst);
 
-			bool			MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int BlockSize = 8);
+			bool			MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize = 8);
 
 
 		}

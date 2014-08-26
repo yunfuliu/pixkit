@@ -1746,7 +1746,7 @@ bool pixkit::halftoning::dotdiffusion::Knuth1987(const cv::Mat &src, cv::Mat &ds
 }
 
 //	Dot diffusion proposed by Mese and Vaidyanathan
-bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int BlockSize)
+bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize)
 {
 	//////////////////////////////////////////////////////////////////////////
 	// exception
@@ -1758,13 +1758,13 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::MeseVaidyanathan2000] image is empty");
 		return false;
 	}
-	if(BlockSize!=8 && BlockSize!=16)
+	if(ClassMatrixSize!=8 && ClassMatrixSize!=16)
 		CV_Error(CV_StsBadArg,"[halftoning::ordereddithering::MeseVaidyanathan2000] BlockSize should be 8 or 16.");
 
 	//////////////////////////////////////////////////////////////////////////
 	cv::Mat	tdst1f	=	src.clone();
 	tdst1f.convertTo(tdst1f,CV_32FC1); 
-	const int sizeOfClassMatrix = BlockSize;
+	const int sizeOfClassMatrix = ClassMatrixSize;
 	std::vector< std::vector< int > >CM_reg(3, std::vector< int >(3));
 	std::vector< std::vector<int> > ClassMatrix( sizeOfClassMatrix, std::vector<int>(sizeOfClassMatrix) );
 
@@ -1774,7 +1774,7 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 		2,	0,	2,
 		1,	2,	1	};
 
-		switch(BlockSize){
+		switch(ClassMatrixSize){
 		case 8:{
 			const int coe[8][8] = {
 				47,	31,	51,	24,	27,	45,	5,	21,
