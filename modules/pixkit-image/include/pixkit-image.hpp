@@ -153,7 +153,7 @@ namespace pixkit{
 				unsigned char	*m_ctmap;
 				unsigned char	*m_ctData;
 			};
-			bool NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
+			bool			NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
 
 			/**
 			* @brief		paper: J. M. Guo and Y. F. Liu"Improved dot diffusion by diffused matrix and class matrix co-optimization," IEEE Trans. Image Processing, vol. 18, no. 8, pp. 1804-1816, 2009.
@@ -168,7 +168,7 @@ namespace pixkit{
 			*
 			* @return		bool: true: successful, false: failure
 			*/ 
-			bool GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
+			bool			GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
 			
 			/**
 			* @brief		paper: S. Lippens and W. Philips, ��Green-noise halftoning with dot diffusion,�� in Proc. SPIE/IS&T - The International Society for Optical Engineering, vol. 6497, no. 64970V, 2007.
@@ -182,7 +182,13 @@ namespace pixkit{
 			*
 			* @return		bool: true: successful, false: failure
 			*/ 
-			bool LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
+			bool			LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
+
+
+			bool			Knuth1987(const cv::Mat &src, cv::Mat &dst);
+
+			bool			MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int BlockSize = 8);
+
 
 		}
 	}

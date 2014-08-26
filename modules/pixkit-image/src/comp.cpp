@@ -230,7 +230,7 @@ bool pixkit::comp::ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYP
 		}
 	}else if(type==ODBTC_TYPE_DispersedDot){
 		if(blockSize!=4&&blockSize!=8&&blockSize!=16&&blockSize!=32&&blockSize!=64)
-		CV_Error(CV_StsBadArg,"[pixkit::comp::ODBTC] blockSize should be 4, 8, 16, 32, or 64.");
+			CV_Error(CV_StsBadArg,"[pixkit::comp::ODBTC] blockSize should be 4, 8, 16, 32, or 64.");
 	}else{
 		CV_Assert(false);
 	}

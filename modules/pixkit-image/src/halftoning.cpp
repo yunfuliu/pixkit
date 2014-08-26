@@ -1632,6 +1632,426 @@ bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src
 //////////////////////////////////////////////////////////////////////////
 //	dot diffusion
 //////////////////////////////////////////////////////////////////////////
+
+//	Dot diffusion proposed by Knuth
+bool pixkit::halftoning::dotdiffusion::Knuth1987(const cv::Mat &src, cv::Mat &dst)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::Knuth1987] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::Knuth1987] image is empty");
+		return false;
+	}
+	if(src.rows%8 != 0 || src.cols%8 != 0){
+		CV_Error(CV_BadImageSize,"[halftoning::ordereddithering::Knuth1987] image size is invalid for dithering array");
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	cv::Mat	tdst1f	=	src.clone();
+	tdst1f.convertTo(tdst1f,CV_32FC1); 
+
+	const int sizeOfClassMatrix = 8;
+	std::vector< std::vector< int > >CM_reg(3, std::vector< int >(3));
+
+	const int ClassMatrix[8][8] = {
+		34,	48,	40,	32,	29,	15,	23,	31,
+		42,	58,	56,	53,	21,	5,	7,	10,
+		50,	62,	61,	45,	13,	1,	2,	18,
+		38,	46,	54,	37,	25,	17,	9,	26,
+		28,	14,	22,	30,	35,	49,	41,	33,
+		20,	4,	6,	11,	43,	59,	57,	52,
+		12,	0,	3,	19,	51,	63,	60,	44,
+		24,	16,	8,	27,	39,	47,	55,	36	};
+
+		// diffusion weight in Dot Diffusion ---------------------------------------
+		const float DiffusionWeight[3][3] = {
+			1,	2,	1,
+			2,	0,	2,
+			1,	2,	1	};
+
+			for(int k=0; k<sizeOfClassMatrix*sizeOfClassMatrix; k++){
+
+				for(int m=0; m<sizeOfClassMatrix; m++){
+					for(int n=0; n<sizeOfClassMatrix; n++){
+						if(ClassMatrix[m][n] == k){
+
+							for(int i=0; i<src.rows; i+=sizeOfClassMatrix){
+								for(int j=0; j<src.cols; j+=sizeOfClassMatrix){
+
+									//ED part--------------------	
+									float error;
+									if(tdst1f.ptr<float>(i+m)[j+n] >= 128){	
+										error = tdst1f.ptr<float>(i+m)[j+n]-255;	//error value
+										tdst1f.ptr<float>(i+m)[j+n] = 255;
+									}
+									else{				
+										error = tdst1f.ptr<float>(i+m)[j+n];	//error value
+										tdst1f.ptr<float>(i+m)[j+n] = 0;
+									}
+
+									int X_index,Y_index;
+									//ClassMatrix_reg(3*3 for diffusion_weight_reg) initialization-------
+									for(int x = -1;x <= 1;x++){
+										for(int y = -1;y <= 1;y++){
+											if((m+x) >= sizeOfClassMatrix)	{X_index = m+x-sizeOfClassMatrix;}
+											else if((m+x) < 0)				{X_index = m+x+sizeOfClassMatrix;}
+											else							{X_index = m+x;}
+
+											if((n+y) >= sizeOfClassMatrix)	{Y_index = n+y-sizeOfClassMatrix;}
+											else if((n+y) < 0)				{Y_index = n+y+sizeOfClassMatrix;}
+											else							{Y_index = n+y;}
+
+											CM_reg[x+1][y+1] = ClassMatrix[X_index][Y_index];
+										}
+									}
+
+									//make sure that error diffusion processing whether it is "over" the "size range" of the image
+									float sum = 0.0;
+
+									for(int x=-1; x<=1; x++){
+										if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+										for(int y=-1; y<=1; y++){
+											if((n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+											if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+												sum += DiffusionWeight[x+1][y+1];
+											}	
+										}
+									}
+
+									//error diffusion processing
+									for(int x=-1; x<=1; x++){
+										if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+										for(int y=-1; y<=1; y++){
+											if( (n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+											if (x!=0 || y!=0){
+												if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+													tdst1f.ptr<float>(m+i+x)[n+j+y]	+=	(error * DiffusionWeight[x+1][y+1] / sum);
+												}
+											}	
+										}
+									}				
+								}
+							}
+						}
+					}
+				}
+			}
+			tdst1f.convertTo(dst,CV_8UC1);
+			return true;
+}
+
+//	Dot diffusion proposed by Mese and Vaidyanathan
+bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int BlockSize)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::MeseVaidyanathan2000] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::MeseVaidyanathan2000] image is empty");
+		return false;
+	}
+	if(BlockSize!=8 && BlockSize!=16)
+		CV_Error(CV_StsBadArg,"[halftoning::ordereddithering::MeseVaidyanathan2000] BlockSize should be 8 or 16.");
+
+	//////////////////////////////////////////////////////////////////////////
+	cv::Mat	tdst1f	=	src.clone();
+	tdst1f.convertTo(tdst1f,CV_32FC1); 
+	const int sizeOfClassMatrix = BlockSize;
+	std::vector< std::vector< int > >CM_reg(3, std::vector< int >(3));
+	std::vector< std::vector<int> > ClassMatrix( sizeOfClassMatrix, std::vector<int>(sizeOfClassMatrix) );
+
+	// diffusion weight in Dot Diffusion ---------------------------------------
+	const float DiffusionWeight[3][3] = {
+		1,	2,	1,
+		2,	0,	2,
+		1,	2,	1	};
+
+		switch(BlockSize){
+		case 8:{
+			const int coe[8][8] = {
+				47,	31,	51,	24,	27,	45,	5,	21,
+				37,	63,	53,	11,	22,	4,	1,	33,
+				61,	0,	57,	16,	26,	29,	46,	8,
+				20,	14,	9,	62,	18,	41,	38,	6,
+				17,	13,	25,	15,	55,	48,	52,	58,
+				3,	7,	2,	32,	30,	34,	56,	60,
+				28,	40,	36,	39,	49,	43,	35,	10,
+				54,	23,	50,	12,	42,	59,	44,	19	};
+
+				for(int i=0;i<sizeOfClassMatrix;i++){
+					for(int j=0;j<sizeOfClassMatrix;j++){
+						ClassMatrix[i][j]=coe[i][j];
+					}
+				}
+				break;
+			   }
+
+		case 16:{
+			const int coe[16][16] = {
+				207,	0,		13,		17,		28,		55,		18,		102,	81,		97,		74,		144,	149,	169,	170,	172,
+				3,		6,		23,		36,		56,		50,		65,		87,		145,	130,	137,	158,	182,	184,	195,	221,
+				7,		14,		24,		37,		67,		69,		86,		5,		106,	152,	150,	165,	183,	192,	224,	1,
+				15,		26,		43,		53,		51,		101,	115,	131,	139,	136,	166,	119,	208,	223,	226,	4,
+				22,		39,		52,		71,		84,		103,	164,	135,	157,	173,	113,	190,	222,	225,	227,	16,
+				40,		85,		72,		83,		104,	117,	167,	133,	168,	180,	200,	219,	231,	228,	12,		21,
+				47,		120,	54,		105,	123,	132,	146,	176,	179,	202,	220,	230,	245,	2,		20,		41,
+				76,		73,		127,	109,	138,	134,	178,	181,	206,	196,	229,	244,	246,	19,		42,		49,
+				80,		99,		112,	147,	142,	171,	177,	203,	218,	232,	243,	248,	247,	33,		48,		68,
+				108,	107,	140,	143,	185,	163,	204,	217,	233,	242,	249,	255,	44,		45,		70,		79,
+				110,	141,	88,		75,		175,	205,	214,	234,	241,	250,	254,	38,		46,		77,		116,	100,	
+				111,	148,	160,	174,	201,	215,	235,	240,	251,	252,	253,	61,		62,		93,		94,		125,
+				151,	159,	189,	199,	197,	216,	236,	239,	25,		31,		60,		82,		92,		95,		124,	114,
+				156,	188,	191,	209,	213,	237,	238,	29,		32,		59,		64,		91,		118,	78,		128,	155,	
+				187,	194,	198,	212,	9,		10,		30,		35,		58,		63,		90,		96,		122,	129,	154,	161,
+				193,	210,	211,	8,		11,		27,		34,		57,		66,		89,		98,		121,	126,	153,	162,	186		};
+
+				for(int i=0;i<sizeOfClassMatrix;i++){
+					for(int j=0;j<sizeOfClassMatrix;j++){
+						ClassMatrix[i][j]=coe[i][j];
+					}
+				}
+				break;
+				}
+		}
+
+		for(int k=0; k<sizeOfClassMatrix*sizeOfClassMatrix; k++){
+
+			for(int m=0; m<sizeOfClassMatrix; m++){
+				for(int n=0; n<sizeOfClassMatrix; n++){
+					if(ClassMatrix[m][n] == k){
+
+						for(int i=0; i<src.rows; i+=sizeOfClassMatrix){
+							for(int j=0; j<src.cols; j+=sizeOfClassMatrix){
+
+								//ED part--------------------	
+								float error;
+								if(tdst1f.ptr<float>(i+m)[j+n] >= 128){	
+									error = tdst1f.ptr<float>(i+m)[j+n]-255;	//error value
+									tdst1f.ptr<float>(i+m)[j+n] = 255;
+								}
+								else{				
+									error = tdst1f.ptr<float>(i+m)[j+n];	//error value
+									tdst1f.ptr<float>(i+m)[j+n] = 0;
+								}
+
+								int X_index,Y_index;
+
+								//ClassMatrix_reg(3*3 for diffusion_weight_reg) initialization-------
+								for(int x = -1;x <= 1;x++){
+									for(int y = -1;y <= 1;y++){
+										if((m+x) >= sizeOfClassMatrix)	{X_index = m+x-sizeOfClassMatrix;}
+										else if((m+x) < 0)				{X_index = m+x+sizeOfClassMatrix;}
+										else							{X_index = m+x;}
+
+										if((n+y) >= sizeOfClassMatrix)	{Y_index = n+y-sizeOfClassMatrix;}
+										else if((n+y) < 0)				{Y_index = n+y+sizeOfClassMatrix;}
+										else							{Y_index = n+y;}
+
+										CM_reg[x+1][y+1] = ClassMatrix[X_index][Y_index];
+									}
+								}
+
+								//make sure that error diffusion processing whether it is "over" the "size range" of the image
+								float sum = 0.0;
+
+								for(int x=-1; x<=1; x++){
+									if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+									for(int y=-1; y<=1; y++){
+										if((n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+										if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+											sum += DiffusionWeight[x+1][y+1];
+										}	
+									}
+								}
+
+								//error diffusion processing
+								for(int x=-1; x<=1; x++){
+									if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+									for(int y=-1; y<=1; y++){
+										if( (n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+										if (x!=0 || y!=0){
+											if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+												tdst1f.ptr<float>(m+i+x)[n+j+y]	+=	(error * DiffusionWeight[x+1][y+1] / sum);
+											}
+										}	
+									}
+								}				
+							}
+						}
+					}
+				}
+			}
+		}
+		tdst1f.convertTo(dst,CV_8UC1);
+		return true;
+}
+
+//	Dot diffusion proposed by Lippens and Philips
+bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv::Mat &dst){
+
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::ErrorDiffusion::Hft_EDF_Ostromoukhov] accepts only grayscale image");
+	}
+	dst.create(src.size(),src.type());
+
+	float	hysteresis=0.;	// 仍在尋找問題, 此為非0之結果不同於該論文, 故先行設定為0
+
+	// = = = = = Get entire CM = = = = = //
+	int	order_global[8][8] = {{0,1,3,0,1,3,0,1},{3,3,2,0,1,2,3,3},{2,2,3,0,1,3,2,2},{0,1,2,0,1,2,0,1},{3,0,1,3,3,0,1,3},{2,0,1,2,2,0,1,2},{0,1,0,1,0,1,0,1},{3,3,3,3,3,3,3,3}};
+	int	oriCM[16][16] = {	
+		{0,		1,	14,	15,	16,		19,		20,		21,		234,	235,	236,	239,	240,	241,	254,	255},
+		{3,		2,	13,	12,	17,		18,		23,		22,		233,	232,	237,	238,	243,	242,	253,	252},
+		{4,		7,	8,	11,	30,		29,		24,		25,		230,	231,	226,	225,	244,	247,	248,	251},
+		{5,		6,	9,	10,	31,		28,		27,		26,		229,	228,	227,	224,	245,	246,	249,	250},
+		{58,	57,	54,	53,	32,		35,		36,		37,		218,	219,	220,	223,	202,	201,	198,	197},
+		{59,	56,	55,	52,	33,		34,		39,		38,		217,	216,	221,	222,	203,	200,	199,	196},
+		{60,	61,	50,	51,	46,		45,		40,		41,		214,	215,	210,	209,	204,	205,	194,	195},
+		{63,	62,	49,	48,	47,		44,		43,		42,		213,	212,	211,	208,	207,	206,	193,	192},
+		{64,	67,	68,	69,	122,	123,	124,	127,	128,	131,	132,	133,	186,	187,	188,	191},
+		{65,	66,	71,	70,	121,	120,	125,	126,	129,	130,	135,	134,	185,	184,	189,	190},
+		{78,	77,	72,	73,	118,	119,	114,	113,	142,	141,	136,	137,	182,	183,	178,	177},
+		{79,	76,	75,	74,	117,	116,	115,	112,	143,	140,	139,	138,	181,	180,	179,	176},
+		{80,	81,	94,	95,	96,		97,		110,	111,	144,	145,	158,	159,	160,	161,	174,	175},
+		{83,	82,	93,	92,	99,		98,		109,	108,	147,	146,	157,	156,	163,	162,	173,	172},
+		{84,	87,	88,	91,	100,	103,	104,	107,	148,	151,	152,	155,	164,	167,	168,	171},
+		{85,	86,	89,	90,	101,	102,	105,	106,	149,	150,	153,	154,	165,	166,	169,	170}};
+		// set initial CM ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		int	CMs[4][16][16];
+		// get type 3	
+		for(int i=0;i<16;i++){
+			for(int j=0;j<16;j++){
+				CMs[3][i][j]=oriCM[i][j];
+			}
+		}
+		// get type 2	
+		for(int i=0;i<16;i++){
+			for(int j=0;j<16;j++){
+				CMs[2][i][j]=oriCM[15-i][15-j];
+			}
+		}
+		// get type 1	
+		for(int i=0;i<16;i++){
+			for(int j=0;j<16;j++){
+				CMs[1][i][j]=oriCM[15-j][15-i];
+			}
+		}
+		// get type 0	
+		for(int i=0;i<16;i++){
+			for(int j=0;j<16;j++){
+				CMs[0][i][j]=oriCM[j][i];
+			}
+		}
+		// get 128 CM
+		int	CM128[128][128];
+		for(int i=0;i<128;i+=16){
+			for(int j=0;j<128;j+=16){
+				for(int m=0;m<16;m++){
+					for(int n=0;n<16;n++){
+						CM128[i+m][j+n]=CMs[order_global[i/16][j/16]][m][n];
+					}
+				}
+			}
+		}
+
+		// get entire CM
+		std::vector< std::vector< int > > entireCM (src.rows, std::vector< int >(src.cols));
+
+		for(int i=0;i<src.rows;i++){
+			for(int j=0;j<src.cols;j++){
+				entireCM[i][j]=CM128[i%128][j%128];
+			}
+		}
+		// get src(temp) image
+		std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
+		//copy Input image to RegImage
+		for (int i=0; i<src.rows; i++){
+			for(int j=0; j<src.cols; j++){
+				RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
+			}
+		}
+
+		// = = = = = set diffused weighting = = = = = //
+		float	coe_sum=32;
+		float	coe[5][5]={{1,2,3,2,1},{2,0,0,0,2},{3,0,0,0,3},{2,0,0,0,2},{1,2,3,2,1}};
+		int		OSCW=2;
+
+		// = = = = = 進行dot_diffusion = = = = = //
+		int		number=0;
+		while(number!=256){	// 256=CMsize*CMsize
+			for(int i=0;i<src.rows;i++){
+				for(int j=0;j<src.cols;j++){
+					if(entireCM[i][j]==number){
+
+						// get 分母
+						float	b_fm=0.,g_fm=0.;	// binary的分母 and grayscale的分母, sum(coe)=b_fm+g_fm;			
+						for(int m=-OSCW;m<=OSCW;m++){
+							for(int n=-OSCW;n<=OSCW;n++){
+								if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
+									if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
+										b_fm += coe[m+OSCW][n+OSCW];
+									}
+								}
+							}
+						}
+						g_fm=coe_sum-b_fm;
+
+						// 取得周圍的擴散補償
+						float	comp=0.;	// 補償
+						if(b_fm!=0){
+							for(int m=-OSCW;m<=OSCW;m++){
+								for(int n=-OSCW;n<=OSCW;n++){
+									if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
+										if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
+											comp += coe[m+OSCW][n+OSCW] / b_fm * (RegImage[i+m][j+n] < 128 ? -1 : 1);	// 待確認
+										}
+									}
+								}
+							}
+							comp*=128.;	// 待確認
+						}else{
+							comp=0.;
+						}
+
+						// 取得error, 並取得halftone 輸出.
+						double	error;
+						if(RegImage[i][j] + comp*hysteresis < 128){
+							error = RegImage[i][j];
+							//src.data[i*src.cols+j] = 0.;
+							dst.data[i*dst.cols+j] = 0;
+						}else{
+							error = RegImage[i][j]-255.;
+							//src.data[i*src.cols+j] = 255.;
+							dst.data[i*dst.cols+j] = 255;
+						}
+						// 進行擴散
+						for(int m=-OSCW;m<=OSCW;m++){
+							for(int n=-OSCW;n<=OSCW;n++){
+								if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
+									if(entireCM[i+m][j+n]>number){		// 可以擴散的區域								
+										RegImage[i+m][j+n] += error * coe[m+OSCW][n+OSCW] / g_fm;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			number++;
+		}
+		return true;
+}
+
+//	Dot diffusion proposed by Guo and Liu
 bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &dst, const int ClassMatrixSize){
 	
 	//////////////////////////////////////////////////////////////////////////
@@ -1762,159 +2182,3 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 	return true;
 }
 
-//	Dot diffusion proposed by Lippens and Philips
-bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv::Mat &dst){
-
-	//////////////////////////////////////////////////////////////////////////
-	// exception
-	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::ErrorDiffusion::Hft_EDF_Ostromoukhov] accepts only grayscale image");
-	}
-	dst.create(src.size(),src.type());
-
-	float	hysteresis=0.;	// 仍在尋找問題, 此為非0之結果不同於該論文, 故先行設定為0
-
-	// = = = = = Get entire CM = = = = = //
-	int	order_global[8][8] = {{0,1,3,0,1,3,0,1},{3,3,2,0,1,2,3,3},{2,2,3,0,1,3,2,2},{0,1,2,0,1,2,0,1},{3,0,1,3,3,0,1,3},{2,0,1,2,2,0,1,2},{0,1,0,1,0,1,0,1},{3,3,3,3,3,3,3,3}};
-	int	oriCM[16][16] = {	
-	{0,		1,	14,	15,	16,		19,		20,		21,		234,	235,	236,	239,	240,	241,	254,	255},
-	{3,		2,	13,	12,	17,		18,		23,		22,		233,	232,	237,	238,	243,	242,	253,	252},
-	{4,		7,	8,	11,	30,		29,		24,		25,		230,	231,	226,	225,	244,	247,	248,	251},
-	{5,		6,	9,	10,	31,		28,		27,		26,		229,	228,	227,	224,	245,	246,	249,	250},
-	{58,	57,	54,	53,	32,		35,		36,		37,		218,	219,	220,	223,	202,	201,	198,	197},
-	{59,	56,	55,	52,	33,		34,		39,		38,		217,	216,	221,	222,	203,	200,	199,	196},
-	{60,	61,	50,	51,	46,		45,		40,		41,		214,	215,	210,	209,	204,	205,	194,	195},
-	{63,	62,	49,	48,	47,		44,		43,		42,		213,	212,	211,	208,	207,	206,	193,	192},
-	{64,	67,	68,	69,	122,	123,	124,	127,	128,	131,	132,	133,	186,	187,	188,	191},
-	{65,	66,	71,	70,	121,	120,	125,	126,	129,	130,	135,	134,	185,	184,	189,	190},
-	{78,	77,	72,	73,	118,	119,	114,	113,	142,	141,	136,	137,	182,	183,	178,	177},
-	{79,	76,	75,	74,	117,	116,	115,	112,	143,	140,	139,	138,	181,	180,	179,	176},
-	{80,	81,	94,	95,	96,		97,		110,	111,	144,	145,	158,	159,	160,	161,	174,	175},
-	{83,	82,	93,	92,	99,		98,		109,	108,	147,	146,	157,	156,	163,	162,	173,	172},
-	{84,	87,	88,	91,	100,	103,	104,	107,	148,	151,	152,	155,	164,	167,	168,	171},
-	{85,	86,	89,	90,	101,	102,	105,	106,	149,	150,	153,	154,	165,	166,	169,	170}};
-	// set initial CM ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	int	CMs[4][16][16];
-	// get type 3	
-	for(int i=0;i<16;i++){
-		for(int j=0;j<16;j++){
-			CMs[3][i][j]=oriCM[i][j];
-		}
-	}
-	// get type 2	
-	for(int i=0;i<16;i++){
-		for(int j=0;j<16;j++){
-			CMs[2][i][j]=oriCM[15-i][15-j];
-		}
-	}
-	// get type 1	
-	for(int i=0;i<16;i++){
-		for(int j=0;j<16;j++){
-			CMs[1][i][j]=oriCM[15-j][15-i];
-		}
-	}
-	// get type 0	
-	for(int i=0;i<16;i++){
-		for(int j=0;j<16;j++){
-			CMs[0][i][j]=oriCM[j][i];
-		}
-	}
-	// get 128 CM
-	int	CM128[128][128];
-	for(int i=0;i<128;i+=16){
-		for(int j=0;j<128;j+=16){
-			for(int m=0;m<16;m++){
-				for(int n=0;n<16;n++){
-					CM128[i+m][j+n]=CMs[order_global[i/16][j/16]][m][n];
-				}
-			}
-		}
-	}
-
-	// get entire CM
-	std::vector< std::vector< int > > entireCM (src.rows, std::vector< int >(src.cols));
-
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			entireCM[i][j]=CM128[i%128][j%128];
-		}
-	}
-	// get src(temp) image
-	std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
-	//copy Input image to RegImage
-	for (int i=0; i<src.rows; i++){
-		for(int j=0; j<src.cols; j++){
-			RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
-		}
-	}
-
-	// = = = = = set diffused weighting = = = = = //
-	float	coe_sum=32;
-	float	coe[5][5]={{1,2,3,2,1},{2,0,0,0,2},{3,0,0,0,3},{2,0,0,0,2},{1,2,3,2,1}};
-	int		OSCW=2;
-
-	// = = = = = 進行dot_diffusion = = = = = //
-	int		number=0;
-	while(number!=256){	// 256=CMsize*CMsize
-		for(int i=0;i<src.rows;i++){
-			for(int j=0;j<src.cols;j++){
-				if(entireCM[i][j]==number){
-
-					// get 分母
-					float	b_fm=0.,g_fm=0.;	// binary的分母 and grayscale的分母, sum(coe)=b_fm+g_fm;			
-					for(int m=-OSCW;m<=OSCW;m++){
-						for(int n=-OSCW;n<=OSCW;n++){
-							if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
-								if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
-									b_fm += coe[m+OSCW][n+OSCW];
-								}
-							}
-						}
-					}
-					g_fm=coe_sum-b_fm;
-
-					// 取得周圍的擴散補償
-					float	comp=0.;	// 補償
-					if(b_fm!=0){
-						for(int m=-OSCW;m<=OSCW;m++){
-							for(int n=-OSCW;n<=OSCW;n++){
-								if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
-									if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
-										comp += coe[m+OSCW][n+OSCW] / b_fm * (RegImage[i+m][j+n] < 128 ? -1 : 1);	// 待確認
-									}
-								}
-							}
-						}
-						comp*=128.;	// 待確認
-					}else{
-						comp=0.;
-					}
-
-					// 取得error, 並取得halftone 輸出.
-					double	error;
-					if(RegImage[i][j] + comp*hysteresis < 128){
-						error = RegImage[i][j];
-						//src.data[i*src.cols+j] = 0.;
-						dst.data[i*dst.cols+j] = 0;
-					}else{
-						error = RegImage[i][j]-255.;
-						//src.data[i*src.cols+j] = 255.;
-						dst.data[i*dst.cols+j] = 255;
-					}
-					// 進行擴散
-					for(int m=-OSCW;m<=OSCW;m++){
-						for(int n=-OSCW;n<=OSCW;n++){
-							if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
-								if(entireCM[i+m][j+n]>number){		// 可以擴散的區域								
-									RegImage[i+m][j+n] += error * coe[m+OSCW][n+OSCW] / g_fm;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		number++;
-	}
-	return true;
-}
