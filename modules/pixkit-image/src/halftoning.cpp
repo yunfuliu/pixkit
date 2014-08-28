@@ -1758,9 +1758,10 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::MeseVaidyanathan2000] image is empty");
 		return false;
 	}
-	if(ClassMatrixSize!=8 && ClassMatrixSize!=16)
+	if(ClassMatrixSize!=8 && ClassMatrixSize!=16){
 		CV_Error(CV_StsBadArg,"[halftoning::ordereddithering::MeseVaidyanathan2000] BlockSize should be 8 or 16.");
-
+		return false;
+	}
 	//////////////////////////////////////////////////////////////////////////
 	cv::Mat	tdst1f	=	src.clone();
 	tdst1f.convertTo(tdst1f,CV_32FC1); 
