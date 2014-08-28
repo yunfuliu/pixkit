@@ -128,11 +128,6 @@ namespace pixkit{
 		/// Dot diffusion related
 		namespace dotdiffusion{
 
-			/**
-			* @brief		paper: Yun-Fu Liu and Jing-Ming Guo, "New class tiling design for dot-diffused halftoning," IEEE Trans. Image Processing, vol. 22, no. 3, pp. 1199-1208, March 2013.
-			* 
-			* @param		ctSize:	CT size
-			*/
 			class CNADDCT{
 			public:
 				int				m_CT_height;	// CT's height and width
@@ -155,40 +150,13 @@ namespace pixkit{
 			};
 			bool			NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
 
-			/**
-			* @brief		paper: J. M. Guo and Y. F. Liu"Improved dot diffusion by diffused matrix and class matrix co-optimization," IEEE Trans. Image Processing, vol. 18, no. 8, pp. 1804-1816, 2009.
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			May 17, 2013
-			* @version		1.0
-			* 
-			* @param		src: input image (grayscale only)
-			* @param		dst: output image
-			* @param		ClassMatrixSize: allow only 8x8 and 16x16
-			*
-			* @return		bool: true: successful, false: failure
-			*/ 
 			bool			GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
 			
-			/**
-			* @brief		paper: S. Lippens and W. Philips, ��Green-noise halftoning with dot diffusion,�� in Proc. SPIE/IS&T - The International Society for Optical Engineering, vol. 6497, no. 64970V, 2007.
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			Feb 25, 2014
-			* @version		1.0
-			* 
-			* @param		src: input image (grayscale only)
-			* @param		dst: output image
-			*
-			* @return		bool: true: successful, false: failure
-			*/ 
 			bool			LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
-
 
 			bool			Knuth1987(const cv::Mat &src, cv::Mat &dst);
 
 			bool			MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize = 8);
-
 
 		}
 	}
