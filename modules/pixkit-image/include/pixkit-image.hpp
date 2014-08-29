@@ -165,6 +165,8 @@ namespace pixkit{
 	/// Image compression
 	namespace comp{
 
+		bool	DBSBTC2011(cv::Mat src, cv::Mat &dst, int blockSize = 8);
+
 		bool	DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize);
 
 		enum	ODBTC_TYPE{ODBTC_TYPE_ClusteredDot,ODBTC_TYPE_DispersedDot};
