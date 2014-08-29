@@ -186,8 +186,6 @@ float pixkit::qualityassessment::CII(const cv::Mat &ori1b,const cv::Mat &pro1b){
 		}
 	}
 	return	c_proposed/c_original;
-
-	return 0.;
 }
 float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 
