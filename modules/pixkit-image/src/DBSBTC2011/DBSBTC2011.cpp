@@ -214,7 +214,7 @@ bool DirectBinarySearch_QLver(const cv::Mat &src, cv::Mat &dst, double highValue
 	return true;
 }
 
-// BTC iteration-based converting by using "alpha data" [5/24/2013 °ê¥°]
+// BTC iteration-based converting by using "alpha data"
 bool pixkit::comp::DBSBTC2011(cv::Mat src, cv::Mat &dst, int blockSize)
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -276,7 +276,7 @@ bool pixkit::comp::DBSBTC2011(cv::Mat src, cv::Mat &dst, int blockSize)
 				segData[i] = alpha[1][i];
 			}
 	}else{
-		CV_Error(CV_StsBadArg,"[comp::DBSBTC_CCS] BlockSize should be 8 or 16.");
+		CV_Error(CV_StsBadArg,"[comp::DBSBTC2011] BlockSize should be 8 or 16.");
 		return false;
 	}
 
