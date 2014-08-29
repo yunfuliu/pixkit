@@ -3,6 +3,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace cv;
+using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
@@ -10,13 +11,13 @@ float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,c
 	//////////////////////////////////////////////////////////////////////////
 	// exceptions
 	if(src.type()!=CV_8U){
-		return false;
+		CV_Assert(false);
 	}
 	if(nBlocks.width>src.cols||nBlocks.height>src.rows){
-		return false;
+		CV_Assert(false);
 	}
 	if(mode!=1&&mode!=2){
-		return false;
+		CV_Assert(false);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -72,8 +73,7 @@ float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,c
 							moment1+=src.data[(i+m)*src.cols+(j+n)];
 							moment2+=src.data[(i+m)*src.cols+(j+n)]*src.data[(i+m)*src.cols+(j+n)];
 							count_mom++;
-						}
-						
+						}						
 					}
 				}
 				moment1/=(double)count_mom;
@@ -145,7 +145,7 @@ float pixkit::qualityassessment::AMBE(const cv::Mat &src1,const cv::Mat &src2){
 
 	//////////////////////////////////////////////////////////////////////////
 	if((src1.rows!=src2.rows)||(src2.cols!=src2.cols)){
-		return false;
+		CV_Assert(false);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -160,6 +160,34 @@ float pixkit::qualityassessment::AMBE(const cv::Mat &src1,const cv::Mat &src2){
 	mean2	/=	(double)(src2.cols*src2.rows);
 
 	return abs((double)(mean1-mean2));
+}
+float pixkit::qualityassessment::CII(const cv::Mat &ori1b,const cv::Mat &pro1b){
+
+	//////////////////////////////////////////////////////////////////////////
+	if((ori1b.rows!=pro1b.rows)||(pro1b.cols!=pro1b.cols)){
+		CV_Assert(false);
+	}
+	if(ori1b.type()!=CV_8UC1||pro1b.type()!=CV_8UC1){
+		CV_Assert(false);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	double	c_proposed=0.,c_original=0.;
+	double	minv,maxv;
+	// cal
+	for(int i=0;i<ori1b.rows-3;i++){
+		for(int j=0;j<ori1b.cols-3;j++){
+			Rect	roi(j,i,3,3);
+			Mat	tmat_ori1b(ori1b,roi),	tmat_pro1b(pro1b,roi);			
+			minMaxLoc(tmat_ori1b,&minv,&maxv);
+			c_original+=(maxv-minv)/(maxv+minv);
+			minMaxLoc(tmat_pro1b,&minv,&maxv);
+			c_proposed+=(maxv-minv)/(maxv+minv);
+		}
+	}
+	return	c_proposed/c_original;
+
+	return 0.;
 }
 float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 

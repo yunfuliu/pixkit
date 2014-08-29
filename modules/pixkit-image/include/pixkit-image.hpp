@@ -364,6 +364,7 @@ namespace pixkit{
 		float EME(const cv::Mat &src,const cv::Size nBlocks,const short mode=1);
 		float TEN(const cv::Mat &src);
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
+		float CII(const cv::Mat &src1,const cv::Mat &src2);	// contrast improvement index (CII)
 
 		// signal similarity 
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
