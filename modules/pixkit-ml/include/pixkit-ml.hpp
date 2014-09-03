@@ -65,6 +65,7 @@ namespace pixkit{
 		};
 
 		bool KNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k);
+		bool FKNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k);
 
 	}
 

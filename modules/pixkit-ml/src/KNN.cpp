@@ -52,6 +52,75 @@ void Tradition_KNN_Process(vector<pixkit::classification::SSample>& sample, cons
 		cout<<"=============================================="<<endl;
 	}
 }
+
+void FKNN_Process(vector<pixkit::classification::SSample>& sample, const vector<pixkit::classification::SSample>& dataset, const vector<vector<double> >& dm, unsigned int k)
+{
+	for (vector<pixkit::classification::SSample>::size_type i = 0; i != sample.size(); ++i)
+	{
+		multimap<double, string> dts;
+		for (vector<double>::size_type j = 0; j != dm[i].size(); ++j)
+		{
+			if (dts.size() < k ) 
+			{
+				dts.insert(make_pair(dm[i][j], dataset[j].classnumber)); 
+			}
+			else
+			{
+				multimap<double, string>::iterator it = dts.end();
+				--it;
+				if (dm[i][j] < (it->first))
+				{
+					dts.erase(it);
+					dts.insert(make_pair(dm[i][j], dataset[j].classnumber));
+
+				}
+			}
+		}
+		map<string, double> tds,fin;
+		string type = "";
+		double weight = 0.0;
+		double now_weight = 0.0;
+		double total_weight= 0.0;
+		for (multimap<double, string>::const_iterator cit = dts.begin(); cit != dts.end(); ++cit)
+		{
+
+			if (cit->first==0)
+			{
+				tds[cit->second] += 1.0 / (cit->first+1);
+				total_weight=total_weight+(1.0 / (cit->first+1));
+
+			}else{
+
+				tds[cit->second] += 1.0 / cit->first;
+				total_weight=total_weight+(1.0 / (cit->first));
+			}
+
+
+
+
+		}
+
+		for (map<string, double>::const_iterator cit = tds.begin(); cit != tds.end(); ++cit)
+		{
+
+			now_weight=(cit->second/total_weight);
+
+			if (now_weight > weight)
+			{
+				weight = now_weight;
+				type = cit->first;
+
+			}
+
+		}
+
+		sample[i].classnumber = type;
+		cout<<"Result Class = "<<sample[i].classnumber<<'\n'<<endl;
+		cout<<"=============================================="<<endl;
+	}
+
+}
+
 bool pixkit::classification::KNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k){
 
 	//////////////////////////////////////////////////////////////////////////
@@ -63,6 +132,21 @@ bool pixkit::classification::KNN(std::vector<SSample> &sample,const std::vector<
 	vector<vector<double> > DM;
     DistanceMatrix(DM, dataset, sample);
 	Tradition_KNN_Process(sample, dataset, DM, k);
+
+	return	true;
+}
+
+bool pixkit::classification::FKNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k){
+
+	//////////////////////////////////////////////////////////////////////////
+	/////
+	if(k<0){
+		CV_Error(CV_StsBadArg,"[pixkit::classification::KNN] k should >= 1.");
+	}
+
+	vector<vector<double> > DM;
+	DistanceMatrix(DM, dataset, sample);
+	FKNN_Process(sample, dataset, DM, k);
 
 	return	true;
 }
