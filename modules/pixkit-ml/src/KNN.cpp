@@ -21,7 +21,7 @@ void DistanceMatrix(std::vector<vector<double> >& dm, const std::vector<pixkit::
 }
 vector<double> kappa_Matrix(const vector<double>& v1, const vector<double>& v2, vector<double>& kappa)
 {	
-	assert(v1.size() == v2.size()); //feature數必須要一致 test[i].features.size()
+	assert(v1.size() == v2.size()); 
 
 	for (vector<double>::size_type i = 0; i != v1.size(); ++i)
 	{
