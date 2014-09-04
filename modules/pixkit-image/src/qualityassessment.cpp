@@ -187,6 +187,23 @@ float pixkit::qualityassessment::CII(const cv::Mat &ori1b,const cv::Mat &pro1b){
 	}
 	return	c_proposed/c_original;
 }
+float pixkit::qualityassessment::SNS(const cv::Mat &src1b,int ksize){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exception
+	if(src1b.type()!=CV_8UC1){
+		CV_Assert(false);
+	}
+	//////////////////////////////////////////////////////////////////////////
+	///// process
+	Mat src1b_bar;
+	cv::medianBlur(src1b,src1b_bar,ksize);
+	Mat	m_diff;
+	cv::absdiff(src1b,src1b_bar,m_diff);
+	//////////////////////////////////////////////////////////////////////////
+	///// get sns
+	return cv::sum(m_diff)[0]	/	((double)src1b.rows*src1b.cols*255.)	*	100.;
+}
 float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 
 	//////////////////////////////////////////////////////////////////////////

@@ -203,94 +203,16 @@ namespace pixkit{
 
 			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
 
-			/**
-			* @brief		local contrast enhancement
-			* @brief		paper: B. Liu, W. Jin, Y. Chen, C. Liu, and L. Li, "Contrast enhancement using non-overlapped sub-blocks and local histogram projection," TCE, vol. 57, no. 2, 2011.
-			* @brief		nickname: non-overlapped sub-blocks and local histogram projection based contrast enhancement (NOSHP)
-			*
-			* @author		Yunfu Liu
-			* @date			Sept. 3, 2013
-			* @version		1.0
-			*
-			* @param		N: number of blocks. (due to this value will be divided by image size, so it can be regarded as 'block size')
-			*
-			* @return		bool: true: successful, false: failure
-			*/
 			bool LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
 
-			/**
-			* @brief		local contrast enhancement, KimKimHwang2001 POSHE's improvement
-			* @brief		paper: F. Lamberti, B. Montrucchio, and A. Sanna, "CMBFHE: a novel contrast enhancement technique based on cascaded multistep binomial filtering histogram equalization," TCE, vol. 52, no. 3, 2006.
-			* @brief		nickname: cascaded multistep binomial filtering histogram equalization (CMBFHE)
-			*
-			* @author		賴柏勳, Yunfu Liu
-			* @date			May 15, 2013
-			*
-			* @param: B: number of blocks
-			* @param: S: number of regions divided by the step size. S should >2xB. .This should be the "Bx2" or "Bx4" or "Bx8" etc multiple of 2. "S" should be B's power (i.e., 2,4,8,16,32,64,128...). Bigger S, better image quality, and slower.
-			*
-			* @return: bool: true: successful, false: failure
-			*/
 			bool LambertiMontrucchioSanna2006(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
-			
-			
-			/**
-			* @brief		local contrast enhancement
-			* @brief		paper: Z. Yu and C. Bajaj, "A fast and adaptive method for image contrast enhancement," ICIP, vol. 2, pp. 1001-1004, 2004.
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			May 13, 2013
-			*
-			* @param		C: within [0,1] - this is only for isotropic mode
-			* @param		anisotropicMode: false-isotropic mode; true-anisotropic mode (iso needs C; ani needs R, respectively)
-			* @param		R: within [0.01,0.1] - this is only for anisotropic mode
-			*
-			* @return		bool: true: successful, false: failure
-			*/ 
+
 			bool YuBajaj2004(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float C=0.85f,bool anisotropicMode=false,const float R=0.09f);
 
-			/**
-			* @brief		local contrast enhancement
-			* @brief		paper: J. Y. Kim, L. S. Kim, and S. H. Hwang, "An advanced contrast enhancement using partially overlapped sub-block histogram equalization," TCSVT, vol. 11, no. 4, pp. 475-484, 2001. 
-			* @brief		nickname: partially overlapped sub-block histogram equalization (POSHE)
-			* 
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			May 15, 2013
-			*
-			* @param		B: number of blocks
-			* @param		S: number of regions divided by the step size. S should >2xB. .This should be the "Bx2" or "Bx4" or "Bx8" etc multiple of 2. "S" should be B's power (i.e., 2,4,8,16,32,64,128...). Bigger S, better image quality, and slower.
-			*
-			* @return		bool: true: successful, false: failure
-			*/
 			bool KimKimHwang2001(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
 
-			/**
-			* @brief		local contrast enhancement
-			* @brief		paper: J. A. Stark, "Adaptive image contrast enhancement using generalizations of histogram equalization," TIP, vol. 9, no. 5, pp. 889-896, 2000.
-			* 
-			* @author		賴柏勳, Yunfu Liu 
-			* @date			May 14, 2013
-			* 
-			* @param		alpha: 0~1. 0: histogram equalization; 1: local-mean subtraction effect.
-			* @param		beta: 0~1
-			* 
-			* @return		bool: true: successful, false: failure
-			*/
 			bool Stark2000(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float alpha=0.5f,const float beta=0.5f);
 
-
-			/**
-			* @brief		local contrast enhancement
-			* @brief		paper: R. C. Gonzalez and R. E. Woods, Digital Image Processing, 2nd ed., Reading, MA: Addison-Wesley, 1992.
-			* @brief		nickname: local histogram equalization (LHE)
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			May 16, 2013
-			* 
-			* @param		blocksize: block sizes
-			* 
-			* @return		bool: true: successful, false: failure
-			*/
 			bool AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize);
 
 			bool FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize);
@@ -311,47 +233,13 @@ namespace pixkit{
 		/// Global methods
 		namespace global{
 
-			/**
-			* @brief		global contrast enhancement
-			* @brief		paper: M. Abdullah-Al-Wadud, Md. Hasanul Kabir, M. Ali Akber Dewan, and O. Chae, "A dynamic histogram equalization for image contrast enhancement," Intl. Conf. Consumer Electronics, pp. 1-2, 2007.
-			* @brief		nickname: dynamic histogram equalization (DHE)
-			* 
-			* @author		Shao-Yun Liu
-			* @date			May 15, 2013
-			* 
-			* @param		x: It is a power-term, and it is suggested within [0 ~ 5]. 
-			* 
-			* @return		bool: true: successful, false: failure
-			*/
 			bool WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
 
-			/**
-			* @brief		global contrast enhancement
-			* @brief		paper: R. C. Gonzalez and R. E. Woods, Digital Image Processing, 2nd ed., Reading, MA: Addison-Wesley, 1992.
-			* @brief		nickname: global histogram equalization (GHE)
-			* 
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			May 16, 2013
-			* 
-			* @return		bool: true: successful, false: failure
-			*/
 			bool GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);
 
-			/**
-			* @brief		global contrast enhancement
-			* @brief		paper: Mary Kim and Min Gyo Chung, "Recursively Separated and Weighted Histogram Equalization for Brightness Preservation and Contrast Enhancement," 2008.
-			*
-			* @author		JC Yu
-			* @date			December 15, 2013
-			*
-			* @param        MorD 1:直方圖用平均值去切割 2:直方圖用中位數去切割
-			* @param        r: 直方圖分割遞回的次數,論文建議給予2
-			*
-			* @return		bool: true: successful, false: failure
-			*/
 			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
 
-			bool  CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
+			bool CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
 		}
 
 	}
@@ -365,6 +253,9 @@ namespace pixkit{
 		float TEN(const cv::Mat &src);
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
 		float CII(const cv::Mat &src1,const cv::Mat &src2);	// contrast improvement index (CII)
+
+		// for evaluating noises
+		float SNS(const cv::Mat &src1b,int ksize=25);	// speckle noise strength (SNS)
 
 		// signal similarity 
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
