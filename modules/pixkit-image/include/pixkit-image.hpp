@@ -233,6 +233,8 @@ namespace pixkit{
 		/// Global methods
 		namespace global{
 
+			bool RajuNair2014(const cv::Mat &src1b,cv::Mat &dst1b);
+
 			bool WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
 
 			bool GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);

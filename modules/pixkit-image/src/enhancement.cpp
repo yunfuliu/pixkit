@@ -1,5 +1,7 @@
 ﻿#include "../include/pixkit-image.hpp"
 
+using namespace cv;
+
 //////////////////////////////////////////////////////////////////////////
 ///// Local contrast enhancement
 bool pixkit::enhancement::local::LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N){
@@ -1252,6 +1254,75 @@ bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B
 
 //////////////////////////////////////////////////////////////////////////
 ///// Global contrast enhancement
+bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src1b,cv::Mat &dst1b){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	Mat	tsrc3b	=	src1b.clone();
+	bool	flag_gray	=	false;
+	if(src1b.type()==CV_8UC1){
+		cvtColor(tsrc3b,tsrc3b,CV_GRAY2BGR);
+		flag_gray	=	true;
+	}else if(src1b.type()==CV_8UC3){
+		// do nothing
+	}else{
+		CV_Assert(false);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// initialization
+	const	float	K	=	128.;
+	const	float	E	=	255.;
+
+	//////////////////////////////////////////////////////////////////////////
+	///// convert color
+	Mat	src3b_hsv;
+	cvtColor(tsrc3b,src3b_hsv,CV_BGR2HSV);
+
+	//////////////////////////////////////////////////////////////////////////
+	///// get M
+	Mat	channel[3];
+	split(src3b_hsv,channel);
+	float	M	=	cvRound(cv::mean(channel[2])[0]);
+
+	//////////////////////////////////////////////////////////////////////////
+	///// enhancement
+	Mat	eV	=	channel[2].clone();	// enhanced V
+	eV.setTo(0);
+	for(int i=0;i<channel[2].rows;i++){
+		for(int j=0;j<channel[2].cols;j++){
+			//
+			uchar	&X	=	channel[2].ptr<uchar>(i)[j];
+			uchar	&dstv	=	eV.ptr<uchar>(i)[j];
+			//
+			float	f_dst_value;
+			if(X<M){
+				float	ud1x	=	1.-((M-(float)X)/M);
+				f_dst_value	=	K*ud1x;
+			}else if(X>=M){
+				float	ud2x	=	(E-(float)X)/(E-M);
+				f_dst_value	=	E-K*ud2x;
+			}else{
+				CV_Assert(false);
+			}
+			CV_DbgAssert(f_dst_value>=0.&&f_dst_value<=255.);
+			dstv	=	cvRound(f_dst_value);
+		}
+	}	
+
+	//////////////////////////////////////////////////////////////////////////
+	///// convert back to bgr
+	channel[2]	=	eV.clone();				// eV			to	channel[2]
+	merge(channel,3,src3b_hsv);				// channel		to	src3b_hsv
+	cvtColor(src3b_hsv,tsrc3b,CV_HSV2BGR);	// src3b_hsv	to	tsrc3b
+	if(flag_gray){	
+		cvtColor(tsrc3b,dst1b,CV_BGR2GRAY);	// tsrc3b		to	dst1b
+	}else{
+		dst1b	=	tsrc3b.clone();			// tsrc3b		to	dst1b	
+	}
+
+	return true;
+}
 bool pixkit::enhancement::global::WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x){
 
 	//////////////////////////////////////////////////////////////////////////
