@@ -303,7 +303,7 @@ namespace pixkit{
 
 			bool Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
 
-			bool MSRCR(const cv::Mat &src,cv::Mat &dst);
+			bool MSRCR1997(const cv::Mat &src,cv::Mat &dst,int Nscale);
 		}
 
 		/// Global methods
