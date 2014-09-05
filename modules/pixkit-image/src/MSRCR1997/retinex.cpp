@@ -423,9 +423,10 @@ bool pixkit::enhancement::local::MSRCR1997(const cv::Mat &src,cv::Mat &dst,int N
 	rvals.nscales=Nscale;
 	/////////////////////////////////////////////////////////////////////
 	///// exceptions
-	if(src.type()!=CV_8UC3){
+	if(src.type()!=CV_8UC3||Nscale<1||Nscale>3){
 		CV_Assert(false);
 	}
+
 
 	IplImage * orig=& IplImage(src);
 	IplImage * out = NULL;   

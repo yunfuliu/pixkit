@@ -215,6 +215,7 @@ namespace pixkit{
 			bool	CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L = 0.03);
 			bool	AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize);
 			bool	MSRCR1997(const cv::Mat &src,cv::Mat &dst,int Nscale);
+			bool	MSRCP2014(char * sFilename,cv::Mat &dst,int Nscale);
 		}
 
 		/// Global methods
