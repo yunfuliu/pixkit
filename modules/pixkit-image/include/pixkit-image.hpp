@@ -214,7 +214,7 @@ namespace pixkit{
 			bool	CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L = 0.03);
 			bool	CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L = 0.03);
 			bool	AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize);
-			bool	MSRCR(const cv::Mat &src,cv::Mat &dst);
+			bool	MSRCR1997(const cv::Mat &src,cv::Mat &dst,int Nscale);
 		}
 
 		/// Global methods

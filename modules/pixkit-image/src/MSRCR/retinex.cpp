@@ -244,7 +244,7 @@ void gausssmooth( float *in, float *out, int size, int rowstride, gauss3_coefs *
  * (a)  Filterings at several scales and sumarize the results.  
  * (b)  Calculation of the final values.  
  */   
-void MSRCR_Main( unsigned char * src, int width, int height, int bytes )   
+void MSRCR_Main( unsigned char * src, int width, int height, int bytes)   
 {   
   int           scale, row, col;   
   int           i, j;   
@@ -419,11 +419,8 @@ void MSRCR_Main( unsigned char * src, int width, int height, int bytes )
    
   free (dst);   
 }   
-      
-
-    
-bool pixkit::enhancement::local::MSRCR(const cv::Mat &src,cv::Mat &dst){   
-
+bool pixkit::enhancement::local::MSRCR1997(const cv::Mat &src,cv::Mat &dst,int Nscale){   
+	rvals.nscales=Nscale;
 	/////////////////////////////////////////////////////////////////////
 	///// exceptions
 	if(src.type()!=CV_8UC3){
@@ -460,7 +457,7 @@ bool pixkit::enhancement::local::MSRCR(const cv::Mat &src,cv::Mat &dst){
 	}   
 	memcpy( dImage, sImage, nWidth*nHeight*orig->nChannels );   
 
-	MSRCR_Main( dImage, nWidth, nHeight, orig->nChannels );   
+	MSRCR_Main( dImage, nWidth, nHeight, orig->nChannels);   
 	printf( "MSRCR parameters:\n" );   
 	printf( "number of scales: \t\t%d\n", rvals.nscales );   
 	printf( "each scale is respectively: \t\t" );   
