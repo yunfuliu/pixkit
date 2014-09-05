@@ -1,9 +1,155 @@
 ﻿#include "../include/pixkit-image.hpp"
 
 using namespace cv;
+using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
 ///// Local contrast enhancement
+bool pixkit::enhancement::local::LCE_BSESCS2014(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	Mat	tsrc	=	src.clone();
+	int	nC		=	3;	// number of channels
+	if(src.type()==CV_8UC1){
+		nC	=	1;
+	}else if(src.type()==CV_8UC3){
+		// do nothing
+	}else{
+		CV_Assert(false);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// initialization
+	int	half_block_height	=	blockSize.height/2;
+	int	half_block_width	=	blockSize.width/2;
+	const	int	nColors		=	256;
+	// for hist
+	const	int	chaninx		=	0;
+	const	int histSize	=	nColors;
+	float hranges[] = { 0, nColors };
+	const float* ranges[] = { hranges };
+
+	//////////////////////////////////////////////////////////////////////////
+	///// get separated channels
+	Mat	channels1b[3],dst_channels1b[3];
+	if(nC==1){
+		channels1b[0]	=	tsrc.clone();
+	}else if(nC==3){
+		split(tsrc,channels1b);
+	}else{
+		CV_Assert(false);
+	}
+	for(int c=0;c<nC;c++){
+		dst_channels1b[c].create(channels1b[c].size(),channels1b[c].type());
+		dst_channels1b[c].setTo(0);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// process
+	for(int c=0;c<nC;c++){
+		for(int i=0;i<src.rows;i++){
+			for(int j=0;j<src.cols;j++){
+
+				uchar	&currv	=	channels1b[c].ptr<uchar>(i)[j];
+				uchar	&dstv	=	dst_channels1b[c].ptr<uchar>(i)[j];
+
+				//////////////////////////////////////////////////////////////////////////
+				// get block region (tl: top-left; br: bottom-right);
+				int		tl_corner_i	=	(i-half_block_height)	<0			?	0			:	(i-half_block_height);
+				int		tl_corner_j	=	(j-half_block_width)	<0			?	0			:	(j-half_block_width);
+				int		br_corner_i	=	(i+half_block_height)	>=src.rows	?	src.rows-1	:	(i+half_block_height);
+				int		br_corner_j	=	(j+half_block_width)	>=src.cols	?	src.cols-1	:	(j+half_block_width);
+				int		block_width	=	br_corner_j	-	tl_corner_j	+1;
+				int		block_height=	br_corner_i	-	tl_corner_i	+1;
+				Rect	roi(tl_corner_j,tl_corner_i,block_width,block_height);
+				Mat		block	=	channels1b[c](roi);
+
+				//////////////////////////////////////////////////////////////////////////
+				///// get hist
+				Mat hist;
+				cv::calcHist(&block, 1, &chaninx, Mat(),hist, 1, &histSize, ranges,true,false);
+
+				//////////////////////////////////////////////////////////////////////////
+				// get mean
+				float	meanv=0.;
+				for(int ci=0;ci<nColors;ci++){
+					meanv	+=	hist.ptr<float>(ci)[0]	*	(float)ci;
+				}
+				meanv	=	cvFloor(meanv	/	((float)block_width*block_height));
+
+				//////////////////////////////////////////////////////////////////////////
+				///// histogram clipping
+				// get T_CR
+				float	T_CR;
+				if(currv<=meanv){	// get T_L
+					float	T_L	=0.;
+					for(int ci=0;ci<=meanv;ci++){
+						T_L	+=	hist.ptr<float>(ci)[0];
+					}
+					T_L	=	cvFloor(T_L/(meanv+1))	+1;
+					T_CR	=	T_L;
+				}else{	// get T_U
+					float	T_U	=0.;
+					for(int ci=meanv+1;ci<nColors;ci++){
+						T_U	+=	hist.ptr<float>(ci)[0];
+					}
+
+					T_U	=	cvFloor((float)T_U	/	(nColors-1-meanv))	+1;
+					T_CR	=	T_U;
+				}
+				// clip hist, the idea of clahe
+				for(int ci=0;ci<nColors;ci++){
+					if(hist.ptr<float>(ci)[0]>=T_CR){
+						hist.ptr<float>(ci)[0]	=	T_CR;
+					}
+				}
+
+				//////////////////////////////////////////////////////////////////////////
+				///// get pdf
+				// get nt
+				float	nt	=	0.;
+				if(currv<=meanv){
+					for(int ci=0;ci<=meanv;ci++){
+						nt	+=	hist.ptr<float>(ci)[0];
+					}
+				}else{
+					for(int ci=meanv+1;ci<nColors;ci++){
+						nt	+=	hist.ptr<float>(ci)[0];
+					}
+				}
+				// enhancement with cdf
+				if(currv<=meanv){	// f_L
+					float	cdfv	=	0;
+					for(int ci=0;ci<=currv;ci++){
+						cdfv	+=	hist.ptr<float>(ci)[0];
+					}
+					cdfv/=nt;
+					dstv	=	cvFloor(meanv*cdfv);
+				}else{	// f_U
+					float	cdfv	=	0;
+					for(int ci=currv;ci<nColors;ci++){
+						cdfv	+=	hist.ptr<float>(ci)[0];
+					}
+					cdfv	=	(nt	-	cdfv)/nt;
+					dstv	=	cvFloor(((float)nColors-meanv-2)*cdfv)	+	meanv	+	1;
+				}
+				CV_Assert(dstv>=0&&dstv<nColors);
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// convert back to bgr
+	if(nC==1){
+		dst	=	dst_channels1b[0].clone();	// dst_channels1b	to	dst
+	}else if(nC==3){
+		merge(dst_channels1b,3,dst);		// dst_channels1b	to	dst
+	}else{
+		CV_Assert(false);
+	}
+	return true;
+}
 bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
@@ -1254,16 +1400,16 @@ bool pixkit::enhancement::local::AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,con
 
 //////////////////////////////////////////////////////////////////////////
 ///// Global contrast enhancement
-bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src1b,cv::Mat &dst1b){
+bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src,cv::Mat &dst){
 
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions
-	Mat	tsrc3b	=	src1b.clone();
+	Mat	tsrc3b	=	src.clone();
 	bool	flag_gray	=	false;
-	if(src1b.type()==CV_8UC1){
+	if(src.type()==CV_8UC1){
 		cvtColor(tsrc3b,tsrc3b,CV_GRAY2BGR);
 		flag_gray	=	true;
-	}else if(src1b.type()==CV_8UC3){
+	}else if(src.type()==CV_8UC3){
 		// do nothing
 	}else{
 		CV_Assert(false);
@@ -1271,8 +1417,14 @@ bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src1b,cv::Mat &dst
 
 	//////////////////////////////////////////////////////////////////////////
 	///// initialization
-	const	float	K	=	128.;
-	const	float	E	=	255.;
+	const	float	K		=	128.;
+	const	float	E		=	255.;
+	const	int		nColors	=	256;
+	// for hist
+	const	int	chaninx		=	0;
+	const	int histSize	=	256;
+	float hranges[] = { 0, 256 };
+	const float* ranges[] = { hranges };
 
 	//////////////////////////////////////////////////////////////////////////
 	///// convert color
@@ -1283,7 +1435,15 @@ bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src1b,cv::Mat &dst
 	///// get M
 	Mat	channel[3];
 	split(src3b_hsv,channel);
-	float	M	=	cvRound(cv::mean(channel[2])[0]);
+	// get hist
+	Mat hist;
+	cv::calcHist(&channel[2], 1, &chaninx, Mat(),hist, 1, &histSize, ranges,true,false);
+	// get M
+	float	M=0.;
+	for(int ci=0;ci<nColors;ci++){
+		M	+=	hist.ptr<float>(ci)[0]	*	(float)ci;
+	}
+	M	=	cvRound(M	/	((float)channel[2].rows*channel[2].cols));
 
 	//////////////////////////////////////////////////////////////////////////
 	///// enhancement
@@ -1316,9 +1476,9 @@ bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src1b,cv::Mat &dst
 	merge(channel,3,src3b_hsv);				// channel		to	src3b_hsv
 	cvtColor(src3b_hsv,tsrc3b,CV_HSV2BGR);	// src3b_hsv	to	tsrc3b
 	if(flag_gray){	
-		cvtColor(tsrc3b,dst1b,CV_BGR2GRAY);	// tsrc3b		to	dst1b
+		cvtColor(tsrc3b,dst,CV_BGR2GRAY);	// tsrc3b		to	dst1b
 	}else{
-		dst1b	=	tsrc3b.clone();			// tsrc3b		to	dst1b	
+		dst	=	tsrc3b.clone();			// tsrc3b		to	dst1b	
 	}
 
 	return true;
