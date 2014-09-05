@@ -4,6 +4,313 @@ using namespace cv;
 
 //////////////////////////////////////////////////////////////////////////
 ///// Local contrast enhancement
+bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
+	///////////////////////////////////////////////////////////////////////////////////////////////////
+	if(src.type()!=CV_8UC1){
+		return false;
+	}
+
+	if(L>1 || L<=0){
+		return false;
+	}
+
+	if(title.height > (src.rows/4) || title.width > (src.cols/4)){
+		return false;
+	}
+
+	if(K2>1 || K2<0){
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////
+	const int nColors = 256;
+	int x = src.cols/title.width, y = src.rows/title.height;
+
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+	cv::Mat temp = cvCreateMat(src.rows,src.cols,src.type());
+	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //�x�s�C��title���ಾ�禡
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//�p��Sigmoid�ഫ
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	for(int i=0;i<temp.rows;i++){
+		for(int j=0;j<temp.cols;j++){
+			float t = (double)src.data[i*src.cols+j]/(nColors-1);
+			float o = t + K1*t/(1.0-exp(K1*(K2+t)));
+
+			temp.data[i*temp.cols+j] = static_cast<uchar>(o*(nColors-1));
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//�p���C��title���ಾ�禡
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	for(int m = 0;m<title.height;m++)
+		for(int n = 0;n<title.width;n++)
+		{
+			int i,j,i1=(m+1)*y,j1=(n+1)*x;
+
+			if( (m+1) == title.height )
+				i1 = src.rows;
+			if((n+1) == title.width )
+				j1 = src.cols;
+
+			int Count = 0;
+			for(i=m*y;i<i1;i++)
+				for(j=n*x;j<j1;j++)
+				{
+					hist[m*title.width+n][(int)temp.data[i*temp.cols+j]]++;
+					Count++;
+				}
+
+				int limt = (int) (Count*L + 0.5);  //�p���ݭn����������
+
+				float over_limit = 0;
+				for(int k=0;k<256;k++)
+				{
+
+					if(hist[m*title.width+n][k] > limt)
+					{
+						over_limit += (hist[m*title.width+n][k]-limt);
+						hist[m*title.width+n][k] = limt;
+					}
+				}
+
+				over_limit /= nColors;
+
+				for(int k=0;k<256;k++)
+				{
+					hist[m*title.width+n][k] += over_limit;
+					hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
+				}
+
+				for(int k=1;k<256;k++)
+					hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
+		}
+		//////////////////////////////////////////////////////////////////////////
+		//�p�����X
+		///////////////////////////////////////////////////////////////////////
+		int a1=0,a2=x/2,b1=0,b2=y/2;  //a����x�b���V.b����y�b���V
+		for(int i=0;i<src.rows;i++)
+		{
+			a2 = x/2 , a1 = 0;
+			for(int j=0;j<src.cols;j++)
+			{
+				if(j>a2)
+				{
+					a1=a2;
+					a2+=x;
+
+					if(a2/x == title.width)
+						a2 = src.cols-1;
+				}
+				if(i>b2)
+				{
+					b1 = b2;
+					b2 += y;
+					if(b2/y == title.height)
+						b2 = src.rows-1;
+				}
+
+				int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
+				if(p2 >= title.width)
+					p2 = title.width-1;
+				if(q2 >= title.height)
+					q2 = title.height-1;
+
+				float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
+				int v = (int)src.data[i*src.cols+j];
+
+				dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
+			}
+		}
+
+		return true;
+}
+bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N){
+	std::vector <std::vector<std::vector<float>>> Ob( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
+	std::vector <std::vector<std::vector<float>>> Cb( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
+
+	int h = B.height, w = B.width;
+	const int nColors = 256;
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+
+	//計算各個旋轉影像
+	for(int k=0;k<N;k++){
+		cv::Mat t_src,t_OP,t_CL,t_ob,t_cb; 
+		double degree = -180.0*k/N; // rotate degree
+
+		cv::Mat map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);
+		cv::warpAffine(src,t_src,map_matrix,cv::Size(src.cols, src.rows));
+
+		cv::Mat element = getStructuringElement(cv::MORPH_RECT,B);
+		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,element);
+		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,element);
+
+		map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);
+		cv::warpAffine(t_OP,t_ob,map_matrix,cv::Size(src.cols, src.rows));
+		cv::warpAffine(t_CL,t_cb,map_matrix,cv::Size(src.cols, src.rows));
+
+		for(int i=0;i<src.rows;i++)
+			for(int j=0;j<src.cols;j++){
+				Ob[k][i][j] = t_ob.data[i*t_ob.cols+j];
+				Cb[k][i][j] = t_cb.data[i*t_cb.cols+j];
+			}
+	}
+
+	//RMP計算Top-hat增強
+	std::vector <std::vector<float>> WTH(src.rows,std::vector<float> (src.cols,0));
+	std::vector <std::vector<float>> BTH(src.rows,std::vector<float> (src.cols,0));
+
+	for(int i=0;i<src.rows;i++)
+		for(int j=0;j<src.cols;j++){
+
+			WTH[i][j] = Ob[0][i][j];
+			BTH[i][j] = Cb[0][i][j];
+
+
+			for(int k=1;k<N;k++){
+
+				if(Ob[k][i][j] > WTH[i][j]){
+					WTH[i][j] = Ob[k][i][j];
+				}
+
+				if(Cb[k][i][j] > BTH[i][j]){
+					BTH[i][j] = Cb[k][i][j];
+				}
+			}
+
+
+			WTH[i][j] = src.data[i*src.cols+j] - WTH[i][j];
+			BTH[i][j] = BTH[i][j] -  src.data[i*src.cols+j];
+
+			if(WTH[i][j] > nColors-1)
+				WTH[i][j] = (float)(nColors-1);
+
+			if(BTH[i][j] > nColors-1)
+				BTH[i][j] = (float)(nColors-1);
+
+			if(WTH[i][j] < 0)
+				WTH[i][j] = 0.0;
+
+			if(BTH[i][j] < 0)
+				BTH[i][j] = 0.0;
+		}
+
+		//直方圖等化
+		std::vector<float> WTH_hist(nColors,0);
+		std::vector<float> BTH_hist(nColors,0);
+
+		for(int i=0;i<src.rows;i++)
+			for(int j=0;j<src.cols;j++){
+				WTH_hist[(int)(WTH[i][j]+0.5)]++;
+				BTH_hist[(int)(BTH[i][j]+0.5)]++;
+			}
+			//計算CDF
+			for(int k=1;k<nColors;k++){
+				WTH_hist[k] += WTH_hist[k-1];
+				BTH_hist[k] += BTH_hist[k-1];
+			}
+			//正歸化CDF
+			for(int k=0;k<nColors;k++){
+				WTH_hist[k] /= (src.rows*src.cols);
+				BTH_hist[k] /= (src.rows*src.cols);
+			}
+
+			for(int i=0;i<src.rows;i++)
+				for(int j=0;j<src.cols;j++){
+					WTH[i][j] = (WTH_hist[(int)WTH[i][j]]-WTH_hist[0])/(WTH_hist[nColors-1]-WTH_hist[0])*(nColors-1); 
+					BTH[i][j] = (BTH_hist[(int)BTH[i][j]]-BTH_hist[0])/(BTH_hist[nColors-1]-BTH_hist[0])*(nColors-1); 
+				}
+
+				//--------------------------------------------------------
+				cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
+				cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
+
+				for(int i=0;i<src.rows;i++)
+					for(int j=0;j<src.cols;j++){
+						float temp = src.data[i*src.cols+j]+WTH[i][j] - BTH[i][j];
+
+						if(temp >= nColors-1)
+							temp = nColors - 1;
+						if(temp < 0)
+							temp = 0;
+
+						dst.data[i*dst.cols+j] = temp;
+
+
+						t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
+						t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
+
+					}
+
+					return true;
+}
+bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L, float phi){
+
+	//////////////////////////////////////////////////////////////////////////////
+	if(src.type()!=CV_8UC1){
+		return false;
+	}
+	if(L>1 || L<=0){
+		return false;
+	}
+	if(N.height >= src.rows-1 || N.width >= src.cols-1){
+		return false;
+	}
+	if(phi>1 || phi<0){
+		return false;
+	}
+	if(N.height%2==0 || N.width%2==0){
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////////
+	int limt = (int) (N.height*N.width*L + 0.5);
+	int x = N.width/2, y = N.height/2;
+	dst = cvCreateMat(src.rows,src.cols,src.type());
+	for(int i=0;i<dst.rows;i++){
+		for(int j=0;j<dst.cols;j++){
+			std::vector<float> hist(256,0);
+
+			float Total = 0;
+			for(int m=i-y;m<=i+y;m++){
+				for(int n=j-x;n<=j+x;n++){
+					if(m>=0 && m<dst.rows && n>=0 && n<dst.cols){
+						hist[(int)src.data[m*src.cols+n]]++;
+						Total++;
+					}
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			//�վ�Histogram
+			//////////////////////////////////////////////////////////////////////////
+			float u = Total/256.0; //�N�����ä���
+			for(int k=0;k<256;k++){
+				hist[k] = (1.0/(1.0+phi))*hist[k] + (phi/(1+phi))*u;
+			}
+
+			float over_limit = 0;
+			for(int k=1;k<256;k++){
+				if(hist[k] > limt){
+					over_limit += (hist[k]-limt);
+					hist[k] = limt;
+				}
+			}
+
+			over_limit /= 256;
+
+			for(int k=0;k<256;k++){
+				hist[k] += over_limit;
+			}
+
+			for(int k=1;k<256;k++){
+				hist[k] += hist[k-1];
+			}
+
+			dst.data[i*dst.cols+j] = (unsigned char) ( (hist[(int)src.data[i*src.cols+j]]*255.0/Total + 0.5) ); 
+		}
+	}
+	return true;
+}
 bool pixkit::enhancement::local::LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N){
 
 	//////////////////////////////////////////////////////////////////////////
@@ -266,6 +573,114 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 			dst.data[i*dst.cols+j]	=	(uchar)(tdst[i][j]	+0.5);
 		}
 	}
+
+	return true;
+}
+bool pixkit::enhancement::local::FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(blockSize.height%2==0){
+		return false;
+	}
+	if(blockSize.width%2==0){
+		return false;
+	}
+	if(src1b.type()!=CV_8UC1){
+		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::FAHE2006] allows only grayscale image.");
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	cv::Mat	tdst1b(src1b.size(),src1b.type());
+	const int nColors	=	256;
+
+	//////////////////////////////////////////////////////////////////////////
+	std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
+	// processing
+	for(int i=0;i<src1b.rows;i++){
+
+		// assign a new hist for the current row
+		hist.assign(nColors,0);
+		int		nNeighbors=0;
+
+		// process each col
+		for(int j=0;j<src1b.cols;j++){
+
+			// init			
+			auto	&currv	=	src1b.ptr<uchar>(i)[j];
+
+			//////////////////////////////////////////////////////////////////////////
+			///// get pdf hist
+			if(j==0){	// the first column				
+				for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+					for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
+						if(i+m>=0&&i+m<src1b.rows&&j+n>=0&&j+n<src1b.cols){
+							auto	&neiv	=	src1b.ptr<uchar>(i+m)[j+n];
+							hist[neiv]++;
+							nNeighbors++;
+						}					
+					}
+				}
+			}else{		// rest columns
+
+				int	idxPreLeftCol	=	j-blockSize.width/2-1;
+				int	idxRightCol		=	j+blockSize.width/2;
+
+				// for the previous first col
+				if(idxPreLeftCol>=0){	// if the first col exists
+					for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+						if(i+m>=0&&i+m<src1b.rows){
+							auto	&neiv	=	src1b.ptr<uchar>(i+m)[idxPreLeftCol];
+							hist[neiv]--;
+							nNeighbors--;
+							CV_DbgAssert(hist[neiv]>=0);
+						}					
+					}					
+				}
+				CV_DbgAssert(nNeighbors>=0);
+
+				// for the last column
+				if(idxRightCol<src1b.cols){	// if the last col exists
+					for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+						if(i+m>=0&&i+m<src1b.rows){
+							auto	&neiv	=	src1b.ptr<uchar>(i+m)[idxRightCol];
+							hist[neiv]++;
+							nNeighbors++;
+						}
+					}					
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			///// get cdf hist
+			int	curr_g_cdf_hist;
+			if(currv<nColors/2){
+				curr_g_cdf_hist	=	0;
+				for(int graylevel=0;graylevel<=currv;graylevel++){
+					curr_g_cdf_hist+=hist[graylevel];
+				}
+			}else{
+				curr_g_cdf_hist	=	nNeighbors;
+				CV_DbgAssert(nNeighbors>=0&&nNeighbors<=(blockSize.height*blockSize.width));
+				for(int graylevel=nColors-1;graylevel>currv;graylevel--){
+					curr_g_cdf_hist-=hist[graylevel];
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////////
+			///// et enhanced pixel value
+			double	cdf	=	(double)curr_g_cdf_hist/nNeighbors;	// cdf hist to cdf
+			if(cdf>1){
+				cdf=1.;
+			}
+			CV_Assert(cdf>=0.&&cdf<=1.);
+			tdst1b.ptr<uchar>(i)[j]	=	cvRound((double)cdf*(nColors-1));
+
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	dst1b	=	tdst1b.clone();
 
 	return true;
 }
@@ -615,174 +1030,6 @@ bool pixkit::enhancement::local::Stark2000(const cv::Mat &src,cv::Mat &dst,const
 
 	return true;
 }
-bool pixkit::enhancement::local::AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize){
-
-	//////////////////////////////////////////////////////////////////////////
-	///// exceptions
-	if(blockSize.height%2==0){
-		return false;
-	}
-	if(blockSize.width%2==0){
-		return false;
-	}
-	if(src1b.type()!=CV_8UC1){
-		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::AHE1974] allows only grayscale image.");
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	cv::Mat	tdst1b(src1b.size(),src1b.type());
-	const int nColors	=	256;
-
-	//////////////////////////////////////////////////////////////////////////
-	std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
-	// processing
-	for(int i=0;i<src1b.rows;i++){
-		for(int j=0;j<src1b.cols;j++){
-
-			hist.assign(nColors,0);
-			auto	&currv	=	src1b.ptr<uchar>(i)[j];
-
-			// get pdf hist
-			int nNeighbors=0;
-			for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
-				for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
-					if(i+m>=0&&i+m<src1b.rows&&j+n>=0&&j+n<src1b.cols){
-						auto	&neiv	=	src1b.ptr<uchar>(i+m)[j+n];
-						hist[neiv]++;
-						nNeighbors++;
-					}					
-				}
-			}
-
-			// get cdf hist
-			for(int graylevel=1;graylevel<=currv;graylevel++){	// calc only to the current value rather than the theoretical maximum for saving complexity. 
-				hist[graylevel]+=hist[graylevel-1];
-			}
-
-			// get enhanced pixel value
-			double	cdf	=	(double)hist[currv]/nNeighbors;	// cdf hist to cdf
-			if(cdf>1){
-				cdf=1.;
-			}
-			CV_Assert(cdf>=0.&&cdf<=1.);
-			tdst1b.ptr<uchar>(i)[j]	=	cvRound((double)cdf*(nColors-1));
-
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	dst1b	=	tdst1b.clone();
-
-	return true;
-}
-bool pixkit::enhancement::local::FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize){
-
-	//////////////////////////////////////////////////////////////////////////
-	///// exceptions
-	if(blockSize.height%2==0){
-		return false;
-	}
-	if(blockSize.width%2==0){
-		return false;
-	}
-	if(src1b.type()!=CV_8UC1){
-		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::FAHE2006] allows only grayscale image.");
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	cv::Mat	tdst1b(src1b.size(),src1b.type());
-	const int nColors	=	256;
-
-	//////////////////////////////////////////////////////////////////////////
-	std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
-	// processing
-	for(int i=0;i<src1b.rows;i++){
-
-		// assign a new hist for the current row
-		hist.assign(nColors,0);
-		int		nNeighbors=0;
-
-		// process each col
-		for(int j=0;j<src1b.cols;j++){
-
-			// init			
-			auto	&currv	=	src1b.ptr<uchar>(i)[j];
-
-			//////////////////////////////////////////////////////////////////////////
-			///// get pdf hist
-			if(j==0){	// the first column				
-				for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
-					for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
-						if(i+m>=0&&i+m<src1b.rows&&j+n>=0&&j+n<src1b.cols){
-							auto	&neiv	=	src1b.ptr<uchar>(i+m)[j+n];
-							hist[neiv]++;
-							nNeighbors++;
-						}					
-					}
-				}
-			}else{		// rest columns
-
-				int	idxPreLeftCol	=	j-blockSize.width/2-1;
-				int	idxRightCol		=	j+blockSize.width/2;
-
-				// for the previous first col
-				if(idxPreLeftCol>=0){	// if the first col exists
-					for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
-						if(i+m>=0&&i+m<src1b.rows){
-							auto	&neiv	=	src1b.ptr<uchar>(i+m)[idxPreLeftCol];
-							hist[neiv]--;
-							nNeighbors--;
-							CV_DbgAssert(hist[neiv]>=0);
-						}					
-					}					
-				}
-				CV_DbgAssert(nNeighbors>=0);
-
-				// for the last column
-				if(idxRightCol<src1b.cols){	// if the last col exists
-					for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
-						if(i+m>=0&&i+m<src1b.rows){
-							auto	&neiv	=	src1b.ptr<uchar>(i+m)[idxRightCol];
-							hist[neiv]++;
-							nNeighbors++;
-						}
-					}					
-				}
-			}
-
-			//////////////////////////////////////////////////////////////////////////
-			///// get cdf hist
-			int	curr_g_cdf_hist;
-			if(currv<nColors/2){
-				curr_g_cdf_hist	=	0;
-				for(int graylevel=0;graylevel<=currv;graylevel++){
-					curr_g_cdf_hist+=hist[graylevel];
-				}
-			}else{
-				curr_g_cdf_hist	=	nNeighbors;
-				CV_DbgAssert(nNeighbors>=0&&nNeighbors<=(blockSize.height*blockSize.width));
-				for(int graylevel=nColors-1;graylevel>currv;graylevel--){
-					curr_g_cdf_hist-=hist[graylevel];
-				}
-			}
-
-			//////////////////////////////////////////////////////////////////////////
-			///// et enhanced pixel value
-			double	cdf	=	(double)curr_g_cdf_hist/nNeighbors;	// cdf hist to cdf
-			if(cdf>1){
-				cdf=1.;
-			}
-			CV_Assert(cdf>=0.&&cdf<=1.);
-			tdst1b.ptr<uchar>(i)[j]	=	cvRound((double)cdf*(nColors-1));
-
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////
-	dst1b	=	tdst1b.clone();
-
-	return true;
-}
 bool pixkit::enhancement::local::CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L ){
 	///////////////////////////////////////////////////////////////////////////////////////////////////
 	if(src.type()!=CV_8UC1){
@@ -944,312 +1191,65 @@ bool pixkit::enhancement::local::CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::
 
 	return true;
 }
-bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
-	///////////////////////////////////////////////////////////////////////////////////////////////////
-	if(src.type()!=CV_8UC1){
-		return false;
-	}
+bool pixkit::enhancement::local::AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize){
 
-	if(L>1 || L<=0){
-		return false;
-	}
-
-	if(title.height > (src.rows/4) || title.width > (src.cols/4)){
-		return false;
-	}
-
-	if(K2>1 || K2<0){
-		return false;
-	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////
-	const int nColors = 256;
-	int x = src.cols/title.width, y = src.rows/title.height;
-
-	dst = cvCreateMat(src.rows,src.cols,src.type());
-	cv::Mat temp = cvCreateMat(src.rows,src.cols,src.type());
-	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //�x�s�C��title���ಾ�禡
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//�p��Sigmoid�ഫ
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	for(int i=0;i<temp.rows;i++){
-		for(int j=0;j<temp.cols;j++){
-			float t = (double)src.data[i*src.cols+j]/(nColors-1);
-			float o = t + K1*t/(1.0-exp(K1*(K2+t)));
-
-			temp.data[i*temp.cols+j] = static_cast<uchar>(o*(nColors-1));
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//�p���C��title���ಾ�禡
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	for(int m = 0;m<title.height;m++)
-		for(int n = 0;n<title.width;n++)
-		{
-			int i,j,i1=(m+1)*y,j1=(n+1)*x;
-
-			if( (m+1) == title.height )
-				i1 = src.rows;
-			if((n+1) == title.width )
-				j1 = src.cols;
-
-			int Count = 0;
-			for(i=m*y;i<i1;i++)
-				for(j=n*x;j<j1;j++)
-				{
-					hist[m*title.width+n][(int)temp.data[i*temp.cols+j]]++;
-					Count++;
-				}
-
-				int limt = (int) (Count*L + 0.5);  //�p���ݭn����������
-
-				float over_limit = 0;
-				for(int k=0;k<256;k++)
-				{
-
-					if(hist[m*title.width+n][k] > limt)
-					{
-						over_limit += (hist[m*title.width+n][k]-limt);
-						hist[m*title.width+n][k] = limt;
-					}
-				}
-
-				over_limit /= nColors;
-
-				for(int k=0;k<256;k++)
-				{
-					hist[m*title.width+n][k] += over_limit;
-					hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
-				}
-
-				for(int k=1;k<256;k++)
-					hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
-		}
 	//////////////////////////////////////////////////////////////////////////
-	//�p�����X
-	///////////////////////////////////////////////////////////////////////
-	int a1=0,a2=x/2,b1=0,b2=y/2;  //a����x�b���V.b����y�b���V
-	for(int i=0;i<src.rows;i++)
-	{
-		a2 = x/2 , a1 = 0;
-		for(int j=0;j<src.cols;j++)
-		{
-			if(j>a2)
-			{
-				a1=a2;
-				a2+=x;
+	///// exceptions
+	if(blockSize.height%2==0){
+		return false;
+	}
+	if(blockSize.width%2==0){
+		return false;
+	}
+	if(src1b.type()!=CV_8UC1){
+		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::AHE1974] allows only grayscale image.");
+	}
 
-				if(a2/x == title.width)
-					a2 = src.cols-1;
+	//////////////////////////////////////////////////////////////////////////
+	cv::Mat	tdst1b(src1b.size(),src1b.type());
+	const int nColors	=	256;
+
+	//////////////////////////////////////////////////////////////////////////
+	std::vector<int>	hist(nColors,0);	// histogram for 256 grayscales
+	// processing
+	for(int i=0;i<src1b.rows;i++){
+		for(int j=0;j<src1b.cols;j++){
+
+			hist.assign(nColors,0);
+			auto	&currv	=	src1b.ptr<uchar>(i)[j];
+
+			// get pdf hist
+			int nNeighbors=0;
+			for(int m=-blockSize.height/2;m<=blockSize.height/2;m++){
+				for(int n=-blockSize.width/2;n<=blockSize.width/2;n++){
+					if(i+m>=0&&i+m<src1b.rows&&j+n>=0&&j+n<src1b.cols){
+						auto	&neiv	=	src1b.ptr<uchar>(i+m)[j+n];
+						hist[neiv]++;
+						nNeighbors++;
+					}					
+				}
 			}
-			if(i>b2)
-			{
-				b1 = b2;
-				b2 += y;
-				if(b2/y == title.height)
-					b2 = src.rows-1;
+
+			// get cdf hist
+			for(int graylevel=1;graylevel<=currv;graylevel++){	// calc only to the current value rather than the theoretical maximum for saving complexity. 
+				hist[graylevel]+=hist[graylevel-1];
 			}
 
-			int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
-			if(p2 >= title.width)
-				p2 = title.width-1;
-			if(q2 >= title.height)
-				q2 = title.height-1;
+			// get enhanced pixel value
+			double	cdf	=	(double)hist[currv]/nNeighbors;	// cdf hist to cdf
+			if(cdf>1){
+				cdf=1.;
+			}
+			CV_Assert(cdf>=0.&&cdf<=1.);
+			tdst1b.ptr<uchar>(i)[j]	=	cvRound((double)cdf*(nColors-1));
 
-			float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
-			int v = (int)src.data[i*src.cols+j];
-
-			dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
 		}
 	}
+
+	//////////////////////////////////////////////////////////////////////////
+	dst1b	=	tdst1b.clone();
 
 	return true;
-}
-bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L, float phi){
-
-	//////////////////////////////////////////////////////////////////////////////
-	if(src.type()!=CV_8UC1){
-		return false;
-	}
-	if(L>1 || L<=0){
-		return false;
-	}
-	if(N.height >= src.rows-1 || N.width >= src.cols-1){
-		return false;
-	}
-	if(phi>1 || phi<0){
-		return false;
-	}
-	if(N.height%2==0 || N.width%2==0){
-		return false;
-	}
-
-	//////////////////////////////////////////////////////////////////////////////
-	int limt = (int) (N.height*N.width*L + 0.5);
-	int x = N.width/2, y = N.height/2;
-	dst = cvCreateMat(src.rows,src.cols,src.type());
-	for(int i=0;i<dst.rows;i++){
-		for(int j=0;j<dst.cols;j++){
-			std::vector<float> hist(256,0);
-
-			float Total = 0;
-			for(int m=i-y;m<=i+y;m++){
-				for(int n=j-x;n<=j+x;n++){
-					if(m>=0 && m<dst.rows && n>=0 && n<dst.cols){
-						hist[(int)src.data[m*src.cols+n]]++;
-						Total++;
-					}
-				}
-			}
-
-			//////////////////////////////////////////////////////////////////////////
-			//�վ�Histogram
-			//////////////////////////////////////////////////////////////////////////
-			float u = Total/256.0; //�N�����ä���
-			for(int k=0;k<256;k++){
-				hist[k] = (1.0/(1.0+phi))*hist[k] + (phi/(1+phi))*u;
-			}
-
-			float over_limit = 0;
-			for(int k=1;k<256;k++){
-				if(hist[k] > limt){
-					over_limit += (hist[k]-limt);
-					hist[k] = limt;
-				}
-			}
-
-			over_limit /= 256;
-
-			for(int k=0;k<256;k++){
-				hist[k] += over_limit;
-			}
-
-			for(int k=1;k<256;k++){
-				hist[k] += hist[k-1];
-			}
-
-			dst.data[i*dst.cols+j] = (unsigned char) ( (hist[(int)src.data[i*src.cols+j]]*255.0/Total + 0.5) ); 
-		}
-	}
-	return true;
-}
-bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N){
-	std::vector <std::vector<std::vector<float>>> Ob( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
-	std::vector <std::vector<std::vector<float>>> Cb( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
-
-	int h = B.height, w = B.width;
-	const int nColors = 256;
-	dst = cvCreateMat(src.rows,src.cols,src.type());
-
-	//計算各個旋轉影像
-	for(int k=0;k<N;k++){
-		cv::Mat t_src,t_OP,t_CL,t_ob,t_cb; 
-		double degree = -180.0*k/N; // rotate degree
-
-		cv::Mat map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);
-		cv::warpAffine(src,t_src,map_matrix,cv::Size(src.cols, src.rows));
-
-		cv::Mat element = getStructuringElement(cv::MORPH_RECT,B);
-		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,element);
-		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,element);
-
-		map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);
-		cv::warpAffine(t_OP,t_ob,map_matrix,cv::Size(src.cols, src.rows));
-		cv::warpAffine(t_CL,t_cb,map_matrix,cv::Size(src.cols, src.rows));
-
-		for(int i=0;i<src.rows;i++)
-			for(int j=0;j<src.cols;j++){
-				Ob[k][i][j] = t_ob.data[i*t_ob.cols+j];
-				Cb[k][i][j] = t_cb.data[i*t_cb.cols+j];
-			}
-	}
-
-	//RMP計算Top-hat增強
-	std::vector <std::vector<float>> WTH(src.rows,std::vector<float> (src.cols,0));
-	std::vector <std::vector<float>> BTH(src.rows,std::vector<float> (src.cols,0));
-
-	for(int i=0;i<src.rows;i++)
-		for(int j=0;j<src.cols;j++){
-
-			WTH[i][j] = Ob[0][i][j];
-			BTH[i][j] = Cb[0][i][j];
-
-
-			for(int k=1;k<N;k++){
-
-				if(Ob[k][i][j] > WTH[i][j]){
-					WTH[i][j] = Ob[k][i][j];
-				}
-
-				if(Cb[k][i][j] > BTH[i][j]){
-					BTH[i][j] = Cb[k][i][j];
-				}
-			}
-
-
-		WTH[i][j] = src.data[i*src.cols+j] - WTH[i][j];
-		BTH[i][j] = BTH[i][j] -  src.data[i*src.cols+j];
-
-		if(WTH[i][j] > nColors-1)
-			WTH[i][j] = (float)(nColors-1);
-
-		if(BTH[i][j] > nColors-1)
-			BTH[i][j] = (float)(nColors-1);
-
-		if(WTH[i][j] < 0)
-			WTH[i][j] = 0.0;
-
-		if(BTH[i][j] < 0)
-			BTH[i][j] = 0.0;
-	}
-
-	//直方圖等化
-	std::vector<float> WTH_hist(nColors,0);
-	std::vector<float> BTH_hist(nColors,0);
-
-	for(int i=0;i<src.rows;i++)
-		for(int j=0;j<src.cols;j++){
-			WTH_hist[(int)(WTH[i][j]+0.5)]++;
-			BTH_hist[(int)(BTH[i][j]+0.5)]++;
-		}
-		//計算CDF
-		for(int k=1;k<nColors;k++){
-			WTH_hist[k] += WTH_hist[k-1];
-			BTH_hist[k] += BTH_hist[k-1];
-		}
-		//正歸化CDF
-		for(int k=0;k<nColors;k++){
-			WTH_hist[k] /= (src.rows*src.cols);
-			BTH_hist[k] /= (src.rows*src.cols);
-		}
-
-		for(int i=0;i<src.rows;i++)
-			for(int j=0;j<src.cols;j++){
-				WTH[i][j] = (WTH_hist[(int)WTH[i][j]]-WTH_hist[0])/(WTH_hist[nColors-1]-WTH_hist[0])*(nColors-1); 
-				BTH[i][j] = (BTH_hist[(int)BTH[i][j]]-BTH_hist[0])/(BTH_hist[nColors-1]-BTH_hist[0])*(nColors-1); 
-			}
-
-		//--------------------------------------------------------
-		cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
-		cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
-
-		for(int i=0;i<src.rows;i++)
-			for(int j=0;j<src.cols;j++){
-				float temp = src.data[i*src.cols+j]+WTH[i][j] - BTH[i][j];
-
-				if(temp >= nColors-1)
-					temp = nColors - 1;
-				if(temp < 0)
-					temp = 0;
-
-				dst.data[i*dst.cols+j] = temp;
-
-
-				t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
-				t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
-
-			}
-
-		return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -1320,6 +1320,169 @@ bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src1b,cv::Mat &dst
 	}else{
 		dst1b	=	tsrc3b.clone();			// tsrc3b		to	dst1b	
 	}
+
+	return true;
+}
+bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r){
+
+	//////////////////////////////////////////////////////////////////////////
+	//	exception process
+	if (src.type()!=CV_8U){
+		return false;
+	}
+	if(MorD < 1 || MorD > 2){
+		return false;
+	}
+	if(r>64){
+		return false;
+	}
+	////////////////////////////////////////////////////////////////////////////
+	const int nColors	=	256;
+	float Pmax = 0,Pmin = 1.0, Xm=0 , Xg=0 ,Beta=0;
+	std::vector <float> pdf(nColors,0),cdf(nColors,0);
+
+	//�έp�Ƕ����Gpdf
+	cv::Mat	tdst(src.size(),src.type());
+	for(int i=0;i<src.rows;i++){
+		for(int j=0;j<src.cols;j++){
+			pdf[(int)src.data[i*src.cols+j]]++;	
+		}
+	}
+
+	//�p���X������,�ç��X�n�v���G�����̤j�̤p��
+	for(int i=0;i<nColors;i++){
+		pdf[i] /= (float)(src.rows*src.rows);
+		Xm += i*pdf[i];
+
+		if(pdf[i]>Pmax){
+			Pmax = pdf[i];
+		}
+
+		if(pdf[i]<Pmin){
+			Pmin = pdf[i];
+		}
+	}
+	//�v���Ƕ��Ȫ�������
+	Xg = (0+nColors-1)/2.0;
+	//�p��Beta,�Ψӧ��s�v��
+	Beta = Pmax*abs(Xm-Xg)/(nColors-1);
+
+	std::vector <int> segmentation(pow(2,(double)r)+1,0);
+
+	segmentation[0] = -1;
+	segmentation[pow(2,(double)r)] = nColors-1;
+	/////////////////////////////////////////////////////////////////////////////////////////
+	//Histogram Segmentation Module
+	/////////////////////////////////////////////////////////////////////////////////////////////
+	if(MorD == 1){//�Υ����Ȥ���
+
+		int Xl,Xu;
+
+		for(int i=0;i<r;i++){
+			int location = pow(2,(double)(r-i))/2;
+			int interval = location;
+			for(int j=0;j<pow(2,(double)i);j++){
+				Xl = segmentation[location-interval]+1;
+				Xu = segmentation[location+interval];
+
+				float m=0,sum=0;
+				for(int k=Xl;k<=Xu;k++)
+				{
+					m += k*pdf[k];
+					sum += pdf[k];
+				}
+
+				segmentation[location] =(int)(m/sum+0.5);
+				location += 2*interval;
+			}
+		}
+	}else if(MorD == 2){//�Τ����Ƥ���
+
+		for(int i=0;i<nColors;i++){
+			cdf[i] = pdf[i];
+		}
+
+		for(int i=1;i<nColors;i++){
+			cdf[i] += cdf[i-1];
+		}
+
+		int Xl,Xu;
+
+		for(int i=0;i<r;i++){
+			int location = pow(2,(double)(r-i))/2;
+			int interval = location;
+			for(int j=0;j<pow(2,(double)i);j++){
+				Xl = segmentation[location-interval]+1;
+				Xu = segmentation[location+interval]; 
+
+				float m = (cdf[Xl]+cdf[Xu])/2 , m_min = 1.0;
+
+				for(int k=Xl;k<=Xu;k++){
+					if(abs(cdf[k]-m) < m_min){
+						m_min = abs(cdf[k]-m);
+						segmentation[location] = k;
+					}
+				}
+				location += 2*interval;
+			}
+		}
+	}
+	/////////////////////////////////////////////////////////////
+	//�v�����s�Ҳ�
+	/////////////////////////////////////////////////////////////
+	for(int i=0;i<pow(2,(double)r);i++){
+		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
+
+		float alpha = 0;
+
+		for(int j=Xl;j<=Xu;j++){
+			alpha += pdf[j];
+		}
+
+		for(int j=Xl;j<=Xu;j++){
+			pdf[j] =  Pmax*pow((pdf[j]-Pmin)/(Pmax-Pmin),alpha)+Beta;
+		}
+	}
+	//�N�v�������W��
+	float sum = 0;
+	for(int i=0;i<nColors;i++){
+		sum += pdf[i];
+	}
+
+	for(int i=0;i<nColors;i++){
+		pdf[i] /= sum;
+	}
+	/////////////////////////////////////////////////////////////////////
+	//�N�C�@�Ϭq�@�Ȥ��ϵ���
+	////////////////////////////////////////////////////////////////////////
+	for(int i=0;i<pow(2,(double)r);i++){
+		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
+		float t_weight=0,D_range=Xu-Xl;
+		//�N�C�ӰϬq��CDF���W����1
+		for(int j=Xl;j<=Xu;j++){
+			t_weight += pdf[j];
+		}
+
+		for(int j=Xl;j<=Xu;j++){
+			cdf[j] = pdf[j]/t_weight;
+		}
+
+		for(int j=Xl+1;j<=Xu;j++){
+			cdf[j] += cdf[j-1];
+		}
+
+		for(int j=Xl;j<=Xu;j++){
+			cdf[j] = cdf[j]*D_range + Xl;
+		}
+	}
+
+	for(int i=0;i<src.rows;i++){
+		for(int j=0;j<src.cols;j++){
+			tdst.data[i*src.cols+j] = cdf[src.data[i*src.cols+j]]+0.5;
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
+	dst	=	tdst.clone();
 
 	return true;
 }
@@ -1537,166 +1700,4 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 
 	return true;
 }
-bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r){
 
-	//////////////////////////////////////////////////////////////////////////
-	//	exception process
-	if (src.type()!=CV_8U){
-		return false;
-	}
-	if(MorD < 1 || MorD > 2){
-		return false;
-	}
-	if(r>64){
-		return false;
-	}
-	////////////////////////////////////////////////////////////////////////////
-	const int nColors	=	256;
-	float Pmax = 0,Pmin = 1.0, Xm=0 , Xg=0 ,Beta=0;
-	std::vector <float> pdf(nColors,0),cdf(nColors,0);
-
-	//�έp�Ƕ����Gpdf
-	cv::Mat	tdst(src.size(),src.type());
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			pdf[(int)src.data[i*src.cols+j]]++;	
-		}
-	}
-
-	//�p���X������,�ç��X�n�v���G�����̤j�̤p��
-	for(int i=0;i<nColors;i++){
-		pdf[i] /= (float)(src.rows*src.rows);
-		Xm += i*pdf[i];
-
-		if(pdf[i]>Pmax){
-			Pmax = pdf[i];
-		}
-
-		if(pdf[i]<Pmin){
-			Pmin = pdf[i];
-		}
-	}
-	//�v���Ƕ��Ȫ�������
-	Xg = (0+nColors-1)/2.0;
-	//�p��Beta,�Ψӧ��s�v��
-	Beta = Pmax*abs(Xm-Xg)/(nColors-1);
-
-	std::vector <int> segmentation(pow(2,(double)r)+1,0);
-
-	segmentation[0] = -1;
-	segmentation[pow(2,(double)r)] = nColors-1;
-	/////////////////////////////////////////////////////////////////////////////////////////
-	//Histogram Segmentation Module
-	/////////////////////////////////////////////////////////////////////////////////////////////
-	if(MorD == 1){//�Υ����Ȥ���
-
-		int Xl,Xu;
-
-		for(int i=0;i<r;i++){
-			int location = pow(2,(double)(r-i))/2;
-			int interval = location;
-			for(int j=0;j<pow(2,(double)i);j++){
-				Xl = segmentation[location-interval]+1;
-				Xu = segmentation[location+interval];
-
-				float m=0,sum=0;
-				for(int k=Xl;k<=Xu;k++)
-				{
-					m += k*pdf[k];
-					sum += pdf[k];
-				}
-
-				segmentation[location] =(int)(m/sum+0.5);
-				location += 2*interval;
-			}
-		}
-	}else if(MorD == 2){//�Τ����Ƥ���
-
-		for(int i=0;i<nColors;i++){
-			cdf[i] = pdf[i];
-		}
-
-		for(int i=1;i<nColors;i++){
-			cdf[i] += cdf[i-1];
-		}
-
-		int Xl,Xu;
-
-		for(int i=0;i<r;i++){
-			int location = pow(2,(double)(r-i))/2;
-			int interval = location;
-			for(int j=0;j<pow(2,(double)i);j++){
-				Xl = segmentation[location-interval]+1;
-				Xu = segmentation[location+interval]; 
-
-				float m = (cdf[Xl]+cdf[Xu])/2 , m_min = 1.0;
-
-				for(int k=Xl;k<=Xu;k++){
-					if(abs(cdf[k]-m) < m_min){
-						m_min = abs(cdf[k]-m);
-						segmentation[location] = k;
-					}
-				}
-				location += 2*interval;
-			}
-		}
-	}
-	/////////////////////////////////////////////////////////////
-	//�v�����s�Ҳ�
-	/////////////////////////////////////////////////////////////
-	for(int i=0;i<pow(2,(double)r);i++){
-		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
-
-		float alpha = 0;
-
-		for(int j=Xl;j<=Xu;j++){
-			alpha += pdf[j];
-		}
-
-		for(int j=Xl;j<=Xu;j++){
-			pdf[j] =  Pmax*pow((pdf[j]-Pmin)/(Pmax-Pmin),alpha)+Beta;
-		}
-	}
-	//�N�v�������W��
-	float sum = 0;
-	for(int i=0;i<nColors;i++){
-		sum += pdf[i];
-	}
-
-	for(int i=0;i<nColors;i++){
-		pdf[i] /= sum;
-	}
-	/////////////////////////////////////////////////////////////////////
-	//�N�C�@�Ϭq�@�Ȥ��ϵ���
-	////////////////////////////////////////////////////////////////////////
-	for(int i=0;i<pow(2,(double)r);i++){
-		int Xl = segmentation[i]+1, Xu = segmentation[i+1];
-		float t_weight=0,D_range=Xu-Xl;
-		//�N�C�ӰϬq��CDF���W����1
-		for(int j=Xl;j<=Xu;j++){
-			t_weight += pdf[j];
-		}
-
-		for(int j=Xl;j<=Xu;j++){
-			cdf[j] = pdf[j]/t_weight;
-		}
-
-		for(int j=Xl+1;j<=Xu;j++){
-			cdf[j] += cdf[j-1];
-		}
-
-		for(int j=Xl;j<=Xu;j++){
-			cdf[j] = cdf[j]*D_range + Xl;
-		}
-	}
-
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			tdst.data[i*src.cols+j] = cdf[src.data[i*src.cols+j]]+0.5;
-		}
-	}
-	//////////////////////////////////////////////////////////////////////////
-	dst	=	tdst.clone();
-
-	return true;
-}
