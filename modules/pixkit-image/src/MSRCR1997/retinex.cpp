@@ -34,7 +34,7 @@
 # include <stdio.h>   
 # include <math.h>   
 # include <string.h>   
-#include "../include/pixkit-image.hpp"
+#include "../../include/pixkit-image.hpp"
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\core\core.hpp>
 #include <opencv2\imgproc\imgproc.hpp>
@@ -457,14 +457,7 @@ bool pixkit::enhancement::local::MSRCR1997(const cv::Mat &src,cv::Mat &dst,int N
 	}   
 	memcpy( dImage, sImage, nWidth*nHeight*orig->nChannels );   
 
-	MSRCR_Main( dImage, nWidth, nHeight, orig->nChannels);   
-	printf( "MSRCR parameters:\n" );   
-	printf( "number of scales: \t\t%d\n", rvals.nscales );   
-	printf( "each scale is respectively: \t\t" );   
-	for ( int i = 0; i < rvals.nscales; i++ ){   
-		printf( "[scale_%d] = %7.4f ", i+1, RetinexScales[i] );   
-	}
-	printf( "\n" );   
+	MSRCR_Main( dImage, nWidth, nHeight, orig->nChannels);
 
 	for ( y = 0; y < nHeight; y++ ){   
 		for ( x = 0; x < nWidth; x++ ){   
