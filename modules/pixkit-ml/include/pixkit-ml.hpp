@@ -59,9 +59,23 @@ namespace pixkit{
 
 	namespace classification{
 
+		struct SSample{
+			std::string			classnumber; // class
+			std::vector<double>	features;
+		};
 
+		bool KNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k);
+		bool FKNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k);
+		bool FRNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset);
 
 	}
 
+	namespace mldata{
+
+		void	readTrain(std::vector<pixkit::classification::SSample>& data, const std::string file);
+		void	readTest(std::vector<pixkit::classification::SSample>& data, const std::string file);
+		void	write(std::vector<pixkit::classification::SSample>& data, const std::string file);
+		
+	}
 }
 #endif

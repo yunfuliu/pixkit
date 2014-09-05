@@ -60,12 +60,6 @@ bool pixkit::thresholding::LAT2011(const cv::Mat &src,cv::Mat &dst,int windowSiz
 		new_integral_image[i] = new int [src.cols+1];
 	}
 	new_integral( src, new_integral_image);
-	for (int i=0 ; i<dst.rows ; i++){
-		for (int j=0 ; j<dst.cols ; j++){
-			dst.data[i*dst.cols+j]=0;
-		}
-	}
-
 
 	//////////////////////////////////////////////////////////////////////////
 	///// initial
