@@ -200,29 +200,30 @@ namespace pixkit{
 		
 		/// Local methods
 		namespace local{
-			bool Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
-			bool Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
-			bool POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
-			bool Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
-			bool LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
-			bool LambertiMontrucchioSanna2006(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
-			bool FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize);
-			bool YuBajaj2004(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float C=0.85f,bool anisotropicMode=false,const float R=0.09f);
-			bool KimKimHwang2001(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
-			bool Stark2000(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float alpha=0.5f,const float beta=0.5f);
-			bool CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L = 0.03);
-			bool CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L = 0.03);
-			bool AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize);
-			bool MSRCR(const cv::Mat &src,cv::Mat &dst);
+			bool	LCE_BSESCS2014(const cv::Mat &src3b,cv::Mat &dst3b);
+			bool	Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
+			bool	Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
+			bool	POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
+			bool	Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
+			bool	LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
+			bool	LambertiMontrucchioSanna2006(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
+			bool	FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize);
+			bool	YuBajaj2004(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float C=0.85f,bool anisotropicMode=false,const float R=0.09f);
+			bool	KimKimHwang2001(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
+			bool	Stark2000(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float alpha=0.5f,const float beta=0.5f);
+			bool	CLAHEnon1987(const cv::Mat &src,cv::Mat &dst, cv::Size nBlock, float L = 0.03);
+			bool	CLAHE1987(const cv::Mat &src,cv::Mat &dst, cv::Size blockSize, float L = 0.03);
+			bool	AHE1974(const cv::Mat &src1b,cv::Mat &dst1b,const cv::Size blockSize);
+			bool	MSRCR(const cv::Mat &src,cv::Mat &dst);
 		}
 
 		/// Global methods
 		namespace global{
-			bool RajuNair2014(const cv::Mat &src1b,cv::Mat &dst1b);
-			bool CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
-			bool MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
-			bool WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
-			bool GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);
+			bool	RajuNair2014(const cv::Mat &src,cv::Mat &dst);
+			bool	CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
+			bool	MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
+			bool	WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
+			bool	GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);
 		}
 
 	}
