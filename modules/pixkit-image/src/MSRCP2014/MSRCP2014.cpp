@@ -302,36 +302,37 @@ void MSRCP_Main( unsigned char * src, int width, int height, int NumChannel){
 * (a)  Filterings at several scales and sumarize the results.  
 * (b)  Calculation of the final values.  
 */   
-bool pixkit::enhancement::local::MSRCP2014( char * sFilename,cv::Mat &Return_Image,int Nscale)   
+bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &Return_Image,int Nscale)   
 {   
-	if(Nscale<1||Nscale>3){
+	rvals.nscales=Nscale;
+	/////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(src.type()!=CV_8UC3||Nscale<1||Nscale>3){
 		CV_Assert(false);
 	}
 
-	rvals.nscales=Nscale;
-	IplImage * orig = NULL;  
-	IplImage * dst = NULL;   
+	IplImage * orig= &IplImage(src);
+
+	IplImage * dst = NULL; 
+
 	unsigned char * sImage, * dImage;   
 	int x, y;   
 	int nWidth, nHeight, step;  
 
-	orig = cvLoadImage( sFilename, 1 );
-
-	if ( orig == NULL )   
-	{   
-		printf( "Could not get image. Program exits!\n" ); 
-		system("pause");
-		exit( 0 );   
+	if ( orig == NULL )	{   
+		printf( "Could not get image. Program exits!\n" );  
+		CV_Assert(false);
 	}   
-	nWidth = orig->width;   
+	nWidth =orig->width;   
 	nHeight = orig->height;   
 	step = orig->widthStep/sizeof( unsigned char );   
-	dst = cvCreateImage( cvSize(nWidth,nHeight), IPL_DEPTH_8U, 3 ); 
-	sImage = new unsigned char[nHeight*nWidth*3];   
+	printf("nWidth=%d",(int)nWidth);
+	printf("nHeight=%d",(int) nHeight);
+	dst = cvCreateImage( cvSize(nWidth,nHeight), IPL_DEPTH_8U, 3 );  
+	
+	sImage = new unsigned char[nHeight*nWidth*3];  
 	dImage = new unsigned char[nHeight*nWidth*3];   
-
-	cvNamedWindow( "Original Video", CV_WINDOW_AUTOSIZE );   
-	cvShowImage( "Original Video", orig );   
+	
 	if ( orig->nChannels == 3 )   
 	{   
 		for ( y = 0; y < nHeight; y++ )   
@@ -341,8 +342,10 @@ bool pixkit::enhancement::local::MSRCP2014( char * sFilename,cv::Mat &Return_Ima
 				sImage[(y*nWidth+x)*orig->nChannels+1] = orig->imageData[y*step+x*orig->nChannels+1];   
 				sImage[(y*nWidth+x)*orig->nChannels+2] = orig->imageData[y*step+x*orig->nChannels+2];   
 			}   
-	}   
-	memcpy( dImage, sImage, nWidth*nHeight*orig->nChannels );   
+	}  
+	
+	memcpy( dImage, sImage, nWidth*nHeight*orig->nChannels );  
+	
 	MSRCP_Main( dImage, nWidth, nHeight, orig->nChannels );   
 	
 	for ( y = 0; y < nHeight; y++ )   
@@ -356,11 +359,11 @@ bool pixkit::enhancement::local::MSRCP2014( char * sFilename,cv::Mat &Return_Ima
 
 
 		cv::Mat Matrix1(dst,0);
-		Return_Image=Matrix1.clone();
-		cvReleaseImage( &orig );   
+		Return_Image=Matrix1.clone(); 
 		cvReleaseImage( &dst );   
 		delete [] sImage;  
 		delete [] dImage;   
+		return true;
 }   
 
 
