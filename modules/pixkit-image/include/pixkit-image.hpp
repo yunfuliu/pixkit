@@ -99,10 +99,15 @@ namespace pixkit{
 	namespace halftoning{
 
 		/// Error Diffusion related
-		namespace errordiffusion{ 
+		namespace errordiffusion{
+			enum			ScanOrder_TYPE { Raster, Serpentine };
+			bool			FloydSteinberg1975(const cv::Mat &src,cv::Mat &dst, ScanOrder_TYPE = Raster);
+			bool			Jarvis1976(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE = Raster);
+			bool			Stucki1981(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE = Raster);
+			bool			ShiauFan1996(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE = Raster);
+
 			bool			Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
 			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);
-			bool			FloydSteinberg1976(const cv::Mat &src,cv::Mat &dst);
 		}
 
 		/// Direct binary search
@@ -113,17 +118,16 @@ namespace pixkit{
 
 		/// Ordered Dither related
 		namespace ordereddithering{
+
+			enum			DitherArray_TYPE { DispersedDot, ClusteredDot };
+			bool			Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE = DispersedDot);
+
 			bool			KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
 		}
 
 		/// Dot diffusion related
 		namespace dotdiffusion{
 
-			/**
-			* @brief		paper: Yun-Fu Liu and Jing-Ming Guo, "New class tiling design for dot-diffused halftoning," IEEE Trans. Image Processing, vol. 22, no. 3, pp. 1199-1208, March 2013.
-			* 
-			* @param		ctSize:	CT size
-			*/
 			class CNADDCT{
 			public:
 				int				m_CT_height;	// CT's height and width
@@ -144,36 +148,15 @@ namespace pixkit{
 				unsigned char	*m_ctmap;
 				unsigned char	*m_ctData;
 			};
-			bool NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
+			bool			NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
 
-			/**
-			* @brief		paper: J. M. Guo and Y. F. Liu"Improved dot diffusion by diffused matrix and class matrix co-optimization," IEEE Trans. Image Processing, vol. 18, no. 8, pp. 1804-1816, 2009.
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			May 17, 2013
-			* @version		1.0
-			* 
-			* @param		src: input image (grayscale only)
-			* @param		dst: output image
-			* @param		ClassMatrixSize: allow only 8x8 and 16x16
-			*
-			* @return		bool: true: successful, false: failure
-			*/ 
-			bool GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
+			bool			GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
 			
-			/**
-			* @brief		paper: S. Lippens and W. Philips, ��Green-noise halftoning with dot diffusion,�� in Proc. SPIE/IS&T - The International Society for Optical Engineering, vol. 6497, no. 64970V, 2007.
-			*
-			* @author		Yunfu Liu (yunfuliu@gmail.com)
-			* @date			Feb 25, 2014
-			* @version		1.0
-			* 
-			* @param		src: input image (grayscale only)
-			* @param		dst: output image
-			*
-			* @return		bool: true: successful, false: failure
-			*/ 
-			bool LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
+			bool			LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
+
+			bool			Knuth1987(const cv::Mat &src, cv::Mat &dst);
+
+			bool			MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize = 8);
 
 		}
 	}
@@ -181,6 +164,8 @@ namespace pixkit{
 	//////////////////////////////////////////////////////////////////////////
 	/// Image compression
 	namespace comp{
+
+		bool	DBSBTC2011(cv::Mat src, cv::Mat &dst, int blockSize = 8);
 
 		bool	DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize);
 
@@ -244,32 +229,18 @@ namespace pixkit{
 		// signal similarity 
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
-		// for halftone images
-		float HPSNR(const cv::Mat &src1, const cv::Mat &src2);
+		// signal similarity for halftone images
+		float HPSNR(const cv::Mat &src1, const cv::Mat &src2, double sd=1.);
 
-		/**
-		*	@brief		Display the difference of two Gaussian blurred images.
-		*
-		*	@paper		C. Schmaltz, P. Gwosdek, A. Bruhn, and J. Weickert, “Electrostatic halftoning,” Computer Graphics Forum, vol. 29, no. 8, pp. 2313-2327, 2010.
-		*/
 		bool GaussianDiff(cv::InputArray &_src1,cv::InputArray &_src2,double sd=1.);
-
-		/**
-		*	@brief		Get the power spectrum density by DFT.
-		*
-		*/
-		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);
-
-		/**
-		*	@brief		Get averaged 
-		*
-		*	@paper		M. S. Bartlett, "The spectral analysis of two-dimensional point processes," Biometrika, Dec. 1964.
-		*	
-		*	@Note		1. Input should be generated from a constant grayscale.
-		*				2. _src should be 256x(256x10), and output (_dst) will be 256x256.
-		*/
+	
+		// Get averaged power spectrum density 
+		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);	
 		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst);
 
+		// image similarity
+		float SSIM(const cv::Mat &src1, const cv::Mat &src2);	
+		float MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
 	}
 
 }
