@@ -1498,10 +1498,6 @@ bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::
 		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::Ulichney1987] image is empty");
 		return false;
 	}
-	if(src.rows%8 != 0 || src.cols%8 != 0){
-		CV_Error(CV_BadImageSize,"[halftoning::ordereddithering::Ulichney1987] image size is invalid for dithering array");
-		return false;
-	}
 
 	//////////////////////////////////////////////////////////////////////////
 	dst.create(src.size(), src.type());
@@ -1544,14 +1540,12 @@ bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::
 	}
 
 	//Dither processing
-	for(int i=0; i<src.rows; i+=sizeOfArray){
-		for(int j=0; j<src.cols; j+=sizeOfArray){
-			for(int m=0; m<sizeOfArray; m++){
-				for(int n=0; n<sizeOfArray; n++){
-					if(src.data[(i+m)*src.cols + (j+n)] >= DitherArray[m][n])	{dst.data[(i+m)*dst.cols + (j+n)] = 255;}
-					else														{dst.data[(i+m)*dst.cols + (j+n)] = 0;}
-				}
-			}
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+				if(src.data[(i)*src.cols + (j)] >= DitherArray[i%sizeOfArray][j%sizeOfArray])
+					dst.data[i*dst.cols+j] = 255;
+				else
+					dst.data[i*dst.cols+j] = 0;
 		}
 	}
 	return true;
@@ -1636,7 +1630,7 @@ bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src
 //	Dot diffusion proposed by Knuth
 bool pixkit::halftoning::dotdiffusion::Knuth1987(const cv::Mat &src, cv::Mat &dst)
 {
-	//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(src.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::Knuth1987] accepts only grayscale image");
@@ -1646,14 +1640,10 @@ bool pixkit::halftoning::dotdiffusion::Knuth1987(const cv::Mat &src, cv::Mat &ds
 		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::Knuth1987] image is empty");
 		return false;
 	}
-	if(src.rows%8 != 0 || src.cols%8 != 0){
-		CV_Error(CV_BadImageSize,"[halftoning::ordereddithering::Knuth1987] image size is invalid for dithering array");
-		return false;
-	}
 
 	//////////////////////////////////////////////////////////////////////////
 	cv::Mat	tdst1f	=	src.clone();
-	tdst1f.convertTo(tdst1f,CV_32FC1); 
+	tdst1f.convertTo(tdst1f, CV_32FC1); 
 
 	const int sizeOfClassMatrix = 8;
 	std::vector< std::vector< int > >CM_reg(3, std::vector< int >(3));
@@ -1666,89 +1656,94 @@ bool pixkit::halftoning::dotdiffusion::Knuth1987(const cv::Mat &src, cv::Mat &ds
 		28,	14,	22,	30,	35,	49,	41,	33,
 		20,	4,	6,	11,	43,	59,	57,	52,
 		12,	0,	3,	19,	51,	63,	60,	44,
-		24,	16,	8,	27,	39,	47,	55,	36	};
+		24,	16,	8,	27,	39,	47,	55,	36	
+	};
 
-		// diffusion weight in Dot Diffusion ---------------------------------------
-		const float DiffusionWeight[3][3] = {
-			1,	2,	1,
-			2,	0,	2,
-			1,	2,	1	};
+	// diffusion weight in Dot Diffusion ---------------------------------------
+	const float DiffusionWeight[3][3] = {
+		1,	2,	1,
+		2,	0,	2,
+		1,	2,	1	
+	};
 
-			for(int k=0; k<sizeOfClassMatrix*sizeOfClassMatrix; k++){
+	for(int k=0; k<sizeOfClassMatrix*sizeOfClassMatrix; k++){
 
-				for(int m=0; m<sizeOfClassMatrix; m++){
-					for(int n=0; n<sizeOfClassMatrix; n++){
-						if(ClassMatrix[m][n] == k){
+		for(int m=0; m<sizeOfClassMatrix; m++){
+			for(int n=0; n<sizeOfClassMatrix; n++){
+				if(ClassMatrix[m][n] == k){
 
-							for(int i=0; i<src.rows; i+=sizeOfClassMatrix){
-								for(int j=0; j<src.cols; j+=sizeOfClassMatrix){
+					for(int i=0; i<src.rows; i+=sizeOfClassMatrix){
+						if (i+m >= src.rows)	continue;
+		
+						for(int j=0; j<src.cols; j+=sizeOfClassMatrix){
+							if (j+n >= src.cols)	continue;
 
-									//ED part--------------------	
-									float error;
-									if(tdst1f.ptr<float>(i+m)[j+n] >= 128){	
-										error = tdst1f.ptr<float>(i+m)[j+n]-255;	//error value
-										tdst1f.ptr<float>(i+m)[j+n] = 255;
-									}
-									else{				
-										error = tdst1f.ptr<float>(i+m)[j+n];	//error value
-										tdst1f.ptr<float>(i+m)[j+n] = 0;
-									}
+							// ED part
+							float error;
+							if(tdst1f.ptr<float>(i+m)[j+n] >= 128){	
+								error = tdst1f.ptr<float>(i+m)[j+n]-255;	//error value
+								tdst1f.ptr<float>(i+m)[j+n] = 255;
+							}
+							else{				
+								error = tdst1f.ptr<float>(i+m)[j+n];	//error value
+								tdst1f.ptr<float>(i+m)[j+n] = 0;
+							}
 
-									int X_index,Y_index;
-									//ClassMatrix_reg(3*3 for diffusion_weight_reg) initialization-------
-									for(int x = -1;x <= 1;x++){
-										for(int y = -1;y <= 1;y++){
-											if((m+x) >= sizeOfClassMatrix)	{X_index = m+x-sizeOfClassMatrix;}
-											else if((m+x) < 0)				{X_index = m+x+sizeOfClassMatrix;}
-											else							{X_index = m+x;}
+							int X_index,Y_index;
+							// ClassMatrix_reg (3*3 for diffusion_weight_reg) initialization
+							for(int x = -1;x <= 1;x++){
+								for(int y = -1;y <= 1;y++){
+									if((m+x) >= sizeOfClassMatrix)	{X_index = m+x-sizeOfClassMatrix;}
+									else if((m+x) < 0)				{X_index = m+x+sizeOfClassMatrix;}
+									else							{X_index = m+x;}
 
-											if((n+y) >= sizeOfClassMatrix)	{Y_index = n+y-sizeOfClassMatrix;}
-											else if((n+y) < 0)				{Y_index = n+y+sizeOfClassMatrix;}
-											else							{Y_index = n+y;}
+									if((n+y) >= sizeOfClassMatrix)	{Y_index = n+y-sizeOfClassMatrix;}
+									else if((n+y) < 0)				{Y_index = n+y+sizeOfClassMatrix;}
+									else							{Y_index = n+y;}
 
-											CM_reg[x+1][y+1] = ClassMatrix[X_index][Y_index];
-										}
-									}
-
-									//make sure that error diffusion processing whether it is "over" the "size range" of the image
-									float sum = 0.0;
-
-									for(int x=-1; x<=1; x++){
-										if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
-										for(int y=-1; y<=1; y++){
-											if((n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
-											if(CM_reg[x+1][y+1] > CM_reg[1][1]){
-												sum += DiffusionWeight[x+1][y+1];
-											}	
-										}
-									}
-
-									//error diffusion processing
-									for(int x=-1; x<=1; x++){
-										if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
-										for(int y=-1; y<=1; y++){
-											if( (n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
-											if (x!=0 || y!=0){
-												if(CM_reg[x+1][y+1] > CM_reg[1][1]){
-													tdst1f.ptr<float>(m+i+x)[n+j+y]	+=	(error * DiffusionWeight[x+1][y+1] / sum);
-												}
-											}	
-										}
-									}				
+									CM_reg[x+1][y+1] = ClassMatrix[X_index][Y_index];
 								}
 							}
+
+							// make sure that error diffusion processing whether it is "over" the "size range" of the image
+							float sum = 0.0;
+
+							for(int x=-1; x<=1; x++){
+								if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+								for(int y=-1; y<=1; y++){
+									if((n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+									if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+										sum += DiffusionWeight[x+1][y+1];
+									}	
+								}
+							}
+
+							// error diffusion processing
+							for(int x=-1; x<=1; x++){
+								if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+								for(int y=-1; y<=1; y++){
+									if( (n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+									if (x!=0 || y!=0){
+										if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+											tdst1f.ptr<float>(m+i+x)[n+j+y]	+=	(error * DiffusionWeight[x+1][y+1] / sum);
+										}
+									}	
+								}
+							}				
 						}
 					}
 				}
 			}
-			tdst1f.convertTo(dst,CV_8UC1);
-			return true;
+		}
+	}
+	tdst1f.convertTo(dst,CV_8UC1);
+	return true;
 }
 
 //	Dot diffusion proposed by Mese and Vaidyanathan
 bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize)
 {
-	//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 	// exception
 	if(src.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::MeseVaidyanathan2000] accepts only grayscale image");
@@ -1762,6 +1757,7 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 		CV_Error(CV_StsBadArg,"[halftoning::ordereddithering::MeseVaidyanathan2000] BlockSize should be 8 or 16.");
 		return false;
 	}
+
 	//////////////////////////////////////////////////////////////////////////
 	cv::Mat	tdst1f	=	src.clone();
 	tdst1f.convertTo(tdst1f,CV_32FC1); 
@@ -1775,7 +1771,7 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 		2,	0,	2,
 		1,	2,	1	};
 
-		switch(ClassMatrixSize){
+	switch(ClassMatrixSize){
 		case 8:{
 			const int coe[8][8] = {
 				47,	31,	51,	24,	27,	45,	5,	21,
@@ -1793,7 +1789,7 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 					}
 				}
 				break;
-			   }
+		}
 
 		case 16:{
 			const int coe[16][16] = {
@@ -1814,85 +1810,87 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 				187,	194,	198,	212,	9,		10,		30,		35,		58,		63,		90,		96,		122,	129,	154,	161,
 				193,	210,	211,	8,		11,		27,		34,		57,		66,		89,		98,		121,	126,	153,	162,	186		};
 
-				for(int i=0;i<sizeOfClassMatrix;i++){
-					for(int j=0;j<sizeOfClassMatrix;j++){
-						ClassMatrix[i][j]=coe[i][j];
-					}
+			for(int i=0;i<sizeOfClassMatrix;i++){
+				for(int j=0;j<sizeOfClassMatrix;j++){
+					ClassMatrix[i][j]=coe[i][j];
 				}
-				break;
-				}
+			}
+			break;
 		}
+	}
 
-		for(int k=0; k<sizeOfClassMatrix*sizeOfClassMatrix; k++){
+	for(int k=0; k<sizeOfClassMatrix*sizeOfClassMatrix; k++){
 
-			for(int m=0; m<sizeOfClassMatrix; m++){
-				for(int n=0; n<sizeOfClassMatrix; n++){
-					if(ClassMatrix[m][n] == k){
+		for(int m=0; m<sizeOfClassMatrix; m++){
+			for(int n=0; n<sizeOfClassMatrix; n++){
+				if(ClassMatrix[m][n] == k){
 
-						for(int i=0; i<src.rows; i+=sizeOfClassMatrix){
-							for(int j=0; j<src.cols; j+=sizeOfClassMatrix){
+					for(int i=0; i<src.rows; i+=sizeOfClassMatrix){
+						if (i+m >= src.rows)	continue;
+						for(int j=0; j<src.cols; j+=sizeOfClassMatrix){
+							if (j+n >= src.cols)	continue;
 
-								//ED part--------------------	
-								float error;
-								if(tdst1f.ptr<float>(i+m)[j+n] >= 128){	
-									error = tdst1f.ptr<float>(i+m)[j+n]-255;	//error value
-									tdst1f.ptr<float>(i+m)[j+n] = 255;
-								}
-								else{				
-									error = tdst1f.ptr<float>(i+m)[j+n];	//error value
-									tdst1f.ptr<float>(i+m)[j+n] = 0;
-								}
-
-								int X_index,Y_index;
-
-								//ClassMatrix_reg(3*3 for diffusion_weight_reg) initialization-------
-								for(int x = -1;x <= 1;x++){
-									for(int y = -1;y <= 1;y++){
-										if((m+x) >= sizeOfClassMatrix)	{X_index = m+x-sizeOfClassMatrix;}
-										else if((m+x) < 0)				{X_index = m+x+sizeOfClassMatrix;}
-										else							{X_index = m+x;}
-
-										if((n+y) >= sizeOfClassMatrix)	{Y_index = n+y-sizeOfClassMatrix;}
-										else if((n+y) < 0)				{Y_index = n+y+sizeOfClassMatrix;}
-										else							{Y_index = n+y;}
-
-										CM_reg[x+1][y+1] = ClassMatrix[X_index][Y_index];
-									}
-								}
-
-								//make sure that error diffusion processing whether it is "over" the "size range" of the image
-								float sum = 0.0;
-
-								for(int x=-1; x<=1; x++){
-									if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
-									for(int y=-1; y<=1; y++){
-										if((n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
-										if(CM_reg[x+1][y+1] > CM_reg[1][1]){
-											sum += DiffusionWeight[x+1][y+1];
-										}	
-									}
-								}
-
-								//error diffusion processing
-								for(int x=-1; x<=1; x++){
-									if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
-									for(int y=-1; y<=1; y++){
-										if( (n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
-										if (x!=0 || y!=0){
-											if(CM_reg[x+1][y+1] > CM_reg[1][1]){
-												tdst1f.ptr<float>(m+i+x)[n+j+y]	+=	(error * DiffusionWeight[x+1][y+1] / sum);
-											}
-										}	
-									}
-								}				
+							//ED part--------------------	
+							float error;
+							if(tdst1f.ptr<float>(i+m)[j+n] >= 128){	
+								error = tdst1f.ptr<float>(i+m)[j+n]-255;	//error value
+								tdst1f.ptr<float>(i+m)[j+n] = 255;
 							}
+							else{				
+								error = tdst1f.ptr<float>(i+m)[j+n];	//error value
+								tdst1f.ptr<float>(i+m)[j+n] = 0;
+							}
+
+							int X_index,Y_index;
+
+							//ClassMatrix_reg(3*3 for diffusion_weight_reg) initialization-------
+							for(int x = -1;x <= 1;x++){
+								for(int y = -1;y <= 1;y++){
+									if((m+x) >= sizeOfClassMatrix)	{X_index = m+x-sizeOfClassMatrix;}
+									else if((m+x) < 0)				{X_index = m+x+sizeOfClassMatrix;}
+									else							{X_index = m+x;}
+
+									if((n+y) >= sizeOfClassMatrix)	{Y_index = n+y-sizeOfClassMatrix;}
+									else if((n+y) < 0)				{Y_index = n+y+sizeOfClassMatrix;}
+									else							{Y_index = n+y;}
+
+									CM_reg[x+1][y+1] = ClassMatrix[X_index][Y_index];
+								}
+							}
+
+							//make sure that error diffusion processing whether it is "over" the "size range" of the image
+							float sum = 0.0;
+
+							for(int x=-1; x<=1; x++){
+								if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+								for(int y=-1; y<=1; y++){
+									if((n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+									if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+										sum += DiffusionWeight[x+1][y+1];
+									}	
+								}
+							}
+
+							//error diffusion processing
+							for(int x=-1; x<=1; x++){
+								if( (m+i+x) >= src.rows || (m+i+x) < 0)		continue;
+								for(int y=-1; y<=1; y++){
+									if( (n+j+y) >= src.cols || (n+j+y) < 0 )		continue;
+									if (x!=0 || y!=0){
+										if(CM_reg[x+1][y+1] > CM_reg[1][1]){
+											tdst1f.ptr<float>(m+i+x)[n+j+y]	+=	(error * DiffusionWeight[x+1][y+1] / sum);
+										}
+									}	
+								}
+							}				
 						}
 					}
 				}
 			}
 		}
-		tdst1f.convertTo(dst,CV_8UC1);
-		return true;
+	}
+	tdst1f.convertTo(dst,CV_8UC1);
+	return true;
 }
 
 //	Dot diffusion proposed by Lippens and Philips
