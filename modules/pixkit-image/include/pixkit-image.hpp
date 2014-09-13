@@ -183,14 +183,12 @@ namespace pixkit{
 	namespace comp{
 
 		bool	DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize);
-
 		enum	ODBTC_TYPE{ODBTC_TYPE_ClusteredDot,ODBTC_TYPE_DispersedDot};
 		bool	ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYPE type);
-
 		enum	EDBTC_TYPE{EDBTC_TYPE_Floyd,EDBTC_TYPE_Jarvis,EDBTC_TYPE_Stucki};
 		bool	EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYPE type);
-
 		bool	BTC(const cv::Mat &src,cv::Mat &dst,int blockSize);
+		bool	YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b, const int K = 256);
 
 	}
 
