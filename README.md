@@ -2,10 +2,10 @@
 
 pixkit
 ======
-For only academic usages of image processing (`pixkit-image`) and machine learning (`pixkit-ml`).
+For only academic usages of image processing (`pixkit-image`), machine learning (`pixkit-ml`), and computer vision (`pixkit-cv`).
 
-Contains image processing and machine learning related methods which <b>had been published</b> (on articles, e.g., journal or conference papers). 
-In addition to above implementations, some frequently utilized tools, i.e., attack simulation and quality assessment, are also involved as expected.
+Contains related methods which <b>had been published</b> (on articles, e.g., journal or conference papers). 
+In addition to above implementations, some frequently utilized tools, are also involved as expected.
 
 The repo, OpenCV, is used to build up all the pixkit functions: <https://github.com/Itseez/opencv>
 
