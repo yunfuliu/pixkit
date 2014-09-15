@@ -503,7 +503,7 @@ float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 	return SSIMresult;
 }
 
-float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize)
+float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize, double* lu_co_st)
 {
 	//////////////////////////////////////////////////////////////////////////
 	// exception
@@ -581,7 +581,20 @@ float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2,
 			STDy = sqrt(STDy);
 
 			SSIMresult += ((2*mean_x*mean_y + C1) * (2*variance_xy + C2)) / ((mean_x*mean_x + mean_y*mean_y + C1) * (STDx*STDx + STDy*STDy + C2));		
+			// for MS_SSIM calculation
+			if (lu_co_st != NULL){
+				luminance += (2*mean_x*mean_y + C1) / (mean_x*mean_x + mean_y*mean_y + C1);
+				contrast += (2*STDx*STDy + C2) / (STDx*STDx + STDy*STDy + C2);
+				structure += (variance_xy + C3) / (STDx*STDy + C3);	
+			}
 		}
+	}
+
+	// for MS_SSIM calculation
+	if (lu_co_st != NULL){
+		lu_co_st[0] = luminance / (src1.rows * src1.cols);
+		lu_co_st[1] = contrast / (src1.rows * src1.cols);
+		lu_co_st[2] = structure / (src1.rows * src1.cols);
 	}
 	SSIMresult /= (src1.rows * src1.cols);
 	return SSIMresult;			
