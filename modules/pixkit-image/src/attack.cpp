@@ -81,7 +81,7 @@ bool	pixkit::attack::addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const doub
 			double	noise_mag=noise_position-CENTER;
 
 			// add noise
-			tdst.data[i*tdst.cols+j]+=noise_mag;			
+			tdst.data[i*tdst.cols+j]+=static_cast<uchar>(noise_mag);			
 			if(tdst.data[i*tdst.cols+j]>MAXVALUE){
 				tdst.data[i*tdst.cols+j]=MAXVALUE;
 			}else if(tdst.data[i*tdst.cols+j]<0){

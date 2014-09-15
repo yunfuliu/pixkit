@@ -9,6 +9,7 @@ PIXKIT MANUAL
 	pixkit involves following major functions:
 	- image processing: `pixkit-image`
 	- maching learning: `pixkit-ml`
+	- timer: `pixkit-timer`
 
 * Build up pixkit with [CMake](http://www.cmake.org/) for your environment, and assign a path for your build with, i.e., `C:\pixkit\build\`
 	

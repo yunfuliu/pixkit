@@ -17,7 +17,7 @@
 #define __PIXKIT_ML_HPP__
 
 namespace pixkit{
-
+	
 	namespace clustering{
 
 		/**
@@ -57,5 +57,25 @@ namespace pixkit{
 		bool KMeans(std::vector<std::vector<double>> &src, std::vector<std::vector<double>> &dst, int K, int iter, pixkit::clustering::KM_TYPE type = KM_RANDPOS);
 	}
 
+	namespace classification{
+
+		struct SSample{
+			std::string			classnumber; // class
+			std::vector<double>	features;
+		};
+
+		bool KNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k);
+		bool FKNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset,int k);
+		bool FRNN(std::vector<SSample> &sample,const std::vector<SSample> &dataset);
+
+	}
+
+	namespace mldata{
+
+		void	readTrain(std::vector<pixkit::classification::SSample>& data, const std::string file);
+		void	readTest(std::vector<pixkit::classification::SSample>& data, const std::string file);
+		void	write(std::vector<pixkit::classification::SSample>& data, const std::string file);
+		
+	}
 }
 #endif
