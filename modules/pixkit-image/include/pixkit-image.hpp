@@ -200,6 +200,32 @@ namespace pixkit{
 			void cvt_(cv::Mat &dst, const int imageSize, int dim_num, int n, int batch, int init, int sample, int sample_num, 
 				int it_max, int it_fixed, int *seed, double *r, int *it_num, double *it_diff, double *energy);
 
+			/*
+			* @brief    paper: SCHMALTZ, C., GWOSDEK, P., BRUHN, A., AND WEICKERT, J. "Electrostatic halftoning," Computer Graphics Forum, vol. 29, no. 8, pp. 2313–2327, 2010.
+			*
+			* @website  http://www.mia.uni-saarland.de/Research/Electrostatic_Halftoning/index.shtml
+			*
+			* @author	Yu Cheng(god2346697@yahoo.com.tw)
+			* @date		Sep 23, 2014
+			* @version	1.0
+			*
+			* @param    src: input image (grayscale only)
+			* @param    dst: output image
+			* @param    InitialCharge: specifies how the points are to be initialized.
+			*                          0, Random distribution;
+			*                          1, using EH's initialization;
+			* @param    Iterations: the maximum number of iterations. (Don't choose 9,19,29... when using "Shake")
+			* @param    GridForce: specifies whether to use 'GridForce', Y/N=1/0 (Recommend using it when input is natural image)
+			* @param    Shake: specifies whether to use 'Shake', Y/N=1/0 ("Shake" will act when "Iterations" is set bigger than 64 times)
+			* @param    Debug: 0, only output the dst
+			*                  1, the resault will be output to "output.bmp" each iteration. 
+			*                  2, the resault will be output to Folder named "output", No. 0 is the initial image, and No. 1~Iterations are the resault of each iteration. 
+			*
+			* @example 
+			*           pixkit::halftoning::ungrouped::ElectrostaticHalftoning(src,dst,1,200,1,0,0);
+			*
+			*/
+			void ElectrostaticHalftoning(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
 		}
 	}
 
