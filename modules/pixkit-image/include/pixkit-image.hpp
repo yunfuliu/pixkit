@@ -106,9 +106,13 @@ namespace pixkit{
 		}
 
 		/// Direct binary search
-		namespace directbinarysearch{
+		namespace iterative{
 			// efficient DBS
 			bool			LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7);
+
+			//
+			bool			ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
+
 		}
 
 		/// Ordered Dither related
@@ -200,7 +204,7 @@ namespace pixkit{
 			void cvt_(cv::Mat &dst, const int imageSize, int dim_num, int n, int batch, int init, int sample, int sample_num, 
 				int it_max, int it_fixed, int *seed, double *r, int *it_num, double *it_diff, double *energy);
 
-		}
+			}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
