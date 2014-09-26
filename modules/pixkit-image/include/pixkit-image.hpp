@@ -100,31 +100,31 @@ namespace pixkit{
 
 		/// Error Diffusion related
 		namespace errordiffusion{
-			bool			FloydSteinberg1975(const cv::Mat &src,cv::Mat &dst);
-			bool			Jarvis1976(const cv::Mat &src, cv::Mat &dst);
-			bool			Stucki1981(const cv::Mat &src, cv::Mat &dst);
-			bool			ShiauFan1996(const cv::Mat &src, cv::Mat &dst);
-			bool			Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
-			bool			ZhouFang2003(const cv::Mat &src, cv::Mat &dst);
+			bool FloydSteinberg1975(const cv::Mat &src,cv::Mat &dst);
+			bool Jarvis1976(const cv::Mat &src, cv::Mat &dst);
+			bool Stucki1981(const cv::Mat &src, cv::Mat &dst);
+			bool ShiauFan1996(const cv::Mat &src, cv::Mat &dst);
+			bool Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst);
+			bool ZhouFang2003(const cv::Mat &src, cv::Mat &dst);
 		}
 
 		/// Direct binary search
 		namespace iterative{
 			// efficient DBS
-			bool			LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7);
+			bool LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7);
 
 			//
-			bool			ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
+			bool ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
 
 		}
 
 		/// Ordered Dither related
 		namespace ordereddithering{
 
-			enum			DitherArray_TYPE { DispersedDot, ClusteredDot };
-			bool			Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE = DispersedDot);
+			enum DitherArray_TYPE { DispersedDot, ClusteredDot };
+			bool Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE = DispersedDot);
 
-			bool			KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
+			bool KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
 		}
 
 		/// Dot diffusion related
@@ -150,15 +150,15 @@ namespace pixkit{
 				unsigned char	*m_ctmap;
 				unsigned char	*m_ctData;
 			};
-			bool			NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
+			bool NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct);
 
-			bool			GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
+			bool GuoLiu2009(const cv::Mat &src, cv::Mat &dst,const int ClassMatrixSize);
 			
-			bool			LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
+			bool LippensPhilips2007(const cv::Mat &src, cv::Mat &dst);
 
-			bool			Knuth1987(const cv::Mat &src, cv::Mat &dst);
+			bool Knuth1987(const cv::Mat &src, cv::Mat &dst);
 
-			bool			MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize = 8);
+			bool MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize = 8);
 
 		}
 
@@ -256,7 +256,7 @@ namespace pixkit{
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
 		// signal similarity for halftone images
-		float HPSNR(const cv::Mat &src1, const cv::Mat &src2, double sd=1.);
+		float HPSNR(const cv::Mat &src1, const cv::Mat &src2);
 
 		bool GaussianDiff(cv::InputArray &_src1,cv::InputArray &_src2,double sd=1.);
 	
