@@ -37,8 +37,8 @@ namespace pixkit{
 		const std::string title;
 
 		bool is_started;
-		unsigned int start_clock;
-		unsigned int cumulative_clock;
+		unsigned long long int start_clock;
+		unsigned long long int cumulative_clock;
 		unsigned int n_starts;
 	};
 }

@@ -3,6 +3,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 using namespace cv;
+using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
@@ -10,13 +11,13 @@ float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,c
 	//////////////////////////////////////////////////////////////////////////
 	// exceptions
 	if(src.type()!=CV_8U){
-		return false;
+		CV_Assert(false);
 	}
 	if(nBlocks.width>src.cols||nBlocks.height>src.rows){
-		return false;
+		CV_Assert(false);
 	}
 	if(mode!=1&&mode!=2){
-		return false;
+		CV_Assert(false);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -72,8 +73,7 @@ float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,c
 							moment1+=src.data[(i+m)*src.cols+(j+n)];
 							moment2+=src.data[(i+m)*src.cols+(j+n)]*src.data[(i+m)*src.cols+(j+n)];
 							count_mom++;
-						}
-						
+						}						
 					}
 				}
 				moment1/=(double)count_mom;
@@ -145,7 +145,7 @@ float pixkit::qualityassessment::AMBE(const cv::Mat &src1,const cv::Mat &src2){
 
 	//////////////////////////////////////////////////////////////////////////
 	if((src1.rows!=src2.rows)||(src2.cols!=src2.cols)){
-		return false;
+		CV_Assert(false);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -160,6 +160,49 @@ float pixkit::qualityassessment::AMBE(const cv::Mat &src1,const cv::Mat &src2){
 	mean2	/=	(double)(src2.cols*src2.rows);
 
 	return abs((double)(mean1-mean2));
+}
+float pixkit::qualityassessment::CII(const cv::Mat &ori1b,const cv::Mat &pro1b){
+
+	//////////////////////////////////////////////////////////////////////////
+	if((ori1b.rows!=pro1b.rows)||(pro1b.cols!=pro1b.cols)){
+		CV_Assert(false);
+	}
+	if(ori1b.type()!=CV_8UC1||pro1b.type()!=CV_8UC1){
+		CV_Assert(false);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	double	c_proposed=0.,c_original=0.;
+	double	minv,maxv;
+	// cal
+	for(int i=0;i<ori1b.rows-3;i++){
+		for(int j=0;j<ori1b.cols-3;j++){
+			Rect	roi(j,i,3,3);
+			Mat	tmat_ori1b(ori1b,roi),	tmat_pro1b(pro1b,roi);			
+			minMaxLoc(tmat_ori1b,&minv,&maxv);
+			c_original+=(maxv-minv)/(maxv+minv);
+			minMaxLoc(tmat_pro1b,&minv,&maxv);
+			c_proposed+=(maxv-minv)/(maxv+minv);
+		}
+	}
+	return	c_proposed/c_original;
+}
+float pixkit::qualityassessment::SNS(const cv::Mat &src1b,int ksize){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exception
+	if(src1b.type()!=CV_8UC1){
+		CV_Assert(false);
+	}
+	//////////////////////////////////////////////////////////////////////////
+	///// process
+	Mat src1b_bar;
+	cv::medianBlur(src1b,src1b_bar,ksize);
+	Mat	m_diff;
+	cv::absdiff(src1b,src1b_bar,m_diff);
+	//////////////////////////////////////////////////////////////////////////
+	///// get sns
+	return cv::sum(m_diff)[0]	/	((double)src1b.rows*src1b.cols*255.)	*	100.;
 }
 float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 
@@ -189,7 +232,6 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 }
 float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 {
-	
 	double  mse = 0;
 	const int height = 15;
 	const int width = 15;
@@ -273,6 +315,7 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2)
 	mse /= (src1.rows * src1.cols);
 	return static_cast<float>(20*log10(255/sqrt(mse)));
 }
+ 
 bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){
 
 	cv::Mat	src1	=	_src1.getMat();
@@ -370,10 +413,10 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst){
 
 	Mat	src	=	_src.getMat();
-	const	int	unitsize	=	256;
+	const	int	unitsize	=	src.cols;
 
 	if(src.size()!=cv::Size(unitsize,unitsize*10)){
-		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] src's image size should be 256x2560");
+		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] _src's height should be 10*_src.cols");
 	}
 	
 	const	int	rounds		=	10;
@@ -399,4 +442,155 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 	tdst1f.copyTo(dst);
 
 	return true;
+}
+
+float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src1.empty()||src2.empty()){
+		CV_Error(CV_HeaderIsNull,"[qualityassessment::SSIM] image is empty");
+	}
+	if(src1.cols != src2.cols || src1.rows != src2.rows){
+		CV_Error(CV_StsBadArg,"[qualityassessment::SSIM] sizes of two images are not equal");
+	}
+	if(src1.type()!=CV_8U || src2.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[qualityassessment::SSIM] image should be grayscale");
+	}
+	//////////////////////////////////////////////////////////////////////////
+
+	const int L =255;
+	double C1 = (0.01*L)*(0.01*L);		//C1 = (K1*L)^2, K1=0.01, L=255(for 8-bit grayscale)
+	double C2 = (0.03*L)*(0.03*L);		//C1 = (K2*L)^2, K2=0.03, L=255(for 8-bit grayscale)
+	double C3 = C2 / 2.0;
+	double mean_x = 0, mean_y = 0, mean2_x = 0, mean2_y = 0, STDx = 0, STDy = 0, variance_xy = 0;
+	float SSIMresult = 0; 
+
+	//mean X, mean Y
+	for (int i=0; i<src1.rows; i++){
+		for (int j=0; j< src1.cols; j++){
+			mean_x += src1.data[i*src1.cols + j];
+			mean_y += src2.data[i*src2.cols + j];
+			mean2_x += (src1.data[i*src1.cols + j] * src1.data[i*src1.cols + j]);
+			mean2_y += (src2.data[i*src2.cols + j] * src2.data[i*src2.cols + j]);
+		}
+	}
+	mean_x /= (src1.rows * src1.cols);
+	mean_y /= (src2.rows * src2.cols);
+	mean2_x /= (src1.rows * src1.cols);
+	mean2_y /= (src2.rows * src2.cols);
+
+	//STD X, STD Y
+	STDx = sqrt(mean2_x - mean_x * mean_x);
+	STDy = sqrt(mean2_y - mean_y * mean_y);
+
+	//variance_xy
+	for (int i=0; i<src1.rows; i++){
+		for (int j=0; j< src1.cols; j++){
+			variance_xy += (src1.data[i*src1.cols + j]-mean_x) * (src2.data[i*src2.cols + j] - mean_y);	
+		}
+	}
+	variance_xy /= (src1.rows * src1.cols);
+
+	SSIMresult = static_cast<float>( ((2*mean_x*mean_y + C1) * (2*variance_xy + C2)) / ((mean_x*mean_x + mean_y*mean_y + C1) * (STDx*STDx + STDy*STDy + C2)) );
+
+	// return result of SSIM
+	return SSIMresult;
+}
+
+float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize, double* lu_co_st)
+{
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src1.empty()||src2.empty()){
+		CV_Error(CV_HeaderIsNull,"[qualityassessment::MSSIM] image is empty");
+	}
+	if(src1.cols != src2.cols || src1.rows != src2.rows){
+		CV_Error(CV_StsBadArg,"[qualityassessment::MSSIM] sizes of two images are not equal");
+	}
+	if(src1.type()!=CV_8U || src2.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[qualityassessment::MSSIM] image should be grayscale");
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	const int L =255;
+	double C1 = (0.01*L)*(0.01*L);		//C1 = (K1*L)^2, K1=0.01, L=255(for 8-bit grayscale)
+	double C2 = (0.03*L)*(0.03*L);		//C1 = (K2*L)^2, K2=0.03, L=255(for 8-bit grayscale)
+	double C3 = C2 / 2.0;
+	int HalfSize = static_cast<int>(HVSsize/2);
+
+	// gaussian filter
+	///////////////////////////////////////////////////
+	// HVS filter
+	std::vector< std::vector<double> > gaussianFilter( HVSsize, std::vector<double>(HVSsize) );
+	double sum = 0, STD = 1.5 ;
+
+	for (int i=-HalfSize; i<=HalfSize; i++){
+		for (int j=-HalfSize; j<=HalfSize; j++){	
+			gaussianFilter[i+HalfSize][j+HalfSize] = exp( -1 * (i*i+j*j) / (2*STD*STD) );
+			sum += gaussianFilter[i+HalfSize][j+HalfSize];
+		}
+	}
+
+	// Normalize to 0~1
+	for (int i=-HalfSize; i<=HalfSize; i++){
+		for (int j=-HalfSize; j<=HalfSize; j++){	
+			gaussianFilter[i+HalfSize][j+HalfSize] /= sum;
+		}
+	}
+	/////////////////////////////////////////////////////
+
+	double luminance=0, contrast=0, structure=0, SSIMresult = 0;
+
+	for (int i=0; i<src1.rows; i++){
+		for (int j=0; j<src1.cols; j++){
+			double mean_x = 0, mean_y = 0, STDx = 0, STDy = 0, variance_xy = 0;
+
+			// mean
+			for (int x=-HalfSize; x<=HalfSize; x++){
+				for (int y=-HalfSize; y<=HalfSize; y++){
+					if (i+x<0 || j+y<0 || i+x>=src1.rows || j+y>=src1.cols){
+						continue;
+					} 
+					else{
+						mean_x += src1.data[(i+x)*src1.cols + (j+y)] * gaussianFilter[x+HalfSize][y+HalfSize];
+						mean_y += src2.data[(i+x)*src2.cols + (j+y)] * gaussianFilter[x+HalfSize][y+HalfSize];
+					}			
+				}
+			}			
+
+			// STD
+			for (int x=-HalfSize; x<=HalfSize; x++){
+				for (int y=-HalfSize; y<=HalfSize; y++){
+					if (i+x<0 || j+y<0 || i+x>=src1.rows || j+y>=src1.cols){
+						continue;
+					} 
+					else{
+						STDx += ((src1.data[(i+x)*src1.cols + (j+y)] - mean_x) * (src1.data[(i+x)*src1.cols + (j+y)] - mean_x) * gaussianFilter[x+HalfSize][y+HalfSize]);
+						STDy += ((src2.data[(i+x)*src2.cols + (j+y)] - mean_y) * (src2.data[(i+x)*src2.cols + (j+y)] - mean_y) * gaussianFilter[x+HalfSize][y+HalfSize]);
+						variance_xy += ((src1.data[(i+x)*src1.cols + (j+y)] - mean_x) * (src2.data[(i+x)*src2.cols + (j+y)] - mean_y) * gaussianFilter[x+HalfSize][y+HalfSize]);
+					}
+				}
+			}
+			STDx = sqrt(STDx);
+			STDy = sqrt(STDy);
+
+			SSIMresult += ((2*mean_x*mean_y + C1) * (2*variance_xy + C2)) / ((mean_x*mean_x + mean_y*mean_y + C1) * (STDx*STDx + STDy*STDy + C2));		
+			// for MS_SSIM calculation
+			if (lu_co_st != NULL){
+				luminance += (2*mean_x*mean_y + C1) / (mean_x*mean_x + mean_y*mean_y + C1);
+				contrast += (2*STDx*STDy + C2) / (STDx*STDx + STDy*STDy + C2);
+				structure += (variance_xy + C3) / (STDx*STDy + C3);	
+			}
+		}
+	}
+
+	// for MS_SSIM calculation
+	if (lu_co_st != NULL){
+		lu_co_st[0] = luminance / (src1.rows * src1.cols);
+		lu_co_st[1] = contrast / (src1.rows * src1.cols);
+		lu_co_st[2] = structure / (src1.rows * src1.cols);
+	}
+	SSIMresult /= (src1.rows * src1.cols);
+	return SSIMresult;			
 }

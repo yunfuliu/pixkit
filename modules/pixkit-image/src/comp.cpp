@@ -144,15 +144,15 @@ bool pixkit::comp::EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYP
 			mean/=count;
 
 			// find max and min values
-			double max=ori[i][j],min=ori[i][j];
+			double max=0,min=255;
 			for(int k=0;k<blockSize;k++){
 				for(int l=0;l<blockSize;l++){
 					if(i+k<src.rows&&j+l<src.cols){
-						if(ori[i+k][j+l]>max){
-							max=ori[i+k][j+l];
+						if(src.data[(i+k)*tdst.cols+(j+l)]>max){
+							max=src.data[(i+k)*tdst.cols+(j+l)];
 						}
-						if(ori[i+k][j+l]<min){
-							min=ori[i+k][j+l];
+						if(src.data[(i+k)*tdst.cols+(j+l)]<min){
+							min=src.data[(i+k)*tdst.cols+(j+l)];
 						}
 					}
 				}
@@ -229,8 +229,9 @@ bool pixkit::comp::ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYP
 			CV_Error(CV_StsBadArg,"[pixkit::comp::ODBTC] blockSize should be 8.");
 		}
 	}else if(type==ODBTC_TYPE_DispersedDot){
-		if(blockSize!=4&&blockSize!=8&&blockSize!=16&&blockSize!=32&&blockSize!=64)
-		CV_Error(CV_StsBadArg,"[pixkit::comp::ODBTC] blockSize should be 4, 8, 16, 32, or 64.");
+		if(blockSize!=4&&blockSize!=8&&blockSize!=16&&blockSize!=32&&blockSize!=64){
+			CV_Error(CV_StsBadArg,"[pixkit::comp::ODBTC] blockSize should be 4, 8, 16, 32, or 64.");
+		}
 	}else{
 		CV_Assert(false);
 	}
