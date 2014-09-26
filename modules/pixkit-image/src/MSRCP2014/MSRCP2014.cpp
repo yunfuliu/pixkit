@@ -9,7 +9,7 @@ MSRCP
 #include <opencv2\core\core.hpp>
 #include <opencv2\imgproc\imgproc.hpp>
 #include <opencv\cv.h>
-#include "pixkit-image.hpp"
+#include "../../include/pixkit-image.hpp"
 # define MAX_RETINEX_SCALES    8       
 # define MIN_GAUSSIAN_SCALE   16    
 # define MAX_GAUSSIAN_SCALE  250      
