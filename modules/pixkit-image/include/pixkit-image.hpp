@@ -185,7 +185,18 @@ namespace pixkit{
 			*/
 			void cvt_(cv::Mat &dst, const int imageSize, int dim_num, int n, int batch, int init, int sample, int sample_num, 
 				int it_max, int it_fixed, int *seed, double *r, int *it_num, double *it_diff, double *energy);
-			}
+
+			/*
+			* @brief	This function generates a two-component Gaussian model to fit the Nasanen's HVS model.
+			*			
+			* @ref		S. H. Kim and J. P. Allebach, "Impact of HVS Models on Model-based halftoning," IEEE TIP, vol. 11, no. 3, March 2002.
+			*
+			* @param	dst: dst model.
+			* @param	others: Please refer to the paper.
+			*/
+			bool generateTwoComponentGaussianModel(cv::Mat &dst1d,float k1=40.8,float k2=9.03,float sd1=0.0384,float sd2=0.105);
+
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

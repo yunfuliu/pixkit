@@ -2050,3 +2050,36 @@ bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv
 	}
 	return true;
 }
+
+//////////////////////////////////////////////////////////////////////////
+//	ungrouped
+//////////////////////////////////////////////////////////////////////////
+bool pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(cv::Mat &dst1d,float k1,float k2,float sd1,float sd2){
+
+	const	float	R	=	9.5;
+	const	float	D	=	300;
+	const	float	S	=	R*D;
+	const	float	pi	=	3.141592653589793;
+	const	float	fm	=	180.*180./((pi*D)*(pi*D));
+	const	int		size=	41;
+	const	int		h_size=	size/2;
+
+	//////////////////////////////////////////////////////////////////////////
+	///// get cpp
+	dst1d.create(Size(size,size),CV_64FC1);
+	for(int m=-h_size;m<=h_size;m++){
+		for(int n=-h_size;n<=h_size;n++){
+			float	mod_m	=	(180.*(float)m)/(pi*S);
+			float	mod_n	=	(180.*(float)n)/(pi*S);
+			float	chh		=	k1*std::expf(-(mod_m*mod_m+mod_n*mod_n)/(2.*sd1*sd1))	+	
+								k2*std::expf(-(mod_m*mod_m+mod_n*mod_n)/(2.*sd2*sd2));
+			dst1d.ptr<double>(m+h_size)[n+h_size]	=	fm*chh;													
+		}
+	}
+	// normalize
+	dst1d	=	dst1d/sum(dst1d)[0];
+	float	sumv	=	std::fabsf(sum(dst1d)[0]-1.);
+	CV_DbgAssert(std::fabsf(sum(dst1d)[0]-1.)<0.000001);
+
+	return true;
+}
