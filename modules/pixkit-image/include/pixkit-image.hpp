@@ -111,9 +111,13 @@ namespace pixkit{
 		}
 
 		/// Direct binary search
-		namespace directbinarysearch{
+		namespace iterative{
 			// efficient DBS
 			bool			LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7);
+
+			//
+			bool			ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
+
 		}
 
 		/// Ordered Dither related
@@ -159,6 +163,31 @@ namespace pixkit{
 			bool			MeseVaidyanathan2000(const cv::Mat &src, cv::Mat &dst, int ClassMatrixSize = 8);
 
 		}
+
+		namespace ungrouped{
+
+			/*
+			* @brief	This function generates white points with CVT method. The details please refer to the following website.
+			*			
+			* @website	http://people.sc.fsu.edu/~jburkardt/cpp_src/cvt/cvt.html
+			*
+			* @param	dst: dst image. It will be a image with CV_8UC1 format. 
+			* @param	imageSize: The size of "dst," and this size will be the width and height of this image. 
+			* @param	definitions of other parameters please refer to the following file.
+			*			pixkit\modules\pixkit-image\src\halftoning\CVT\cvt.cpp
+			*
+			* @example	
+			*			int seed	= 123456789;
+			*			double		r[DIM_NUM*N];	// where DIM_NUM=2 and N=500 in this case.
+			*			double it_diff;	int it_num;	double energy;			
+			*			pixkit::halftoning::ungrouped::cvt_ (dst, imgsize,2, 500, 1000, 1, 0, 10000, 40, 1, &seed, r, &it_num, &it_diff, &energy );
+			*
+			*			// more examples can be found at http://people.sc.fsu.edu/~jburkardt/cpp_src/cvt/cvt_prb.cpp
+			*/
+			void cvt_(cv::Mat &dst, const int imageSize, int dim_num, int n, int batch, int init, int sample, int sample_num, 
+				int it_max, int it_fixed, int *seed, double *r, int *it_num, double *it_diff, double *energy);
+
+			}
 	}
 
 	//////////////////////////////////////////////////////////////////////////

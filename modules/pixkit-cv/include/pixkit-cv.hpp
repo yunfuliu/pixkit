@@ -36,7 +36,7 @@ namespace pixkit{
 	namespace labeling{
 
 		// Two-pass connected-component labeling
-		bool twoPass(const cv::Mat &src,cv::Mat &dst,const int offset);
+		bool twoPass(const cv::Mat &src,cv::Mat &dst,const int offset=1);
 
 	}
 

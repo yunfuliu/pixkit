@@ -418,10 +418,10 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst){
 
 	Mat	src	=	_src.getMat();
-	const	int	unitsize	=	256;
+	const	int	unitsize	=	src.cols;
 
 	if(src.size()!=cv::Size(unitsize,unitsize*10)){
-		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] src's image size should be 256x2560");
+		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] _src's height should be 10*_src.cols");
 	}
 	
 	const	int	rounds		=	10;

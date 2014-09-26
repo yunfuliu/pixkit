@@ -1,6 +1,7 @@
 #include "../include/pixkit-image.hpp"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <ctime>
+#include "halftoning/cvt/cvt.hpp"
 
 using namespace	cv;
 
@@ -1190,7 +1191,7 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 // direct binary search
 //////////////////////////////////////////////////////////////////////////
 
-bool pixkit::halftoning::directbinarysearch::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize){
+bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize){
 
 	//////////////////////////////////////////////////////////////////////////
 	/// exceptions
@@ -1551,6 +1552,297 @@ bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::
 	return true;
 }
 
+bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, 
+	int GridForce, int Shake, int Debug){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[pixkit::halftoning::ElectrostaticHalftoning] image should be grayscale");
+	}
+	if(InitialCharge!=0&&InitialCharge!=1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] InitialCharge should be 0 or 1");
+		system("pause");
+		exit(0);
+	}
+	if(Iterations<1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Iterations should be bigger than 1");
+		system("pause");
+		exit(0);
+	}
+	if(GridForce!=0&&GridForce!=1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] GridForce should be 0 or 1");
+		system("pause");
+		exit(0);
+	}
+	if(Shake!=0&&Shake!=1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Shake should be 0 or 1");
+		system("pause");
+		exit(0);
+	}
+	if(Shake==1&&Iterations<=64){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Iterations should be bigger than 64");
+		system("pause");
+		exit(0);
+	}
+	if(Debug!=0&&Debug!=1&&Debug!=2){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Debug should be 0, 1 or 2");
+		system("pause");
+		exit(0);
+	}
+
+	char out_file[50];
+	double **image_in = new double*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		image_in[i] = new double [src.cols];
+	int **image_tmp = new int*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		image_tmp[i] = new int [src.cols];
+	Mat real_dst(src.rows,src.cols,CV_8UC1);
+
+	//////////////////////////////////////////////////////////////////////////
+	///// Initialization
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			image_in[i][j]=(double)src.data[i*src.cols+j]/255;
+			image_tmp[i][j]=255;
+			real_dst.data[i*src.cols+j]=255;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// Find the number of Particle
+	double CountParticle=0;
+	for(int i=0; i<src.rows; i++)
+		for(int j=0; j<src.cols; j++)
+			CountParticle=CountParticle+(1-image_in[i][j]);
+	printf("The number of black pixel(charge) = %d\n",(int)CountParticle);
+
+	//////////////////////////////////////////////////////////////////////////
+	///// Initialize the Particle's position
+	double *Particle_Y = new double[(int)CountParticle];
+	double *Particle_X = new double[(int)CountParticle];
+	int Particle=CountParticle;
+	while(Particle>0){
+		int RandY=rand()%src.rows;
+		int RandX=rand()%src.cols;
+		if(image_tmp[RandY][RandX]!=0){
+			if(InitialCharge==1){
+				int RandNumber=rand()%256;
+				if(RandNumber>src.data[RandY*src.cols+RandX]){
+					image_tmp[RandY][RandX]=0;
+					if(Debug==1)
+						real_dst.data[RandY*src.cols+RandX]=0;
+					Particle--;
+				}
+			}
+			else if(InitialCharge==0){
+				image_tmp[RandY][RandX]=0;
+				if(Debug==1)
+					real_dst.data[RandY*src.cols+RandX]=0;
+				Particle--;
+			}
+		}
+	}
+	if(Debug==1)
+		cv::imwrite("output.bmp", real_dst);
+	else if(Debug==2){
+		sprintf(out_file,".\\output\\0.bmp");
+		cv::imwrite(out_file, real_dst);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// Record the Particle's position
+	int ParticleNumber=0;
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			if(image_tmp[i][j]==0){
+				Particle_Y[ParticleNumber]=(double)i;
+				Particle_X[ParticleNumber]=(double)j;
+				ParticleNumber++;
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// Create Forcefield Table
+	printf("Create Forcefield Table, \n");
+	double **forcefield_y = new double*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		forcefield_y[i] = new double [src.cols];
+	double **forcefield_x = new double*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		forcefield_x[i] = new double [src.cols];
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			forcefield_y[i][j]=0;
+			forcefield_x[i][j]=0;
+			for(int y=0; y<src.rows; y++){
+				for(int x=0; x<src.cols; x++){
+					if(!(i==y&&j==x)){
+						forcefield_y[i][j]+=(1-image_in[y][x])*(y-i)/((y-i)*(y-i)+(x-j)*(x-j));
+						forcefield_x[i][j]+=(1-image_in[y][x])*(x-j)/((y-i)*(y-i)+(x-j)*(x-j));
+					}
+				}
+			}
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// process
+	double instead_y,instead_x;
+	Particle=CountParticle;
+	for(int iterations=1; iterations<=Iterations; iterations++){
+		printf("Iterations %d\n",iterations);
+
+		for(int NowCharge=0; NowCharge<Particle; NowCharge++){
+			double NewPosition_Y=0,NewPosition_X=0;
+			double GridForce_Y=0,GridForce_X=0;
+
+			//Attraction(by using bilinear interpolation)
+			if(Particle_Y[NowCharge]-(int)Particle_Y[NowCharge]==0&&Particle_X[NowCharge]-(int)Particle_X[NowCharge]==0){
+				NewPosition_Y=forcefield_y[(int)Particle_Y[NowCharge]][(int)Particle_X[NowCharge]];
+				NewPosition_X=forcefield_x[(int)Particle_Y[NowCharge]][(int)Particle_X[NowCharge]];
+			}
+			else{
+				int Bilinear_y1=Particle_Y[NowCharge];
+				int Bilinear_x1=Particle_X[NowCharge];
+				int Bilinear_y2=Bilinear_y1+1;
+				int Bilinear_x2=Bilinear_x1+1;
+				if(Bilinear_y1+1<src.rows&&Bilinear_x1+1<src.cols){
+					NewPosition_Y=forcefield_y[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
+					   +forcefield_y[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
+					   +forcefield_y[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
+					   +forcefield_y[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
+					NewPosition_X=forcefield_x[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
+					   +forcefield_x[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
+					   +forcefield_x[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
+					   +forcefield_x[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
+				}
+			}
+			
+			//Repulsion
+			for(int OtherCharge=0; OtherCharge<Particle; OtherCharge++){
+				if(NowCharge!=OtherCharge){
+					instead_y=Particle_Y[OtherCharge]-Particle_Y[NowCharge];
+					instead_x=Particle_X[OtherCharge]-Particle_X[NowCharge];
+					if(!(instead_y==0&&instead_x==0)){
+						NewPosition_Y-=instead_y/(instead_y*instead_y+instead_x*instead_x);
+						NewPosition_X-=instead_x/(instead_y*instead_y+instead_x*instead_x);
+					}
+				}
+			}
+
+			//Add GridForce to find discrete particle locations
+			double real_y=Particle_Y[NowCharge]-(int)Particle_Y[NowCharge];
+			double real_x=Particle_X[NowCharge]-(int)Particle_X[NowCharge];
+			if(real_y==0&&real_x==0){
+					GridForce_Y=0;
+					GridForce_X=0;
+			}
+			else{
+				if(real_y<0.5){
+					if(real_x<0.5){
+						real_y=(0-real_y);
+						real_x=(0-real_x);
+					}
+					else{
+						real_y=(0-real_y);
+						real_x=(1-real_x);
+					}	
+				}
+				else{
+					if(real_x<0.5){
+						real_y=(1-real_y);
+						real_x=(0-real_x);
+					}
+					else{
+						real_y=(1-real_y);
+						real_x=(1-real_x);
+					}	
+				}
+				double vector3=sqrt(real_y*real_y+real_x*real_x);
+				if(real_y==0)
+					GridForce_Y=0;
+				else
+					GridForce_Y=3.5*real_y/(vector3*(1+pow(vector3,8)*10000));
+				if(real_x==0)
+					GridForce_X=0;
+				else
+					GridForce_X=3.5*real_x/(vector3*(1+pow(vector3,8)*10000));
+			}
+			
+			//resault (new position of particles)
+			if(GridForce==0){
+				Particle_Y[NowCharge]=Particle_Y[NowCharge]+0.1*NewPosition_Y;
+				Particle_X[NowCharge]=Particle_X[NowCharge]+0.1*NewPosition_X;
+			}
+			else if(GridForce==1){
+				Particle_Y[NowCharge]=Particle_Y[NowCharge]+0.1*(NewPosition_Y+GridForce_Y);
+				Particle_X[NowCharge]=Particle_X[NowCharge]+0.1*(NewPosition_X+GridForce_X);
+			}
+
+			//Shake
+			if(Shake==1&&iterations%10==0&&Iterations>64){
+				Particle_Y[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
+				Particle_X[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
+			}
+			
+			if(Particle_Y[NowCharge]<0)
+				Particle_Y[NowCharge]=0;
+			if(Particle_Y[NowCharge]>=src.rows)
+				Particle_Y[NowCharge]=src.rows-1;
+			if(Particle_X[NowCharge]<0)
+				Particle_X[NowCharge]=0;
+			if(Particle_X[NowCharge]>=src.cols)
+				Particle_X[NowCharge]=src.cols-1;
+			
+		}
+
+		//Output
+		for(int y=0; y<src.rows; y++){
+			for(int x=0; x<src.cols; x++){
+				real_dst.data[y*src.cols+x]=255;
+				image_tmp[y][x]=255;
+			}
+		}
+		int output_position;
+		int out_Y,out_X;
+		double count_errorY=0,count_errorX=0;
+		for(int NowCharge=0; NowCharge<Particle; NowCharge++){
+			out_Y=Particle_Y[NowCharge]+0.5;
+			out_X=Particle_X[NowCharge]+0.5;
+			if(out_Y>=src.rows)
+				out_Y=src.rows-1;
+			if(out_X>=src.cols)
+				out_X=src.cols-1;
+			image_tmp[out_Y][out_X]=0;
+		}
+		
+		for(int y=0; y<src.rows; y++)
+			for(int x=0; x<src.cols; x++)
+				real_dst.data[y*src.cols+x]=image_tmp[y][x];
+
+		if(Debug==1)
+			cv::imwrite("output.bmp",real_dst);
+		else if(Debug==2){
+			sprintf(out_file,".\\output\\%d.bmp",iterations);
+			cv::imwrite(out_file,real_dst);
+		}
+	}
+	
+	dst=real_dst.clone();
+
+	delete [] image_in;
+	delete [] image_tmp;
+	
+	return true;
+
+}
+//////////////////////////////////////////////////////////////////////////
+//	ordered dithering
+//////////////////////////////////////////////////////////////////////////
+
 // Hft_OD_KackerAllebach1998 processing
 bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src, cv::Mat &dst){
 
@@ -1893,163 +2185,6 @@ bool pixkit::halftoning::dotdiffusion::MeseVaidyanathan2000(const cv::Mat &src, 
 	return true;
 }
 
-//	Dot diffusion proposed by Lippens and Philips
-bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv::Mat &dst){
-
-	//////////////////////////////////////////////////////////////////////////
-	// exception
-	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::ErrorDiffusion::Hft_EDF_Ostromoukhov] accepts only grayscale image");
-	}
-	dst.create(src.size(),src.type());
-
-	float	hysteresis=0.;	// 仍在尋找問題, 此為非0之結果不同於該論文, 故先行設定為0
-
-	// = = = = = Get entire CM = = = = = //
-	int	order_global[8][8] = {{0,1,3,0,1,3,0,1},{3,3,2,0,1,2,3,3},{2,2,3,0,1,3,2,2},{0,1,2,0,1,2,0,1},{3,0,1,3,3,0,1,3},{2,0,1,2,2,0,1,2},{0,1,0,1,0,1,0,1},{3,3,3,3,3,3,3,3}};
-	int	oriCM[16][16] = {	
-		{0,		1,	14,	15,	16,		19,		20,		21,		234,	235,	236,	239,	240,	241,	254,	255},
-		{3,		2,	13,	12,	17,		18,		23,		22,		233,	232,	237,	238,	243,	242,	253,	252},
-		{4,		7,	8,	11,	30,		29,		24,		25,		230,	231,	226,	225,	244,	247,	248,	251},
-		{5,		6,	9,	10,	31,		28,		27,		26,		229,	228,	227,	224,	245,	246,	249,	250},
-		{58,	57,	54,	53,	32,		35,		36,		37,		218,	219,	220,	223,	202,	201,	198,	197},
-		{59,	56,	55,	52,	33,		34,		39,		38,		217,	216,	221,	222,	203,	200,	199,	196},
-		{60,	61,	50,	51,	46,		45,		40,		41,		214,	215,	210,	209,	204,	205,	194,	195},
-		{63,	62,	49,	48,	47,		44,		43,		42,		213,	212,	211,	208,	207,	206,	193,	192},
-		{64,	67,	68,	69,	122,	123,	124,	127,	128,	131,	132,	133,	186,	187,	188,	191},
-		{65,	66,	71,	70,	121,	120,	125,	126,	129,	130,	135,	134,	185,	184,	189,	190},
-		{78,	77,	72,	73,	118,	119,	114,	113,	142,	141,	136,	137,	182,	183,	178,	177},
-		{79,	76,	75,	74,	117,	116,	115,	112,	143,	140,	139,	138,	181,	180,	179,	176},
-		{80,	81,	94,	95,	96,		97,		110,	111,	144,	145,	158,	159,	160,	161,	174,	175},
-		{83,	82,	93,	92,	99,		98,		109,	108,	147,	146,	157,	156,	163,	162,	173,	172},
-		{84,	87,	88,	91,	100,	103,	104,	107,	148,	151,	152,	155,	164,	167,	168,	171},
-		{85,	86,	89,	90,	101,	102,	105,	106,	149,	150,	153,	154,	165,	166,	169,	170}};
-		// set initial CM ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		int	CMs[4][16][16];
-		// get type 3	
-		for(int i=0;i<16;i++){
-			for(int j=0;j<16;j++){
-				CMs[3][i][j]=oriCM[i][j];
-			}
-		}
-		// get type 2	
-		for(int i=0;i<16;i++){
-			for(int j=0;j<16;j++){
-				CMs[2][i][j]=oriCM[15-i][15-j];
-			}
-		}
-		// get type 1	
-		for(int i=0;i<16;i++){
-			for(int j=0;j<16;j++){
-				CMs[1][i][j]=oriCM[15-j][15-i];
-			}
-		}
-		// get type 0	
-		for(int i=0;i<16;i++){
-			for(int j=0;j<16;j++){
-				CMs[0][i][j]=oriCM[j][i];
-			}
-		}
-		// get 128 CM
-		int	CM128[128][128];
-		for(int i=0;i<128;i+=16){
-			for(int j=0;j<128;j+=16){
-				for(int m=0;m<16;m++){
-					for(int n=0;n<16;n++){
-						CM128[i+m][j+n]=CMs[order_global[i/16][j/16]][m][n];
-					}
-				}
-			}
-		}
-
-		// get entire CM
-		std::vector< std::vector< int > > entireCM (src.rows, std::vector< int >(src.cols));
-
-		for(int i=0;i<src.rows;i++){
-			for(int j=0;j<src.cols;j++){
-				entireCM[i][j]=CM128[i%128][j%128];
-			}
-		}
-		// get src(temp) image
-		std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
-		//copy Input image to RegImage
-		for (int i=0; i<src.rows; i++){
-			for(int j=0; j<src.cols; j++){
-				RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
-			}
-		}
-
-		// = = = = = set diffused weighting = = = = = //
-		float	coe_sum=32;
-		float	coe[5][5]={{1,2,3,2,1},{2,0,0,0,2},{3,0,0,0,3},{2,0,0,0,2},{1,2,3,2,1}};
-		int		OSCW=2;
-
-		// = = = = = 進行dot_diffusion = = = = = //
-		int		number=0;
-		while(number!=256){	// 256=CMsize*CMsize
-			for(int i=0;i<src.rows;i++){
-				for(int j=0;j<src.cols;j++){
-					if(entireCM[i][j]==number){
-
-						// get 分母
-						float	b_fm=0.,g_fm=0.;	// binary的分母 and grayscale的分母, sum(coe)=b_fm+g_fm;			
-						for(int m=-OSCW;m<=OSCW;m++){
-							for(int n=-OSCW;n<=OSCW;n++){
-								if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
-									if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
-										b_fm += coe[m+OSCW][n+OSCW];
-									}
-								}
-							}
-						}
-						g_fm=coe_sum-b_fm;
-
-						// 取得周圍的擴散補償
-						float	comp=0.;	// 補償
-						if(b_fm!=0){
-							for(int m=-OSCW;m<=OSCW;m++){
-								for(int n=-OSCW;n<=OSCW;n++){
-									if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
-										if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
-											comp += coe[m+OSCW][n+OSCW] / b_fm * (RegImage[i+m][j+n] < 128 ? -1 : 1);	// 待確認
-										}
-									}
-								}
-							}
-							comp*=128.;	// 待確認
-						}else{
-							comp=0.;
-						}
-
-						// 取得error, 並取得halftone 輸出.
-						double	error;
-						if(RegImage[i][j] + comp*hysteresis < 128){
-							error = RegImage[i][j];
-							//src.data[i*src.cols+j] = 0.;
-							dst.data[i*dst.cols+j] = 0;
-						}else{
-							error = RegImage[i][j]-255.;
-							//src.data[i*src.cols+j] = 255.;
-							dst.data[i*dst.cols+j] = 255;
-						}
-						// 進行擴散
-						for(int m=-OSCW;m<=OSCW;m++){
-							for(int n=-OSCW;n<=OSCW;n++){
-								if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
-									if(entireCM[i+m][j+n]>number){		// 可以擴散的區域								
-										RegImage[i+m][j+n] += error * coe[m+OSCW][n+OSCW] / g_fm;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			number++;
-		}
-		return true;
-}
-
 //	Dot diffusion proposed by Guo and Liu
 bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &dst, const int ClassMatrixSize){
 	
@@ -2181,3 +2316,183 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 	return true;
 }
 
+//	Dot diffusion proposed by Lippens and Philips
+bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv::Mat &dst){
+
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::ErrorDiffusion::Hft_EDF_Ostromoukhov] accepts only grayscale image");
+	}
+	dst.create(src.size(),src.type());
+
+	float	hysteresis=0.;	// 仍在尋找問題, 此為非0之結果不同於該論文, 故先行設定為0
+
+	// = = = = = Get entire CM = = = = = //
+	int	order_global[8][8] = {{0,1,3,0,1,3,0,1},{3,3,2,0,1,2,3,3},{2,2,3,0,1,3,2,2},{0,1,2,0,1,2,0,1},{3,0,1,3,3,0,1,3},{2,0,1,2,2,0,1,2},{0,1,0,1,0,1,0,1},{3,3,3,3,3,3,3,3}};
+	int	oriCM[16][16] = {	
+	{0,		1,	14,	15,	16,		19,		20,		21,		234,	235,	236,	239,	240,	241,	254,	255},
+	{3,		2,	13,	12,	17,		18,		23,		22,		233,	232,	237,	238,	243,	242,	253,	252},
+	{4,		7,	8,	11,	30,		29,		24,		25,		230,	231,	226,	225,	244,	247,	248,	251},
+	{5,		6,	9,	10,	31,		28,		27,		26,		229,	228,	227,	224,	245,	246,	249,	250},
+	{58,	57,	54,	53,	32,		35,		36,		37,		218,	219,	220,	223,	202,	201,	198,	197},
+	{59,	56,	55,	52,	33,		34,		39,		38,		217,	216,	221,	222,	203,	200,	199,	196},
+	{60,	61,	50,	51,	46,		45,		40,		41,		214,	215,	210,	209,	204,	205,	194,	195},
+	{63,	62,	49,	48,	47,		44,		43,		42,		213,	212,	211,	208,	207,	206,	193,	192},
+	{64,	67,	68,	69,	122,	123,	124,	127,	128,	131,	132,	133,	186,	187,	188,	191},
+	{65,	66,	71,	70,	121,	120,	125,	126,	129,	130,	135,	134,	185,	184,	189,	190},
+	{78,	77,	72,	73,	118,	119,	114,	113,	142,	141,	136,	137,	182,	183,	178,	177},
+	{79,	76,	75,	74,	117,	116,	115,	112,	143,	140,	139,	138,	181,	180,	179,	176},
+	{80,	81,	94,	95,	96,		97,		110,	111,	144,	145,	158,	159,	160,	161,	174,	175},
+	{83,	82,	93,	92,	99,		98,		109,	108,	147,	146,	157,	156,	163,	162,	173,	172},
+	{84,	87,	88,	91,	100,	103,	104,	107,	148,	151,	152,	155,	164,	167,	168,	171},
+	{85,	86,	89,	90,	101,	102,	105,	106,	149,	150,	153,	154,	165,	166,	169,	170}};
+	// set initial CM ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	int	CMs[4][16][16];
+	// get type 3	
+	for(int i=0;i<16;i++){
+		for(int j=0;j<16;j++){
+			CMs[3][i][j]=oriCM[i][j];
+		}
+	}
+	// get type 2	
+	for(int i=0;i<16;i++){
+		for(int j=0;j<16;j++){
+			CMs[2][i][j]=oriCM[15-i][15-j];
+		}
+	}
+	// get type 1	
+	for(int i=0;i<16;i++){
+		for(int j=0;j<16;j++){
+			CMs[1][i][j]=oriCM[15-j][15-i];
+		}
+	}
+	// get type 0	
+	for(int i=0;i<16;i++){
+		for(int j=0;j<16;j++){
+			CMs[0][i][j]=oriCM[j][i];
+		}
+	}
+	// get 128 CM
+	int	CM128[128][128];
+	for(int i=0;i<128;i+=16){
+		for(int j=0;j<128;j+=16){
+			for(int m=0;m<16;m++){
+				for(int n=0;n<16;n++){
+					CM128[i+m][j+n]=CMs[order_global[i/16][j/16]][m][n];
+				}
+			}
+		}
+	}
+
+	// get entire CM
+	std::vector< std::vector< int > > entireCM (src.rows, std::vector< int >(src.cols));
+
+	for(int i=0;i<src.rows;i++){
+		for(int j=0;j<src.cols;j++){
+			entireCM[i][j]=CM128[i%128][j%128];
+		}
+	}
+	// get src(temp) image
+	std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
+	//copy Input image to RegImage
+	for (int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
+		}
+	}
+
+	// = = = = = set diffused weighting = = = = = //
+	float	coe_sum=32;
+	float	coe[5][5]={{1,2,3,2,1},{2,0,0,0,2},{3,0,0,0,3},{2,0,0,0,2},{1,2,3,2,1}};
+	int		OSCW=2;
+
+	// = = = = = 進行dot_diffusion = = = = = //
+	int		number=0;
+	while(number!=256){	// 256=CMsize*CMsize
+		for(int i=0;i<src.rows;i++){
+			for(int j=0;j<src.cols;j++){
+				if(entireCM[i][j]==number){
+
+					// get 分母
+					float	b_fm=0.,g_fm=0.;	// binary的分母 and grayscale的分母, sum(coe)=b_fm+g_fm;			
+					for(int m=-OSCW;m<=OSCW;m++){
+						for(int n=-OSCW;n<=OSCW;n++){
+							if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
+								if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
+									b_fm += coe[m+OSCW][n+OSCW];
+								}
+							}
+						}
+					}
+					g_fm=coe_sum-b_fm;
+
+					// 取得周圍的擴散補償
+					float	comp=0.;	// 補償
+					if(b_fm!=0){
+						for(int m=-OSCW;m<=OSCW;m++){
+							for(int n=-OSCW;n<=OSCW;n++){
+								if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){	// 在影像範圍內
+									if(entireCM[i+m][j+n]<number){		// 範圍內擴散過的區域
+										comp += coe[m+OSCW][n+OSCW] / b_fm * (RegImage[i+m][j+n] < 128 ? -1 : 1);	// 待確認
+									}
+								}
+							}
+						}
+						comp*=128.;	// 待確認
+					}else{
+						comp=0.;
+					}
+
+					// 取得error, 並取得halftone 輸出.
+					double	error;
+					if(RegImage[i][j] + comp*hysteresis < 128){
+						error = RegImage[i][j];
+						//src.data[i*src.cols+j] = 0.;
+						dst.data[i*dst.cols+j] = 0;
+					}else{
+						error = RegImage[i][j]-255.;
+						//src.data[i*src.cols+j] = 255.;
+						dst.data[i*dst.cols+j] = 255;
+					}
+					// 進行擴散
+					for(int m=-OSCW;m<=OSCW;m++){
+						for(int n=-OSCW;n<=OSCW;n++){
+							if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
+								if(entireCM[i+m][j+n]>number){		// 可以擴散的區域								
+									RegImage[i+m][j+n] += error * coe[m+OSCW][n+OSCW] / g_fm;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		number++;
+	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//	ungrouped
+//////////////////////////////////////////////////////////////////////////
+
+void pixkit::halftoning::ungrouped::cvt_ (cv::Mat &dst, const int imageSize,int dim_num, int n, int batch, int init, int sample, int sample_num, 
+	int it_max, int it_fixed, int *seed, double *r,int *it_num, double *it_diff, 
+	double *energy ){
+	
+	// get dots from CVT
+	cvt ( dim_num, n, batch, init, sample, sample_num, it_max, it_fixed, seed, r, it_num, it_diff, energy );
+
+	// map points to Mat
+	dst.create(Size(imageSize,imageSize),CV_8UC1);
+	dst.setTo(0);
+
+	for(int i=0;i<n;i++){
+		int	x	=	cvRound(r[i*dim_num+0]*(double)(imageSize-1));
+		int	y	=	cvRound(r[i*dim_num+1]*(double)(imageSize-1));
+		if(x>=0&&x<imageSize&&y>=0&&y<imageSize){
+			dst.ptr<uchar>(y)[x]	=	255;
+		}		
+	}
+}
