@@ -1,20 +1,20 @@
 ﻿//////////////////////////////////////////////////////////////////////////
 // 
+// pixkit-image.hpp
+//
 // SOURCE CODE: https://github.com/yunfuliu/pixkit
 // 
 // BEIRF: pixkit-image contains image processing related methods which have been published (on articles, e.g., journal or conference papers). 
 //	In addition, some frequently used related tools are also involved.
 // 
 //////////////////////////////////////////////////////////////////////////
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
 #include <cmath>
 #include <iostream>
 #include <vector>
 #include <fstream>
-
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
