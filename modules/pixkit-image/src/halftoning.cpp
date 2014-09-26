@@ -10,7 +10,7 @@ using namespace	cv;
 //////////////////////////////////////////////////////////////////////////
 
 // Floyd-Steinberg halftoning processing
-bool pixkit::halftoning::errordiffusion::FloydSteinberg1975(const cv::Mat &src,cv::Mat &dst, ScanOrder_TYPE scan_type){
+bool pixkit::halftoning::errordiffusion::FloydSteinberg1975(const cv::Mat &src,cv::Mat &dst){
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
@@ -25,128 +25,31 @@ bool pixkit::halftoning::errordiffusion::FloydSteinberg1975(const cv::Mat &src,c
 	//////////////////////////////////////////////////////////////////////////
 	Mat	tdst1f	=	src.clone();
 	tdst1f.convertTo(tdst1f,CV_32FC1);
+	//raster scan
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
 
-	// processing
-	switch(scan_type){
-	case 0:		
-		//raster scan
-		for(int i=0; i<src.rows; i++){
-			for(int j=0; j<src.cols; j++){
-
-				double	error;
-				if(tdst1f.ptr<float>(i)[j] >= 128){	
-					error = tdst1f.ptr<float>(i)[j]-255;	//error value
-					tdst1f.ptr<float>(i)[j] = 255;
-				}
-				else{				
-					error = tdst1f.ptr<float>(i)[j];	//error value
-					tdst1f.ptr<float>(i)[j] = 0;
-				}
-
-				if(j+1<src.cols){
-					tdst1f.ptr<float>(i)[j+1] += error*	0.4375;
-				}
-				if((i+1<src.rows)&&(j-1>=0)){
-					tdst1f.ptr<float>(i+1)[j-1] += error*	0.1875;
-				}
-				if(i+1<src.rows){
-					tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
-				}
-				if((i+1<src.rows)&&(j+1<src.cols)){
-					tdst1f.ptr<float>(i+1)[j+1] += error*	0.0625;
-				}
+			double	error;
+			if(tdst1f.ptr<float>(i)[j] >= 128){	
+				error = tdst1f.ptr<float>(i)[j]-255;	//error value
+				tdst1f.ptr<float>(i)[j] = 255;
 			}
-		}
-		break;
-
-	case 1:		//serpentine scan
-		for(int i=0; i<src.rows; i++){
-			if(i%2==0){
-				for(int j=0; j<src.cols; j++){
-
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
-
-					if(j+1<src.cols){
-						tdst1f.ptr<float>(i)[j+1] += error*	0.4375;
-					}
-					if((i+1<src.rows)&&(j-1>=0)){
-						tdst1f.ptr<float>(i+1)[j-1] += error*	0.1875;
-					}
-					if(i+1<src.rows){
-						tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
-					}
-					if((i+1<src.rows)&&(j+1<src.cols)){
-						tdst1f.ptr<float>(i+1)[j+1] += error*	0.0625;
-					}
-				}
-			}
-			else{
-				for(int j=src.cols-1; j>=0; j--){
-
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
-
-					if(j-1>0){
-						tdst1f.ptr<float>(i)[j-1] += error*	0.4375;
-					}
-					if((i+1<src.rows)&&(j-1>=0)){
-						tdst1f.ptr<float>(i+1)[j-1] += error*	0.0625;
-					}
-					if(i+1<src.rows){
-						tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
-					}
-					if((i+1<src.rows)&&(j+1<src.cols)){
-						tdst1f.ptr<float>(i+1)[j+1] += error*	0.1875;
-					}
-				}
-
+			else{				
+				error = tdst1f.ptr<float>(i)[j];	//error value
+				tdst1f.ptr<float>(i)[j] = 0;
 			}
 
-		}
-		break;
-
-	default:
-		//raster scan
-		for(int i=0; i<src.rows; i++){
-			for(int j=0; j<src.cols; j++){
-
-				float error;
-				if(tdst1f.ptr<float>(i)[j] >= 128){	
-					error = tdst1f.ptr<float>(i)[j]-255;	//error value
-					tdst1f.ptr<float>(i)[j] = 255;
-				}
-				else{				
-					error = tdst1f.ptr<float>(i)[j];	//error value
-					tdst1f.ptr<float>(i)[j] = 0;
-				}
-
-				if(j+1<src.cols){
-					tdst1f.ptr<float>(i)[j+1] += error*	0.4375;
-				}
-				if((i+1<src.rows)&&(j-1>=0)){
-					tdst1f.ptr<float>(i+1)[j-1] += error*	0.1875;
-				}
-				if(i+1<src.rows){
-					tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
-				}
-				if((i+1<src.rows)&&(j+1<src.cols)){
-					tdst1f.ptr<float>(i+1)[j+1] += error*	0.0625;
-				}
+			if(j+1<src.cols){
+				tdst1f.ptr<float>(i)[j+1] += error*	0.4375;
+			}
+			if((i+1<src.rows)&&(j-1>=0)){
+				tdst1f.ptr<float>(i+1)[j-1] += error*	0.1875;
+			}
+			if(i+1<src.rows){
+				tdst1f.ptr<float>(i+1)[j] += error*	0.3125;
+			}
+			if((i+1<src.rows)&&(j+1<src.cols)){
+				tdst1f.ptr<float>(i+1)[j+1] += error*	0.0625;
 			}
 		}
 	}
@@ -156,7 +59,7 @@ bool pixkit::halftoning::errordiffusion::FloydSteinberg1975(const cv::Mat &src,c
 }
 
 // Jarvis halftoning processing
-bool pixkit::halftoning::errordiffusion::Jarvis1976(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE scan_type)
+bool pixkit::halftoning::errordiffusion::Jarvis1976(const cv::Mat &src, cv::Mat &dst)
 {
 	//////////////////////////////////////////////////////////////////////////
 	// exception
@@ -173,164 +76,55 @@ bool pixkit::halftoning::errordiffusion::Jarvis1976(const cv::Mat &src, cv::Mat 
 	const float Errorkernel_Jarvis[3][5] = {	
 		0,	0,	0,	7,	5,	
 		3,	5,	7,	5,	3,	
-		1,	3,	5,	3,	1	};
-		const int HalfSize = 2;
+		1,	3,	5,	3,	1
+	};
+	const int HalfSize = 2;
 
-		//copy Input to RegImage
-		cv::Mat tdst1f = src.clone();
-		tdst1f.convertTo(tdst1f, CV_32FC1);
+	//copy Input to RegImage
+	cv::Mat tdst1f = src.clone();
+	tdst1f.convertTo(tdst1f, CV_32FC1);
 
-		// processing
-		switch(scan_type){
-		case 0:		
-			//raster scan
-			for(int i=0; i<src.rows; i++){
-				for(int j=0; j<src.cols; j++){
+	// processing
+	//raster scan
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
 
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
+			float error;
+			if(tdst1f.ptr<float>(i)[j] >= 128){	
+				error = tdst1f.ptr<float>(i)[j]-255;	//error value
+				tdst1f.ptr<float>(i)[j] = 255;
+			}
+			else{				
+				error = tdst1f.ptr<float>(i)[j];	//error value
+				tdst1f.ptr<float>(i)[j] = 0;
+			}
 
-					float sum = 0;
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							sum += Errorkernel_Jarvis[x][y + HalfSize];
-						}
-					}
-
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							if(x!=0 || y!=0)
-								tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][y + HalfSize] / sum);
-						}
-					}
+			float sum = 0;
+			for(int x=0; x<=HalfSize; x++){
+				if(i+x<0 || i+x>=src.rows)	continue;
+				for(int y=-HalfSize; y<=HalfSize; y++){
+					if(j+y<0 || j+y>=src.cols)	continue;
+					sum += Errorkernel_Jarvis[x][y + HalfSize];
 				}
 			}
-			break;
 
-		case 1:		//serpentine scan
-			for(int i=0; i<src.rows; i++){
-				if(i%2==0){
-					for(int j=0; j<src.cols; j++){
-
-						float error;
-						if(tdst1f.ptr<float>(i)[j] >= 128){	
-							error = tdst1f.ptr<float>(i)[j]-255;	//error value
-							tdst1f.ptr<float>(i)[j] = 255;
-						}
-						else{				
-							error = tdst1f.ptr<float>(i)[j];	//error value
-							tdst1f.ptr<float>(i)[j] = 0;
-						}
-
-						float sum = 0;
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								sum += Errorkernel_Jarvis[x][y + HalfSize];
-							}
-						}
-
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								if(x!=0 || y!=0)
-									tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][y + HalfSize] / sum);
-							}
-						}
-					}
-				}
-				else{
-					for(int j=src.cols-1; j>=0; j--){
-
-						float error;
-						if(tdst1f.ptr<float>(i)[j] >= 128){	
-							error = tdst1f.ptr<float>(i)[j]-255;	//error value
-							tdst1f.ptr<float>(i)[j] = 255;
-						}
-						else{				
-							error = tdst1f.ptr<float>(i)[j];	//error value
-							tdst1f.ptr<float>(i)[j] = 0;
-						}
-
-						float sum = 0;
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								sum += Errorkernel_Jarvis[x][2*HalfSize - (y + HalfSize)];
-							}
-						}
-
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								if(x!=0 || y!=0)
-									tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][2*HalfSize - (y + HalfSize)] / sum);
-							}
-						}
-					}
-
-				}
-
-			}
-			break;
-
-		default:
-			//raster scan
-			for(int i=0; i<src.rows; i++){
-				for(int j=0; j<src.cols; j++){
-
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
-
-					float sum = 0;
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							sum += Errorkernel_Jarvis[x][y + HalfSize];
-						}
-					}
-
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							if(x!=0 || y!=0)
-								tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][y + HalfSize] / sum);
-						}
-					}
+			for(int x=0; x<=HalfSize; x++){
+				if(i+x<0 || i+x>=src.rows)	continue;
+				for(int y=-HalfSize; y<=HalfSize; y++){
+					if(j+y<0 || j+y>=src.cols)	continue;
+					if(x!=0 || y!=0)
+						tdst1f.ptr<float>(i+x)[j+y] += (error * Errorkernel_Jarvis[x][y + HalfSize] / sum);
 				}
 			}
 		}
+	}
 
-		tdst1f.convertTo(dst,CV_8UC1);
-		return true;
+	tdst1f.convertTo(dst,CV_8UC1);
+	return true;
 }
 
 // Stucki halftoning processing
-bool pixkit::halftoning::errordiffusion::Stucki1981(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE scan_type)
+bool pixkit::halftoning::errordiffusion::Stucki1981(const cv::Mat &src, cv::Mat &dst)
 {
 	//////////////////////////////////////////////////////////////////////////
 	// exception
@@ -347,164 +141,54 @@ bool pixkit::halftoning::errordiffusion::Stucki1981(const cv::Mat &src, cv::Mat 
 	const float ErrorKernel_Stucki[3][5] = {	
 		0,	0,	0,	8,	4,	
 		2,	4,	8,	4,	2,	
-		1,	2,	4,	2,	1	};
-		const int HalfSize = 2;
+		1,	2,	4,	2,	1	
+	};
+	const int HalfSize = 2;
 
-		//copy Input to RegImage
-		cv::Mat tdst1f = src.clone();
-		tdst1f.convertTo(tdst1f, CV_32FC1);
+	//copy Input to RegImage
+	cv::Mat tdst1f = src.clone();
+	tdst1f.convertTo(tdst1f, CV_32FC1);
 
-		// processing
-		switch(scan_type){
-		case 0:		
-			//raster scan
-			for(int i=0; i<src.rows; i++){
-				for(int j=0; j<src.cols; j++){
+	// processing
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
 
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
+			float error;
+			if(tdst1f.ptr<float>(i)[j] >= 128){	
+				error = tdst1f.ptr<float>(i)[j]-255;	//error value
+				tdst1f.ptr<float>(i)[j] = 255;
+			}
+			else{				
+				error = tdst1f.ptr<float>(i)[j];	//error value
+				tdst1f.ptr<float>(i)[j] = 0;
+			}
 
-					float sum = 0;
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							sum += ErrorKernel_Stucki[x][y + HalfSize];
-						}
-					}
-
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							if(x!=0 || y!=0)
-								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][y + HalfSize] / sum);
-						}
-					}
+			float sum = 0;
+			for(int x=0; x<=HalfSize; x++){
+				if(i+x<0 || i+x>=src.rows)	continue;
+				for(int y=-HalfSize; y<=HalfSize; y++){
+					if(j+y<0 || j+y>=src.cols)	continue;
+					sum += ErrorKernel_Stucki[x][y + HalfSize];
 				}
 			}
-			break;
 
-		case 1:		//serpentine scan
-			for(int i=0; i<src.rows; i++){
-				if(i%2==0){
-					for(int j=0; j<src.cols; j++){
-
-						float error;
-						if(tdst1f.ptr<float>(i)[j] >= 128){	
-							error = tdst1f.ptr<float>(i)[j]-255;	//error value
-							tdst1f.ptr<float>(i)[j] = 255;
-						}
-						else{				
-							error = tdst1f.ptr<float>(i)[j];	//error value
-							tdst1f.ptr<float>(i)[j] = 0;
-						}
-
-						float sum = 0;
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								sum += ErrorKernel_Stucki[x][y + HalfSize];
-							}
-						}
-
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								if(x!=0 || y!=0)
-									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][y + HalfSize] / sum);
-							}
-						}
-					}
-				}
-				else{
-					for(int j=src.cols-1; j>=0; j--){
-
-						float error;
-						if(tdst1f.ptr<float>(i)[j] >= 128){	
-							error = tdst1f.ptr<float>(i)[j]-255;	//error value
-							tdst1f.ptr<float>(i)[j] = 255;
-						}
-						else{				
-							error = tdst1f.ptr<float>(i)[j];	//error value
-							tdst1f.ptr<float>(i)[j] = 0;
-						}
-
-						float sum = 0;
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								sum += ErrorKernel_Stucki[x][2*HalfSize - (y + HalfSize)];
-							}
-						}
-
-						for(int x=0; x<=HalfSize; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								if(x!=0 || y!=0)
-									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][2*HalfSize - (y + HalfSize)] / sum);
-							}
-						}
-					}
-
-				}
-
-			}
-			break;
-
-		default:
-			//raster scan
-			for(int i=0; i<src.rows; i++){
-				for(int j=0; j<src.cols; j++){
-
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
-
-					float sum = 0;
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							sum += ErrorKernel_Stucki[x][y + HalfSize];
-						}
-					}
-
-					for(int x=0; x<=HalfSize; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							if(x!=0 || y!=0)
-								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][y + HalfSize] / sum);
-						}
-					}
+			for(int x=0; x<=HalfSize; x++){
+				if(i+x<0 || i+x>=src.rows)	continue;
+				for(int y=-HalfSize; y<=HalfSize; y++){
+					if(j+y<0 || j+y>=src.cols)	continue;
+					if(x!=0 || y!=0)
+						tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_Stucki[x][y + HalfSize] / sum);
 				}
 			}
 		}
+	}
 
-		tdst1f.convertTo(dst,CV_8UC1);
-		return true;
+	tdst1f.convertTo(dst,CV_8UC1);
+	return true;
 }
 
 // Shiau-Fan halftoning processing
-bool pixkit::halftoning::errordiffusion::ShiauFan1996(const cv::Mat &src, cv::Mat &dst, ScanOrder_TYPE scan_type)
+bool pixkit::halftoning::errordiffusion::ShiauFan1996(const cv::Mat &src, cv::Mat &dst)
 {
 	//////////////////////////////////////////////////////////////////////////
 	// exception
@@ -520,161 +204,51 @@ bool pixkit::halftoning::errordiffusion::ShiauFan1996(const cv::Mat &src, cv::Ma
 	/////////////////////////////////////////////////////////////////////////
 	const float ErrorKernel_ShiauFan[2][7] = {	
 		0,	0,	0,	0,	8,	0,	0,	
-		1,	1,	2,	4,	0,	0,	0,	};
+		1,	1,	2,	4,	0,	0,	0,	
+	};
 
-		int HalfSize = 3;
+	int HalfSize = 3;
 
-		//copy Input to RegImage
-		cv::Mat tdst1f = src.clone();
-		tdst1f.convertTo(tdst1f, CV_32FC1);
+	//copy Input to RegImage
+	cv::Mat tdst1f = src.clone();
+	tdst1f.convertTo(tdst1f, CV_32FC1);
 
-		// processing
-		switch(scan_type){
-		case 0:		
-			//raster scan
-			for(int i=0; i<src.rows; i++){
-				for(int j=0; j<src.cols; j++){
+	// processing
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
 
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
+			float error;
+			if(tdst1f.ptr<float>(i)[j] >= 128){	
+				error = tdst1f.ptr<float>(i)[j]-255;	//error value
+				tdst1f.ptr<float>(i)[j] = 255;
+			}
+			else{				
+				error = tdst1f.ptr<float>(i)[j];	//error value
+				tdst1f.ptr<float>(i)[j] = 0;
+			}
 
-					float sum = 0;
-					for(int x=0; x<=1; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							sum += ErrorKernel_ShiauFan[x][y + HalfSize];
-						}
-					}
-
-					for(int x=0; x<=1; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							if(x!=0 || y!=0)
-								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][y + HalfSize] / sum);
-						}
-					}
+			float sum = 0;
+			for(int x=0; x<=1; x++){
+				if(i+x<0 || i+x>=src.rows)	continue;
+				for(int y=-HalfSize; y<=HalfSize; y++){
+					if(j+y<0 || j+y>=src.cols)	continue;
+					sum += ErrorKernel_ShiauFan[x][y + HalfSize];
 				}
 			}
-			break;
 
-		case 1:		//serpentine scan
-			for(int i=0; i<src.rows; i++){
-				if(i%2==0){
-					for(int j=0; j<src.cols; j++){
-
-						float error;
-						if(tdst1f.ptr<float>(i)[j] >= 128){	
-							error = tdst1f.ptr<float>(i)[j]-255;	//error value
-							tdst1f.ptr<float>(i)[j] = 255;
-						}
-						else{				
-							error = tdst1f.ptr<float>(i)[j];	//error value
-							tdst1f.ptr<float>(i)[j] = 0;
-						}
-
-						float sum = 0;
-						for(int x=0; x<=1; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								sum += ErrorKernel_ShiauFan[x][y + HalfSize];
-							}
-						}
-
-						for(int x=0; x<=1; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								if(x!=0 || y!=0)
-									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][y + HalfSize] / sum);
-							}
-						}
-					}
-				}
-				else{
-					for(int j=src.cols-1; j>=0; j--){
-
-						float error;
-						if(tdst1f.ptr<float>(i)[j] >= 128){	
-							error = tdst1f.ptr<float>(i)[j]-255;	//error value
-							tdst1f.ptr<float>(i)[j] = 255;
-						}
-						else{				
-							error = tdst1f.ptr<float>(i)[j];	//error value
-							tdst1f.ptr<float>(i)[j] = 0;
-						}
-
-						float sum = 0;
-						for(int x=0; x<=1; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								sum += ErrorKernel_ShiauFan[x][2*HalfSize - (y + HalfSize)];
-							}
-						}
-
-						for(int x=0; x<=1; x++){
-							if(i+x<0 || i+x>=src.rows)	continue;
-							for(int y=-HalfSize; y<=HalfSize; y++){
-								if(j+y<0 || j+y>=src.cols)	continue;
-								if(x!=0 || y!=0)
-									tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][2*HalfSize - (y + HalfSize)] / sum);
-							}
-						}
-					}
-
-				}
-
-			}
-			break;
-
-		default:
-			//raster scan
-			for(int i=0; i<src.rows; i++){
-				for(int j=0; j<src.cols; j++){
-
-					float error;
-					if(tdst1f.ptr<float>(i)[j] >= 128){	
-						error = tdst1f.ptr<float>(i)[j]-255;	//error value
-						tdst1f.ptr<float>(i)[j] = 255;
-					}
-					else{				
-						error = tdst1f.ptr<float>(i)[j];	//error value
-						tdst1f.ptr<float>(i)[j] = 0;
-					}
-
-					float sum = 0;
-					for(int x=0; x<=1; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							sum += ErrorKernel_ShiauFan[x][y + HalfSize];
-						}
-					}
-
-					for(int x=0; x<=1; x++){
-						if(i+x<0 || i+x>=src.rows)	continue;
-						for(int y=-HalfSize; y<=HalfSize; y++){
-							if(j+y<0 || j+y>=src.cols)	continue;
-							if(x!=0 || y!=0)
-								tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][y + HalfSize] / sum);
-						}
-					}
+			for(int x=0; x<=1; x++){
+				if(i+x<0 || i+x>=src.rows)	continue;
+				for(int y=-HalfSize; y<=HalfSize; y++){
+					if(j+y<0 || j+y>=src.cols)	continue;
+					if(x!=0 || y!=0)
+						tdst1f.ptr<float>(i+x)[j+y] += (error * ErrorKernel_ShiauFan[x][y + HalfSize] / sum);
 				}
 			}
 		}
+	}
 
-		tdst1f.convertTo(dst,CV_8UC1);
-		return true;
+	tdst1f.convertTo(dst,CV_8UC1);
+	return true;
 }
 
 // Ostromoukhov halftoning processing
