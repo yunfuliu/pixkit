@@ -769,7 +769,7 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 // direct binary search
 //////////////////////////////////////////////////////////////////////////
 
-bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize){
+bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize,bool cppmode){
 
 	//////////////////////////////////////////////////////////////////////////
 	/// exceptions
@@ -821,28 +821,45 @@ bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, 
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	/// get autocorrelation	
-	int	exFS=FilterSize*2-1;
-	int	tempFS=FilterSize-1;
+	/// get autocorrelation. Notably, the process depends upon the cppmode, it means whether the 'coe' is cpp or p as defined in paper. 
+	int	exFS;
+	int	tempFS;
+	if(cppmode){
+		exFS=FilterSize;
+		tempFS=FilterSize/2;
+	}else{
+		exFS=FilterSize*2-1;
+		tempFS=FilterSize-1;
+	}
 	double	*	autocoeData	=	new	double		[exFS*exFS];
 	double	**	autocoe		=	new	double	*	[exFS];
-	for(int i=0;i<exFS;i++){
-		autocoe[i]=&autocoeData[i*exFS];
-		for(int j=0;j<exFS;j++){
-			autocoe[i][j]=0.;
+	if(cppmode){
+		for(int i=0;i<exFS;i++){
+			autocoe[i]=&autocoeData[i*exFS];
+			for(int j=0;j<exFS;j++){
+				autocoe[i][j]=coe[i][j];
+			}
 		}
-	}
-	for(int i=0;i<FilterSize;i++){
-		for(int j=0;j<FilterSize;j++){
-			for(int m=-tempFS;m<=tempFS;m++){
-				for(int n=-tempFS;n<=tempFS;n++){
-					if(i+m<FilterSize&&i+m>=0&&j+n<FilterSize&&j+n>=0){
-						autocoe[m+tempFS][n+tempFS]+=coe[i][j]*coe[i+m][j+n];
+	}else{
+		for(int i=0;i<exFS;i++){
+			autocoe[i]=&autocoeData[i*exFS];
+			for(int j=0;j<exFS;j++){
+				autocoe[i][j]=0.;
+			}
+		}
+		for(int i=0;i<FilterSize;i++){
+			for(int j=0;j<FilterSize;j++){
+				for(int m=-tempFS;m<=tempFS;m++){
+					for(int n=-tempFS;n<=tempFS;n++){
+						if(i+m<FilterSize&&i+m>=0&&j+n<FilterSize&&j+n>=0){
+							autocoe[m+tempFS][n+tempFS]+=coe[i][j]*coe[i+m][j+n];
+						}
 					}
 				}
 			}
 		}
 	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	/// load original image
