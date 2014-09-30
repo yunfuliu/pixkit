@@ -112,8 +112,9 @@ namespace pixkit{
 		namespace iterative{
 			// efficient DBS
 			bool LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7,bool cppmode=false);
+			bool dualmetricDBS2002(const cv::Mat &src1b,cv::Mat &dst1b);
 
-			//
+			// Electrostatic halftoning
 			bool ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
 
 		}
