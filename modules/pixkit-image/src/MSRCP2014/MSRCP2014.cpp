@@ -326,13 +326,11 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &Return_Im
 	nWidth =orig->width;   
 	nHeight = orig->height;   
 	step = orig->widthStep/sizeof( unsigned char );   
-	printf("nWidth=%d",(int)nWidth);
-	printf("nHeight=%d",(int) nHeight);
-	
+
 	Return_Image=cv::Mat::zeros(nHeight,nWidth,CV_8UC3);
 	sImage = new unsigned char[nHeight*nWidth*3];  
 	dImage = new unsigned char[nHeight*nWidth*3];   
-	
+
 	if ( orig->nChannels == 3 )   
 	{   
 		for ( y = 0; y < nHeight; y++ )   
@@ -343,23 +341,23 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &Return_Im
 				sImage[(y*nWidth+x)*orig->nChannels+2] = orig->imageData[y*step+x*orig->nChannels+2];   
 			}   
 	}  
-	
+
 	memcpy( dImage, sImage, nWidth*nHeight*orig->nChannels );  
-	
+
 	MSRCP_Main( dImage, nWidth, nHeight, orig->nChannels );   
-	
-		for (int i = 0; i <  nWidth*nHeight*orig->nChannels; i += orig->nChannels ){
-			Return_Image.data[i]= dImage[i];   
-			Return_Image.data[i+1]= dImage[i+1];   
-			Return_Image.data[i+2]= dImage[i+2];   
-		}   
+
+	for (int i = 0; i <  nWidth*nHeight*orig->nChannels; i += orig->nChannels ){
+		Return_Image.data[i]= dImage[i];   
+		Return_Image.data[i+1]= dImage[i+1];   
+		Return_Image.data[i+2]= dImage[i+2];   
+	}   
 
 
 
-	
-		delete [] sImage;  
-		delete [] dImage;   
-		return true;
+
+	delete [] sImage;  
+	delete [] dImage;   
+	return true;
 }   
 
 
