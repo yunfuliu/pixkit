@@ -107,19 +107,13 @@ namespace pixkit{
 
 		/// Direct binary search
 		namespace iterative{
-			// efficient DBS
-<<<<<<< HEAD
-			bool			LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7);
 
-			//
-			bool			ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
-=======
+			// efficient DBS
 			bool LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData=NULL,int FilterSize=7,bool cppmode=false);
 			bool dualmetricDBS2002(const cv::Mat &src1b,cv::Mat &dst1b);
 
 			// Electrostatic halftoning
 			bool ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug);
->>>>>>> b7478e929c2e16f29144bcadcb4852314be7bb6c
 
 		}
 

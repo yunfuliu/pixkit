@@ -563,12 +563,7 @@ bool pixkit::halftoning::errordiffusion::FloydSteinberg1976(const cv::Mat &src,c
 //////////////////////////////////////////////////////////////////////////
 // direct binary search
 //////////////////////////////////////////////////////////////////////////
-<<<<<<< HEAD
-
-bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize){
-=======
 bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize,bool cppmode){
->>>>>>> b7478e929c2e16f29144bcadcb4852314be7bb6c
 
 	//////////////////////////////////////////////////////////////////////////
 	/// exceptions
