@@ -334,7 +334,7 @@ bool pixkit::halftoning::ordereddithering::DMS_2Level2012_genDitherArray(cv::Mat
 	return true;
 }
 
-bool pixkit::halftoning::ordereddithering::DMS_2Level2012(const cv::Mat &src1b, const cv::Mat ditherarray1b,cv::Mat &dst1b){
+bool pixkit::halftoning::ordereddithering::DMS_2Level2012(const cv::Mat &src1b, const cv::Mat &ditherarray1b,cv::Mat &dst1b){
 	dst1b.create(src1b.size(),src1b.type());
 	for(int i=0;i<src1b.rows;i++){
 		for(int j=0;j<src1b.cols;j++){

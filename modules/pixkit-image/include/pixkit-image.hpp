@@ -124,7 +124,7 @@ namespace pixkit{
 
 			// dms
 			bool DMS_2Level2012_genDitherArray(cv::Mat &DA, int daSize);
-			bool DMS_2Level2012(const cv::Mat &src1b, const cv::Mat ditherarray1b,cv::Mat &dst1b);
+			bool DMS_2Level2012(const cv::Mat &src1b, const cv::Mat &ditherarray1b,cv::Mat &dst1b);
 
 			// conventional od methods
 			enum DitherArray_TYPE { DispersedDot, ClusteredDot };
