@@ -122,6 +122,11 @@ namespace pixkit{
 		/// Ordered Dither related
 		namespace ordereddithering{
 
+			// dms
+			bool DMS_2Level2012_genDitherArray(cv::Mat &DA, int daSize);
+			bool DMS_2Level2012(const cv::Mat &src1b, const cv::Mat ditherarray1b,cv::Mat &dst1b);
+
+			// conventional od methods
 			enum DitherArray_TYPE { DispersedDot, ClusteredDot };
 			bool Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE = DispersedDot);
 
