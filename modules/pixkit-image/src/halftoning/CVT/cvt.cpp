@@ -20,10 +20,6 @@
 using namespace std;
 
 # include "cvt.hpp"
-//////////////////////////////////////////////////////////////////////////
-///// additional files
-# include "../../../include/pixkit-image.hpp"
-# include <opencv2/core/core.hpp>
 
 //****************************************************************************80
 
@@ -3244,27 +3240,4 @@ void user ( int dim_num, int n, int *seed, double r[] )
 
   return;
 # undef PI
-}
-
-//////////////////////////////////////////////////////////////////////////
-///// pixkit
-void pixkit::halftoning::ungrouped::cvt_ (cv::Mat &dst, const int imageSize,int dim_num, int n, int batch, int init, int sample, int sample_num, 
-	int it_max, int it_fixed, int *seed, double *r,int *it_num, double *it_diff, 
-	double *energy )
-{
-
-	// get dots from CVT
-	cvt ( dim_num, n, batch, init, sample, sample_num, it_max, it_fixed, seed, r, it_num, it_diff, energy );
-
-	// map points to Mat
-	dst.create(cv::Size(imageSize,imageSize),CV_8UC1);
-	dst.setTo(0);
-
-	for(int i=0;i<n;i++){
-		int	x	=	cvRound(r[i*dim_num+0]*(double)(imageSize-1));
-		int	y	=	cvRound(r[i*dim_num+1]*(double)(imageSize-1));
-		if(x>=0&&x<imageSize&&y>=0&&y<imageSize){
-			dst.ptr<uchar>(y)[x]	=	255;
-		}		
-	}
 }
