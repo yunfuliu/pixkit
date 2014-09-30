@@ -328,8 +328,8 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &Return_Im
 	step = orig->widthStep/sizeof( unsigned char );   
 	printf("nWidth=%d",(int)nWidth);
 	printf("nHeight=%d",(int) nHeight);
-	dst = cvCreateImage( cvSize(nWidth,nHeight), IPL_DEPTH_8U, 3 );  
 	
+	Return_Image=cv::Mat::zeros(nHeight,nWidth,CV_8UC3);
 	sImage = new unsigned char[nHeight*nWidth*3];  
 	dImage = new unsigned char[nHeight*nWidth*3];   
 	
@@ -348,19 +348,15 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &Return_Im
 	
 	MSRCP_Main( dImage, nWidth, nHeight, orig->nChannels );   
 	
-	for ( y = 0; y < nHeight; y++ )   
-		for ( x = 0; x < nWidth; x++ )   
-		{   
-			dst->imageData[y*step+x*3] = dImage[(y*nWidth+x)*3];   
-			dst->imageData[y*step+x*3+1] = dImage[(y*nWidth+x)*3+1];   
-			dst->imageData[y*step+x*3+2] = dImage[(y*nWidth+x)*3+2];   
+		for (int i = 0; i <  nWidth*nHeight*orig->nChannels; i += orig->nChannels ){
+			Return_Image.data[i]= dImage[i];   
+			Return_Image.data[i+1]= dImage[i+1];   
+			Return_Image.data[i+2]= dImage[i+2];   
 		}   
 
 
 
-		cv::Mat Matrix1(dst,0);
-		Return_Image=Matrix1.clone(); 
-		cvReleaseImage( &dst );   
+	
 		delete [] sImage;  
 		delete [] dImage;   
 		return true;
