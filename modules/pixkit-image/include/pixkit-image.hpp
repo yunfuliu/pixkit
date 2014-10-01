@@ -273,7 +273,7 @@ namespace pixkit{
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
 
 		// signal similarity for halftone images
-		float HPSNR(const cv::Mat &src1, const cv::Mat &src2);
+		float HPSNR(const cv::Mat &src1, const cv::Mat &src2,const int ksize=9);
 
 		bool GaussianDiff(cv::InputArray &_src1,cv::InputArray &_src2,double sd=1.);
 	
