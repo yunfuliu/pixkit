@@ -1335,291 +1335,290 @@ bool pixkit::halftoning::iterative::dualmetricDBS2002(const cv::Mat &src1b, cv::
 	return true;
 }
 
-bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, 
-	int GridForce, int Shake, int Debug){
+bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug){
 
-		//////////////////////////////////////////////////////////////////////////
-		///// exceptions
-		if(src.type()!=CV_8U){
-			CV_Error(CV_BadNumChannels,"[pixkit::halftoning::ElectrostaticHalftoning] image should be grayscale");
-		}
-		if(InitialCharge!=0&&InitialCharge!=1){
-			printf("[pixkit::halftoning::ElectrostaticHalftoning] InitialCharge should be 0 or 1");
-			system("pause");
-			exit(0);
-		}
-		if(Iterations<1){
-			printf("[pixkit::halftoning::ElectrostaticHalftoning] Iterations should be bigger than 1");
-			system("pause");
-			exit(0);
-		}
-		if(GridForce!=0&&GridForce!=1){
-			printf("[pixkit::halftoning::ElectrostaticHalftoning] GridForce should be 0 or 1");
-			system("pause");
-			exit(0);
-		}
-		if(Shake!=0&&Shake!=1){
-			printf("[pixkit::halftoning::ElectrostaticHalftoning] Shake should be 0 or 1");
-			system("pause");
-			exit(0);
-		}
-		if(Shake==1&&Iterations<=64){
-			printf("[pixkit::halftoning::ElectrostaticHalftoning] Iterations should be bigger than 64");
-			system("pause");
-			exit(0);
-		}
-		if(Debug!=0&&Debug!=1&&Debug!=2){
-			printf("[pixkit::halftoning::ElectrostaticHalftoning] Debug should be 0, 1 or 2");
-			system("pause");
-			exit(0);
-		}
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[pixkit::halftoning::ElectrostaticHalftoning] image should be grayscale");
+	}
+	if(InitialCharge!=0&&InitialCharge!=1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] InitialCharge should be 0 or 1");
+		system("pause");
+		exit(0);
+	}
+	if(Iterations<1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Iterations should be bigger than 1");
+		system("pause");
+		exit(0);
+	}
+	if(GridForce!=0&&GridForce!=1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] GridForce should be 0 or 1");
+		system("pause");
+		exit(0);
+	}
+	if(Shake!=0&&Shake!=1){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Shake should be 0 or 1");
+		system("pause");
+		exit(0);
+	}
+	if(Shake==1&&Iterations<=64){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Iterations should be bigger than 64");
+		system("pause");
+		exit(0);
+	}
+	if(Debug!=0&&Debug!=1&&Debug!=2){
+		printf("[pixkit::halftoning::ElectrostaticHalftoning] Debug should be 0, 1 or 2");
+		system("pause");
+		exit(0);
+	}
 
-		char out_file[50];
-		double **image_in = new double*[src.rows];
-		for(int i=0;i<src.rows;i++)
-			image_in[i] = new double [src.cols];
-		int **image_tmp = new int*[src.rows];
-		for(int i=0;i<src.rows;i++)
-			image_tmp[i] = new int [src.cols];
-		Mat real_dst(src.rows,src.cols,CV_8UC1);
+	char out_file[50];
+	double **image_in = new double*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		image_in[i] = new double [src.cols];
+	int **image_tmp = new int*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		image_tmp[i] = new int [src.cols];
+	Mat real_dst(src.rows,src.cols,CV_8UC1);
 
-		//////////////////////////////////////////////////////////////////////////
-		///// Initialization
-		for(int i=0; i<src.rows; i++){
-			for(int j=0; j<src.cols; j++){
-				image_in[i][j]=(double)src.data[i*src.cols+j]/255;
-				image_tmp[i][j]=255;
-				real_dst.data[i*src.cols+j]=255;
-			}
+	//////////////////////////////////////////////////////////////////////////
+	///// Initialization
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			image_in[i][j]=(double)src.data[i*src.cols+j]/255;
+			image_tmp[i][j]=255;
+			real_dst.data[i*src.cols+j]=255;
 		}
+	}
 
-		//////////////////////////////////////////////////////////////////////////
-		///// Find the number of Particle
-		double CountParticle=0;
-		for(int i=0; i<src.rows; i++)
-			for(int j=0; j<src.cols; j++)
-				CountParticle=CountParticle+(1-image_in[i][j]);
-		printf("The number of black pixel(charge) = %d\n",(int)CountParticle);
+	//////////////////////////////////////////////////////////////////////////
+	///// Find the number of Particle
+	double CountParticle=0;
+	for(int i=0; i<src.rows; i++)
+		for(int j=0; j<src.cols; j++)
+			CountParticle=CountParticle+(1-image_in[i][j]);
+	printf("The number of black pixel(charge) = %d\n",(int)CountParticle);
 
-		//////////////////////////////////////////////////////////////////////////
-		///// Initialize the Particle's position
-		double *Particle_Y = new double[(int)CountParticle];
-		double *Particle_X = new double[(int)CountParticle];
-		int Particle=CountParticle;
-		while(Particle>0){
-			int RandY=rand()%src.rows;
-			int RandX=rand()%src.cols;
-			if(image_tmp[RandY][RandX]!=0){
-				if(InitialCharge==1){
-					int RandNumber=rand()%256;
-					if(RandNumber>src.data[RandY*src.cols+RandX]){
-						image_tmp[RandY][RandX]=0;
-						if(Debug==1)
-							real_dst.data[RandY*src.cols+RandX]=0;
-						Particle--;
-					}
-				}
-				else if(InitialCharge==0){
+	//////////////////////////////////////////////////////////////////////////
+	///// Initialize the Particle's position
+	double *Particle_Y = new double[(int)CountParticle];
+	double *Particle_X = new double[(int)CountParticle];
+	int Particle=CountParticle;
+	while(Particle>0){
+		int RandY=rand()%src.rows;
+		int RandX=rand()%src.cols;
+		if(image_tmp[RandY][RandX]!=0){
+			if(InitialCharge==1){
+				int RandNumber=rand()%256;
+				if(RandNumber>src.data[RandY*src.cols+RandX]){
 					image_tmp[RandY][RandX]=0;
 					if(Debug==1)
 						real_dst.data[RandY*src.cols+RandX]=0;
 					Particle--;
 				}
 			}
-		}
-		if(Debug==1)
-			cv::imwrite("output.bmp", real_dst);
-		else if(Debug==2){
-			sprintf(out_file,".\\output\\0.bmp");
-			cv::imwrite(out_file, real_dst);
-		}
-
-		//////////////////////////////////////////////////////////////////////////
-		///// Record the Particle's position
-		int ParticleNumber=0;
-		for(int i=0; i<src.rows; i++){
-			for(int j=0; j<src.cols; j++){
-				if(image_tmp[i][j]==0){
-					Particle_Y[ParticleNumber]=(double)i;
-					Particle_X[ParticleNumber]=(double)j;
-					ParticleNumber++;
-				}
+			else if(InitialCharge==0){
+				image_tmp[RandY][RandX]=0;
+				if(Debug==1)
+					real_dst.data[RandY*src.cols+RandX]=0;
+				Particle--;
 			}
 		}
+	}
+	if(Debug==1)
+		cv::imwrite("output.bmp", real_dst);
+	else if(Debug==2){
+		sprintf(out_file,".\\output\\0.bmp");
+		cv::imwrite(out_file, real_dst);
+	}
 
-		//////////////////////////////////////////////////////////////////////////
-		///// Create Forcefield Table
-		printf("Create Forcefield Table, \n");
-		double **forcefield_y = new double*[src.rows];
-		for(int i=0;i<src.rows;i++)
-			forcefield_y[i] = new double [src.cols];
-		double **forcefield_x = new double*[src.rows];
-		for(int i=0;i<src.rows;i++)
-			forcefield_x[i] = new double [src.cols];
-		for(int i=0; i<src.rows; i++){
-			for(int j=0; j<src.cols; j++){
-				forcefield_y[i][j]=0;
-				forcefield_x[i][j]=0;
-				for(int y=0; y<src.rows; y++){
-					for(int x=0; x<src.cols; x++){
-						if(!(i==y&&j==x)){
-							forcefield_y[i][j]+=(1-image_in[y][x])*(y-i)/((y-i)*(y-i)+(x-j)*(x-j));
-							forcefield_x[i][j]+=(1-image_in[y][x])*(x-j)/((y-i)*(y-i)+(x-j)*(x-j));
-						}
-					}
-				}
+	//////////////////////////////////////////////////////////////////////////
+	///// Record the Particle's position
+	int ParticleNumber=0;
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			if(image_tmp[i][j]==0){
+				Particle_Y[ParticleNumber]=(double)i;
+				Particle_X[ParticleNumber]=(double)j;
+				ParticleNumber++;
 			}
 		}
+	}
 
-		//////////////////////////////////////////////////////////////////////////
-		///// process
-		double instead_y,instead_x;
-		Particle=CountParticle;
-		for(int iterations=1; iterations<=Iterations; iterations++){
-			printf("Iterations %d\n",iterations);
-
-			for(int NowCharge=0; NowCharge<Particle; NowCharge++){
-				double NewPosition_Y=0,NewPosition_X=0;
-				double GridForce_Y=0,GridForce_X=0;
-
-				//Attraction(by using bilinear interpolation)
-				if(Particle_Y[NowCharge]-(int)Particle_Y[NowCharge]==0&&Particle_X[NowCharge]-(int)Particle_X[NowCharge]==0){
-					NewPosition_Y=forcefield_y[(int)Particle_Y[NowCharge]][(int)Particle_X[NowCharge]];
-					NewPosition_X=forcefield_x[(int)Particle_Y[NowCharge]][(int)Particle_X[NowCharge]];
-				}
-				else{
-					int Bilinear_y1=Particle_Y[NowCharge];
-					int Bilinear_x1=Particle_X[NowCharge];
-					int Bilinear_y2=Bilinear_y1+1;
-					int Bilinear_x2=Bilinear_x1+1;
-					if(Bilinear_y1+1<src.rows&&Bilinear_x1+1<src.cols){
-						NewPosition_Y=forcefield_y[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
-							+forcefield_y[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
-							+forcefield_y[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
-							+forcefield_y[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
-						NewPosition_X=forcefield_x[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
-							+forcefield_x[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
-							+forcefield_x[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
-							+forcefield_x[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
-					}
-				}
-
-				//Repulsion
-				for(int OtherCharge=0; OtherCharge<Particle; OtherCharge++){
-					if(NowCharge!=OtherCharge){
-						instead_y=Particle_Y[OtherCharge]-Particle_Y[NowCharge];
-						instead_x=Particle_X[OtherCharge]-Particle_X[NowCharge];
-						if(!(instead_y==0&&instead_x==0)){
-							NewPosition_Y-=instead_y/(instead_y*instead_y+instead_x*instead_x);
-							NewPosition_X-=instead_x/(instead_y*instead_y+instead_x*instead_x);
-						}
-					}
-				}
-
-				//Add GridForce to find discrete particle locations
-				double real_y=Particle_Y[NowCharge]-(int)Particle_Y[NowCharge];
-				double real_x=Particle_X[NowCharge]-(int)Particle_X[NowCharge];
-				if(real_y==0&&real_x==0){
-					GridForce_Y=0;
-					GridForce_X=0;
-				}
-				else{
-					if(real_y<0.5){
-						if(real_x<0.5){
-							real_y=(0-real_y);
-							real_x=(0-real_x);
-						}
-						else{
-							real_y=(0-real_y);
-							real_x=(1-real_x);
-						}	
-					}
-					else{
-						if(real_x<0.5){
-							real_y=(1-real_y);
-							real_x=(0-real_x);
-						}
-						else{
-							real_y=(1-real_y);
-							real_x=(1-real_x);
-						}	
-					}
-					double vector3=sqrt(real_y*real_y+real_x*real_x);
-					if(real_y==0)
-						GridForce_Y=0;
-					else
-						GridForce_Y=3.5*real_y/(vector3*(1+pow(vector3,8)*10000));
-					if(real_x==0)
-						GridForce_X=0;
-					else
-						GridForce_X=3.5*real_x/(vector3*(1+pow(vector3,8)*10000));
-				}
-
-				//resault (new position of particles)
-				if(GridForce==0){
-					Particle_Y[NowCharge]=Particle_Y[NowCharge]+0.1*NewPosition_Y;
-					Particle_X[NowCharge]=Particle_X[NowCharge]+0.1*NewPosition_X;
-				}
-				else if(GridForce==1){
-					Particle_Y[NowCharge]=Particle_Y[NowCharge]+0.1*(NewPosition_Y+GridForce_Y);
-					Particle_X[NowCharge]=Particle_X[NowCharge]+0.1*(NewPosition_X+GridForce_X);
-				}
-
-				//Shake
-				if(Shake==1&&iterations%10==0&&Iterations>64){
-					Particle_Y[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
-					Particle_X[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
-				}
-
-				if(Particle_Y[NowCharge]<0)
-					Particle_Y[NowCharge]=0;
-				if(Particle_Y[NowCharge]>=src.rows)
-					Particle_Y[NowCharge]=src.rows-1;
-				if(Particle_X[NowCharge]<0)
-					Particle_X[NowCharge]=0;
-				if(Particle_X[NowCharge]>=src.cols)
-					Particle_X[NowCharge]=src.cols-1;
-
-			}
-
-			//Output
+	//////////////////////////////////////////////////////////////////////////
+	///// Create Forcefield Table
+	printf("Create Forcefield Table, \n");
+	double **forcefield_y = new double*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		forcefield_y[i] = new double [src.cols];
+	double **forcefield_x = new double*[src.rows];
+	for(int i=0;i<src.rows;i++)
+		forcefield_x[i] = new double [src.cols];
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			forcefield_y[i][j]=0;
+			forcefield_x[i][j]=0;
 			for(int y=0; y<src.rows; y++){
 				for(int x=0; x<src.cols; x++){
-					real_dst.data[y*src.cols+x]=255;
-					image_tmp[y][x]=255;
+					if(!(i==y&&j==x)){
+						forcefield_y[i][j]+=(1-image_in[y][x])*(y-i)/((y-i)*(y-i)+(x-j)*(x-j));
+						forcefield_x[i][j]+=(1-image_in[y][x])*(x-j)/((y-i)*(y-i)+(x-j)*(x-j));
+					}
 				}
 			}
-			int output_position;
-			int out_Y,out_X;
-			double count_errorY=0,count_errorX=0;
-			for(int NowCharge=0; NowCharge<Particle; NowCharge++){
-				out_Y=Particle_Y[NowCharge]+0.5;
-				out_X=Particle_X[NowCharge]+0.5;
-				if(out_Y>=src.rows)
-					out_Y=src.rows-1;
-				if(out_X>=src.cols)
-					out_X=src.cols-1;
-				image_tmp[out_Y][out_X]=0;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// process
+	double instead_y,instead_x;
+	Particle=CountParticle;
+	for(int iterations=1; iterations<=Iterations; iterations++){
+		printf("Iterations %d\n",iterations);
+
+		for(int NowCharge=0; NowCharge<Particle; NowCharge++){
+			double NewPosition_Y=0,NewPosition_X=0;
+			double GridForce_Y=0,GridForce_X=0;
+
+			//Attraction(by using bilinear interpolation)
+			if(Particle_Y[NowCharge]-(int)Particle_Y[NowCharge]==0&&Particle_X[NowCharge]-(int)Particle_X[NowCharge]==0){
+				NewPosition_Y=forcefield_y[(int)Particle_Y[NowCharge]][(int)Particle_X[NowCharge]];
+				NewPosition_X=forcefield_x[(int)Particle_Y[NowCharge]][(int)Particle_X[NowCharge]];
+			}
+			else{
+				int Bilinear_y1=Particle_Y[NowCharge];
+				int Bilinear_x1=Particle_X[NowCharge];
+				int Bilinear_y2=Bilinear_y1+1;
+				int Bilinear_x2=Bilinear_x1+1;
+				if(Bilinear_y1+1<src.rows&&Bilinear_x1+1<src.cols){
+					NewPosition_Y=forcefield_y[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
+						+forcefield_y[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
+						+forcefield_y[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
+						+forcefield_y[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
+					NewPosition_X=forcefield_x[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
+						+forcefield_x[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
+						+forcefield_x[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
+						+forcefield_x[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
+				}
 			}
 
-			for(int y=0; y<src.rows; y++)
-				for(int x=0; x<src.cols; x++)
-					real_dst.data[y*src.cols+x]=image_tmp[y][x];
-
-			if(Debug==1)
-				cv::imwrite("output.bmp",real_dst);
-			else if(Debug==2){
-				sprintf(out_file,".\\output\\%d.bmp",iterations);
-				cv::imwrite(out_file,real_dst);
+			//Repulsion
+			for(int OtherCharge=0; OtherCharge<Particle; OtherCharge++){
+				if(NowCharge!=OtherCharge){
+					instead_y=Particle_Y[OtherCharge]-Particle_Y[NowCharge];
+					instead_x=Particle_X[OtherCharge]-Particle_X[NowCharge];
+					if(!(instead_y==0&&instead_x==0)){
+						NewPosition_Y-=instead_y/(instead_y*instead_y+instead_x*instead_x);
+						NewPosition_X-=instead_x/(instead_y*instead_y+instead_x*instead_x);
+					}
+				}
 			}
+
+			//Add GridForce to find discrete particle locations
+			double real_y=Particle_Y[NowCharge]-(int)Particle_Y[NowCharge];
+			double real_x=Particle_X[NowCharge]-(int)Particle_X[NowCharge];
+			if(real_y==0&&real_x==0){
+				GridForce_Y=0;
+				GridForce_X=0;
+			}
+			else{
+				if(real_y<0.5){
+					if(real_x<0.5){
+						real_y=(0-real_y);
+						real_x=(0-real_x);
+					}
+					else{
+						real_y=(0-real_y);
+						real_x=(1-real_x);
+					}	
+				}
+				else{
+					if(real_x<0.5){
+						real_y=(1-real_y);
+						real_x=(0-real_x);
+					}
+					else{
+						real_y=(1-real_y);
+						real_x=(1-real_x);
+					}	
+				}
+				double vector3=sqrt(real_y*real_y+real_x*real_x);
+				if(real_y==0)
+					GridForce_Y=0;
+				else
+					GridForce_Y=3.5*real_y/(vector3*(1+pow(vector3,8)*10000));
+				if(real_x==0)
+					GridForce_X=0;
+				else
+					GridForce_X=3.5*real_x/(vector3*(1+pow(vector3,8)*10000));
+			}
+
+			//resault (new position of particles)
+			if(GridForce==0){
+				Particle_Y[NowCharge]=Particle_Y[NowCharge]+0.1*NewPosition_Y;
+				Particle_X[NowCharge]=Particle_X[NowCharge]+0.1*NewPosition_X;
+			}
+			else if(GridForce==1){
+				Particle_Y[NowCharge]=Particle_Y[NowCharge]+0.1*(NewPosition_Y+GridForce_Y);
+				Particle_X[NowCharge]=Particle_X[NowCharge]+0.1*(NewPosition_X+GridForce_X);
+			}
+
+			//Shake
+			if(Shake==1&&iterations%10==0&&Iterations>64){
+				Particle_Y[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
+				Particle_X[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
+			}
+
+			if(Particle_Y[NowCharge]<0)
+				Particle_Y[NowCharge]=0;
+			if(Particle_Y[NowCharge]>=src.rows)
+				Particle_Y[NowCharge]=src.rows-1;
+			if(Particle_X[NowCharge]<0)
+				Particle_X[NowCharge]=0;
+			if(Particle_X[NowCharge]>=src.cols)
+				Particle_X[NowCharge]=src.cols-1;
+
 		}
 
-		dst=real_dst.clone();
+		//Output
+		for(int y=0; y<src.rows; y++){
+			for(int x=0; x<src.cols; x++){
+				real_dst.data[y*src.cols+x]=255;
+				image_tmp[y][x]=255;
+			}
+		}
+		int output_position;
+		int out_Y,out_X;
+		double count_errorY=0,count_errorX=0;
+		for(int NowCharge=0; NowCharge<Particle; NowCharge++){
+			out_Y=Particle_Y[NowCharge]+0.5;
+			out_X=Particle_X[NowCharge]+0.5;
+			if(out_Y>=src.rows)
+				out_Y=src.rows-1;
+			if(out_X>=src.cols)
+				out_X=src.cols-1;
+			image_tmp[out_Y][out_X]=0;
+		}
 
-		delete [] image_in;
-		delete [] image_tmp;
+		for(int y=0; y<src.rows; y++)
+			for(int x=0; x<src.cols; x++)
+				real_dst.data[y*src.cols+x]=image_tmp[y][x];
 
-		return true;
+		if(Debug==1)
+			cv::imwrite("output.bmp",real_dst);
+		else if(Debug==2){
+			sprintf(out_file,".\\output\\%d.bmp",iterations);
+			cv::imwrite(out_file,real_dst);
+		}
+	}
+
+	dst=real_dst.clone();
+
+	delete [] image_in;
+	delete [] image_tmp;
+
+	return true;
 
 }
 
