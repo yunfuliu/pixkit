@@ -230,6 +230,7 @@ namespace pixkit{
 			bool	LCE_BSESCS2014(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize);
 			bool	Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
 			bool	MSRCP2014(const cv::Mat &src,cv::Mat &dst,int Nscale);
+			bool	WangZhengHuLi2013(const cv::Mat &src,cv::Mat &dst);
 			bool	Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
 			bool	POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
 			bool	Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
