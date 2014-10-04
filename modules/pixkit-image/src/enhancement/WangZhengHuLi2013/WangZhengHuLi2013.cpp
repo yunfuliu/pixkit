@@ -94,8 +94,8 @@ bool pixkit::enhancement::local::WangZhengHuLi2013(const cv::Mat &ori,cv::Mat &r
 			//calculate bright pass filter
 			double Q=0;
 			double W=0;
-			for(int y=CenterY-patch_y;y<CenterY+patch_y;y++){
-				for(int x=CenterX-patch_x;x<CenterX+patch_x;x++){
+			for(int y=CenterY-patch_y;y<=CenterY+patch_y;y++){
+				for(int x=CenterX-patch_x;x<=CenterX+patch_x;x++){
 					if(HSV[2].at<uchar>(CenterY,CenterX)>HSV[2].at<uchar>(y,x))continue;
 					//G(x,y) HSV[2].at<uchar>(CenterY,CenterX)
 					//G(i,j) HSV[2].at<uchar>(y,x)
@@ -113,8 +113,14 @@ bool pixkit::enhancement::local::WangZhengHuLi2013(const cv::Mat &ori,cv::Mat &r
 				}
 			}
 
-			Q=Q/W;
+			Q=ceil(Q/W);
+
 			//calculate reflectance and illumination, b-patch_x and a-patch_y are due to the margin problem
+			if(Q==(double)0){
+				reflectance_f.at<cv::Vec3f>(a-patch_y,b-patch_x)[0]=1;
+				reflectance_f.at<cv::Vec3f>(a-patch_y,b-patch_x)[1]=1;
+				reflectance_f.at<cv::Vec3f>(a-patch_y,b-patch_x)[2]=1;
+			}
 			reflectance_f.at<cv::Vec3f>(a-patch_y,b-patch_x)[0]=(float)(ori.at<cv::Vec3b>(a-patch_y,b-patch_x)[0]/Q);
 			reflectance_f.at<cv::Vec3f>(a-patch_y,b-patch_x)[1]=(float)(ori.at<cv::Vec3b>(a-patch_y,b-patch_x)[1]/Q);
 			reflectance_f.at<cv::Vec3f>(a-patch_y,b-patch_x)[2]=(float)(ori.at<cv::Vec3b>(a-patch_y,b-patch_x)[2]/Q);
