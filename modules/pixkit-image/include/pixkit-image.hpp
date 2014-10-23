@@ -39,7 +39,7 @@ namespace pixkit{
 		* @param		sd:	standard deviation, unit: grayscale. range: 0~255
 		*/
 		bool	addGaussianNoise(const cv::Mat &src,cv::Mat &dst,const double sd);
-
+		
 		/**
 		* @brief		add white noise to each pixel
 		*
@@ -68,10 +68,13 @@ namespace pixkit{
 		* @return		bool: true: successful, false: failure
 		*/
 		bool medianfilter(const cv::Mat &src,cv::Mat &dst,cv::Size blocksize);
-
+		
 		// fast box filtering
 		bool FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize,cv::Mat &sum=cv::Mat());
-
+		//peer group filtering
+		void PGF(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha);
+		
+		
 	}
 
 	//////////////////////////////////////////////////////////////////////////
