@@ -71,10 +71,10 @@ namespace pixkit{
 		
 		// fast box filtering
 		bool FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize,cv::Mat &sum=cv::Mat());
-		//peer group filtering
-		void PGF(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha);
-		
-		
+
+		// peer group filtering
+		bool PGF(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha);
+				
 	}
 
 	//////////////////////////////////////////////////////////////////////////
