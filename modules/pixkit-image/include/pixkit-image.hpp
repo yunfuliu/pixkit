@@ -73,7 +73,7 @@ namespace pixkit{
 		bool FBF(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize,cv::Mat &sum=cv::Mat());
 
 		// peer group filtering
-		bool PGF(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha);
+		bool PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha);
 				
 	}
 

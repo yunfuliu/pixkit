@@ -1,7 +1,5 @@
 #include "pixkit-image\include\pixkit-image.hpp"
 
-
-
 void gaussianweight(int &blocksize,double &sigma,double **kernel){
 
 	double  sum=0.0;
@@ -23,7 +21,7 @@ void gaussianweight(int &blocksize,double &sigma,double **kernel){
 
 }
 
-bool pixkit::filtering::PGF(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha){//peer group filter(source image,output image,gauss blocksize,gauss standard variance,first derivative thershold)
+bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha){//peer group filter(source image,output image,gauss blocksize,gauss standard variance,first derivative thershold)
 
 	//////////////////////////////////////////////////////////////////////////
 	//judge coefficient 
