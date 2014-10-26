@@ -21,16 +21,11 @@ void gaussianweight(int &blocksize,double &sigma,double **kernel){
 
 }
 
-bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,double &sigma,int &alpha){//peer group filter(source image,output image,gauss blocksize,gauss standard variance,first derivative thershold)
+bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,double sigma,int alpha){//peer group filter(source image,output image,gauss blocksize,gauss standard variance,first derivative thershold)
 
 	//////////////////////////////////////////////////////////////////////////
 	//judge coefficient 
-	if(alpha==0){
-		alpha=16;
-	}
-	if(sigma==0.0){
-		sigma=1.0;
-	}
+
 	if(blocksize%2==0){
 		return false;
 	}
