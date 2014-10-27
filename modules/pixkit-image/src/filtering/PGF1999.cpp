@@ -25,13 +25,12 @@ bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,d
 
 	//////////////////////////////////////////////////////////////////////////
 	//judge coefficient 
-
 	if(blocksize%2==0){
 		return false;
 	}
+
 	//////////////////////////////////////////////////////////////////////////
 	//grayimage,colorimage
-	
 	double ***rgbimagestorage = new double **[src.channels()];
 		for (int i = 0 ; i < src.channels(); i++){
 			rgbimagestorage [i] = new double *[src.rows];
