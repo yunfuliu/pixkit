@@ -23,6 +23,8 @@ void gaussianweight(int &blocksize,double &sigma,double **kernel){
 
 bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,double sigma,int alpha){//peer group filter(source image,output image,gauss blocksize,gauss standard variance,first derivative thershold)
 
+	//create dst
+	dst=src.clone();
 	//////////////////////////////////////////////////////////////////////////
 	//judge coefficient 
 	if(blocksize%2==0){
@@ -140,7 +142,7 @@ bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,d
 					for(int i=0;i<blocksize;i++){
 						for(int j=0;j<blocksize;j++){
 							for(int k=0;k<src.channels();k++){
-							distance+=pow((rgbimagestorage[k][sourcey+blocksize/2][sourcex+blocksize/2]-rgbimagestorage[k][sourcey+i][sourcex+j]),3);
+							distance+=pow(fabs(rgbimagestorage[k][sourcey+blocksize/2][sourcex+blocksize/2]-rgbimagestorage[k][sourcey+i][sourcex+j]),3);
 							}
 							distance=pow(distance,(0.33333333));
 							totaldistance[i*blocksize+j]=distance;
@@ -315,8 +317,8 @@ bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,d
 									}
 								}
 							}
-							colortotal+=rgbpeergroup[channel][i]*kernel[weightlocationy][weightlocationx];
-							weighttotal+=kernel[weightlocationy][weightlocationx];		
+							colortotal+=rgbpeergroup[i][channel]*kernel[weightlocationy][weightlocationx];
+							weighttotal+=kernel[weightlocationy][weightlocationx];
 						}
 					rgbimagestorage[channel][sourcey+blocksize/2][sourcex+blocksize/2]=colortotal/weighttotal;
 					colortotal=0;
@@ -345,6 +347,7 @@ bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,d
 						weighttotal+=kernel[weightlocationy][weightlocationx];		
 				}
 				imagestorage[sourcey+blocksize/2][sourcex+blocksize/2]=colortotal/weighttotal;
+
 				}
 				///////////////////////////////////////////////////////////////////////////////////
 				for(int i=0;i<fishmaxlocation;i++){
@@ -367,12 +370,22 @@ bool pixkit::filtering::PGF1999(const cv::Mat &src,cv::Mat &dst,int &blocksize,d
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			dst.at<unsigned char>(i,j)=imagestorage[i][j]+0.5;
+	if(src.channels()==3){
+		for(int channel=0;channel<src.channels();channel++){
+			for(int i=0;i<src.rows;i++){
+				for(int j=0;j<src.cols;j++){
+				dst.at<cv::Vec3b>(i,j)[channel]=rgbimagestorage[channel][i][j]+0.5;
+				}
+			}
+		}
+
+	}else{
+		for(int i=0;i<src.rows;i++){
+			for(int j=0;j<src.cols;j++){
+				dst.at<unsigned char>(i,j)=imagestorage[i][j]+0.5;
+			}
 		}
 	}
-
 
 	for(int i = 0 ; i < src.channels(); i++){
 		for(int j=0;j<src.rows;j++){
