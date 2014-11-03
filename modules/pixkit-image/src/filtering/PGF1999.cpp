@@ -1,4 +1,4 @@
-#include "pixkit-image\include\pixkit-image.hpp"
+#include "../../include/pixkit-image.hpp"
 
 void gaussianweight(int &blocksize,double &sigma,double **kernel){
 
