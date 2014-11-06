@@ -2336,7 +2336,7 @@ bool pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(cv::Mat &d
 	const	float	S	=	R*D;
 	const	float	pi	=	3.141592653589793;
 	const	float	fm	=	180.*180./((pi*D)*(pi*D));
-	const	int		size=	41;
+	const	int		size=	21;
 	const	int		h_size=	size/2;
 
 	//////////////////////////////////////////////////////////////////////////
@@ -2344,11 +2344,11 @@ bool pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(cv::Mat &d
 	dst1d.create(Size(size,size),CV_64FC1);
 	for(int m=-h_size;m<=h_size;m++){
 		for(int n=-h_size;n<=h_size;n++){
-			float	mod_m	=	(180.*(float)m)/(pi*S);
-			float	mod_n	=	(180.*(float)n)/(pi*S);
-			float	chh		=	k1*std::expf(-(mod_m*mod_m+mod_n*mod_n)/(2.*sd1*sd1))	+	
-								k2*std::expf(-(mod_m*mod_m+mod_n*mod_n)/(2.*sd2*sd2));
-			dst1d.ptr<double>(m+h_size)[n+h_size]	=	fm*chh;													
+			float	x		=	(180.*(float)m)/(pi*S);
+			float	y		=	(180.*(float)n)/(pi*S);
+			float	chh		=	k1*std::expf(-(x*x+y*y)/(2.*sd1*sd1))	+	
+								k2*std::expf(-(x*x+y*y)/(2.*sd2*sd2));
+			dst1d.ptr<double>(m+h_size)[n+h_size]	=	fm*chh;
 		}
 	}
 	// normalize
