@@ -238,6 +238,7 @@ namespace pixkit{
 			bool	POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
 			bool	Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
 			bool	LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
+			bool    NRCIR2009(const cv::Mat ori,cv::Mat &ret);
 			bool	LambertiMontrucchioSanna2006(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
 			bool	FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize);
 			bool	YuBajaj2004(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float C=0.85f,bool anisotropicMode=false,const float R=0.09f);
