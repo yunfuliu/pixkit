@@ -236,8 +236,10 @@ namespace pixkit{
 			bool	WangZhengHuLi2013(const cv::Mat &src,cv::Mat &dst);
 			bool	Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
 			bool	POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
+			bool    LiWangGeng2011(const cv::Mat & ori,cv::Mat &ret);
 			bool	Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
 			bool	LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
+			bool    NRCIR2009(const cv::Mat ori,cv::Mat &ret);
 			bool	LambertiMontrucchioSanna2006(const cv::Mat &src,cv::Mat &dst,const cv::Size B,const cv::Size S);
 			bool	FAHE2006(const cv::Mat &src1b,cv::Mat &dst1b,cv::Size blockSize);
 			bool	YuBajaj2004(const cv::Mat &src,cv::Mat &dst,const int blockheight,const int blockwidth,const float C=0.85f,bool anisotropicMode=false,const float R=0.09f);
@@ -252,6 +254,7 @@ namespace pixkit{
 		/// Global methods
 		namespace global{
 			bool	RajuNair2014(const cv::Mat &src,cv::Mat &dst);
+			bool    LeeLeeKim2013(const cv::Mat ori,cv::Mat &ret,double alpha=2.5);
 			bool	CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
 			bool	MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
 			bool	WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
