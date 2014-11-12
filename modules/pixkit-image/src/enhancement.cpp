@@ -389,6 +389,86 @@ bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B
 
 					return true;
 }
+bool pixkit::enhancement::local::LiWangGeng2011(const cv::Mat & ori,cv::Mat &ret){
+
+	if(ori.type()!=CV_8UC3){
+		printf("The input type should be CV_8UC3");
+		CV_Assert(false);
+	}
+
+	float alpha=0;
+	unsigned char *Lmax=new unsigned char [3];
+	double MA_max [3]={0};
+	double MA_min [3]={99};
+	memset( Lmax, 0, 3 * sizeof (unsigned char) );   
+	ret=cv::Mat::zeros(ori.rows,ori.cols,CV_8UC3);
+	cv::Mat RL=cv::Mat::zeros(ori.rows,ori.cols,CV_32FC3);//equation (16) annd (11)
+	cv::Mat Li=cv::Mat::zeros(ori.rows,ori.cols,CV_8UC1);//equation (10)
+	cv::Mat F=cv::Mat::zeros(ori.rows,ori.cols,CV_8UC1);
+	cv::Mat MA=cv::Mat::zeros(ori.rows,ori.cols,CV_32FC3);
+	cv::Mat AI=cv::Mat::zeros(ori.rows,ori.cols,CV_32FC3);
+
+	for(int j=0;j<ori.cols*ori.rows*3;j=j+3){
+		if(ori.data[j]>Lmax[0])Lmax[0]=ori.data[j];
+		if(ori.data[j+1]>Lmax[1])Lmax[1]=ori.data[j+1];
+		if(ori.data[j+2]>Lmax[2])Lmax[2]=ori.data[j+2];
+	}
+
+	//equation (16), calculate the RL(x,y) matrix and prepare equation (10)
+	for(int j=0;j<ori.cols*ori.rows*3;j=j+3){
+		float a=(1-0.5*(ori.data[j]/(float)Lmax[0]))*ori.data[j];
+		float b=(1-0.5*(ori.data[j+1]/(float)Lmax[1]))*ori.data[j+1];
+		float c=(1-0.5*(ori.data[j+2]/(float)Lmax[2]))*ori.data[j+2];
+		float d=0;
+		if(a>d)d=a;
+		if(b>d)d=b;
+		if(c>d)d=c;
+		Li.data[j/3]=cv::saturate_cast <unsigned char>(d);
+	}
+
+	//equation (9), calculate F
+	//You can adjust the bilateralFilter parameter
+	cv::bilateralFilter(Li,F,-1,3,11);
+
+	float FinalMin=FLT_MAX;
+	float FinalMax=0;
+	double k=1;
+	//equation 12
+	for(int i=0;i<ori.rows;i++){
+		for(int j=0;j<ori.cols;j++){
+			MA.at<cv::Vec3f>(i,j)[0]=log((0.5*(ori.at<cv::Vec3b>(i,j)[0]/(float)Lmax[0]))*ori.at<cv::Vec3b>(i,j)[0]+k);
+			MA.at<cv::Vec3f>(i,j)[1]=log((0.5*(ori.at<cv::Vec3b>(i,j)[1]/(float)Lmax[1]))*ori.at<cv::Vec3b>(i,j)[1]+k);
+			MA.at<cv::Vec3f>(i,j)[2]=log((0.5*(ori.at<cv::Vec3b>(i,j)[2]/(float)Lmax[2]))*ori.at<cv::Vec3b>(i,j)[2]+k);
+			if(MA.at<cv::Vec3f>(i,j)[0]>MA_max[0])MA_max[0]=MA.at<cv::Vec3f>(i,j)[0];
+			if(MA.at<cv::Vec3f>(i,j)[1]>MA_max[1])MA_max[1]=MA.at<cv::Vec3f>(i,j)[1];
+			if(MA.at<cv::Vec3f>(i,j)[2]>MA_max[2])MA_max[2]=MA.at<cv::Vec3f>(i,j)[2];
+			if(MA.at<cv::Vec3f>(i,j)[0]<MA_min[0])MA_min[0]=MA.at<cv::Vec3f>(i,j)[0];
+			if(MA.at<cv::Vec3f>(i,j)[1]<MA_min[1])MA_min[1]=MA.at<cv::Vec3f>(i,j)[1];
+			if(MA.at<cv::Vec3f>(i,j)[2]<MA_min[2])MA_min[2]=MA.at<cv::Vec3f>(i,j)[2];
+			RL.at<cv::Vec3f>(i,j)[0]=(1-0.5*(ori.at<cv::Vec3b>(i,j)[0]/(float)Lmax[0]))*ori.at<cv::Vec3b>(i,j)[0];
+			RL.at<cv::Vec3f>(i,j)[1]=(1-0.5*(ori.at<cv::Vec3b>(i,j)[1]/(float)Lmax[1]))*ori.at<cv::Vec3b>(i,j)[1];
+			RL.at<cv::Vec3f>(i,j)[2]=(1-0.5*(ori.at<cv::Vec3b>(i,j)[2]/(float)Lmax[2]))*ori.at<cv::Vec3b>(i,j)[2];
+		}
+	}
+	//normilize equation (12)
+	for(int i=0;i<ori.rows;i++){
+		for(int j=0;j<ori.cols;j++){
+			MA.at<cv::Vec3f>(i,j)[0]=MA.at<cv::Vec3f>(i,j)[0]/(MA_max[0]-MA_min[0])*255;
+			MA.at<cv::Vec3f>(i,j)[1]=MA.at<cv::Vec3f>(i,j)[1]/(MA_max[1]-MA_min[1])*255;
+			MA.at<cv::Vec3f>(i,j)[2]=MA.at<cv::Vec3f>(i,j)[2]/(MA_max[2]-MA_min[2])*255;
+		}
+	}
+
+	//normilize equation (13)
+	for(int i=0;i<ori.rows;i++){
+		for(int j=0;j<ori.cols;j++){
+			ret.at<cv::Vec3b>(i,j)[0]=cv::saturate_cast <unsigned char>(RL.at<cv::Vec3f>(i,j)[0]/F.at<uchar>(i,j)*MA.at<cv::Vec3f>(i,j)[0]);
+			ret.at<cv::Vec3b>(i,j)[1]=cv::saturate_cast <unsigned char>(RL.at<cv::Vec3f>(i,j)[1]/F.at<uchar>(i,j)*MA.at<cv::Vec3f>(i,j)[1]);
+			ret.at<cv::Vec3b>(i,j)[2]=cv::saturate_cast <unsigned char>(RL.at<cv::Vec3f>(i,j)[2]/F.at<uchar>(i,j)*MA.at<cv::Vec3f>(i,j)[2]);
+		}
+	}
+	return 1;
+}
 bool pixkit::enhancement::local::Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L, float phi){
 
 	//////////////////////////////////////////////////////////////////////////////

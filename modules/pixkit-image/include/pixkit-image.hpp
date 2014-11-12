@@ -236,6 +236,7 @@ namespace pixkit{
 			bool	WangZhengHuLi2013(const cv::Mat &src,cv::Mat &dst);
 			bool	Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
 			bool	POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
+			bool    LiWangGeng2011(const cv::Mat & ori,cv::Mat &ret);
 			bool	Sundarami2011(const cv::Mat &src,cv::Mat &dst, cv::Size N, float L = 0.03, float phi = 0.5);
 			bool	LiuJinChenLiuLi2011(const cv::Mat &src,cv::Mat &dst,const cv::Size N);
 			bool    NRCIR2009(const cv::Mat ori,cv::Mat &ret);
