@@ -408,13 +408,14 @@ bool pixkit::enhancement::local::LiWangGeng2011(const cv::Mat & ori,cv::Mat &ret
 	cv::Mat MA=cv::Mat::zeros(ori.rows,ori.cols,CV_32FC3);
 	cv::Mat AI=cv::Mat::zeros(ori.rows,ori.cols,CV_32FC3);
 
+	//equation (16), calculate the "max" term in the dominator
 	for(int j=0;j<ori.cols*ori.rows*3;j=j+3){
 		if(ori.data[j]>Lmax[0])Lmax[0]=ori.data[j];
 		if(ori.data[j+1]>Lmax[1])Lmax[1]=ori.data[j+1];
 		if(ori.data[j+2]>Lmax[2])Lmax[2]=ori.data[j+2];
 	}
 
-	//equation (16), calculate the RL(x,y) matrix and prepare equation (10)
+	//equation (16), calculate the RL(x,y) matrix and prepare for equation (10)
 	for(int j=0;j<ori.cols*ori.rows*3;j=j+3){
 		float a=(1-0.5*(ori.data[j]/(float)Lmax[0]))*ori.data[j];
 		float b=(1-0.5*(ori.data[j+1]/(float)Lmax[1]))*ori.data[j+1];
@@ -430,10 +431,10 @@ bool pixkit::enhancement::local::LiWangGeng2011(const cv::Mat & ori,cv::Mat &ret
 	//You can adjust the bilateralFilter parameter
 	cv::bilateralFilter(Li,F,-1,3,11);
 
+	//equation 12
 	float FinalMin=FLT_MAX;
 	float FinalMax=0;
 	double k=1;
-	//equation 12
 	for(int i=0;i<ori.rows;i++){
 		for(int j=0;j<ori.cols;j++){
 			MA.at<cv::Vec3f>(i,j)[0]=log((0.5*(ori.at<cv::Vec3b>(i,j)[0]/(float)Lmax[0]))*ori.at<cv::Vec3b>(i,j)[0]+k);
