@@ -51,7 +51,7 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &dst){
 	
 	//zeros
 	dst=cv::Mat::zeros(src.rows,src.cols,CV_8UC3);
-	cv::Mat Intensity=cv::Mat::zeros(src.rows,src.cols,CV_32FC1);
+	cv::Mat Intensity=cv::Mat::zeros(src.rows,src.cols,CV_8UC1);
 	cv::Mat MSR_Nor;
 	cv::Mat RetinexOut=cv::Mat::zeros(src.rows,src.cols,CV_32FC1);
 	
@@ -62,12 +62,10 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &dst){
 	*/
 	for (int i=0; i<src.rows; i++ ){
 		for (int j=0; j<src.cols; j++ ){
-			Intensity.ptr<float>(i)[j]= (src.at<cv::Vec3b>(i,j)[0]+src.at<cv::Vec3b>(i,j)[1]+src.at<cv::Vec3b>(i,j)[2])/3.+0.1;
+			Intensity.ptr<uchar>(i)[j]= (src.at<cv::Vec3b>(i,j)[0]+src.at<cv::Vec3b>(i,j)[1]+src.at<cv::Vec3b>(i,j)[2])/3;
 		}
 	}
 
-	
-	
 	//compute 3-scale retinex output, log domain
 	for (int scale = 0; scale <3; scale++ ){
 		cv::Size a(RetinexScales[scale],RetinexScales[scale]);
@@ -75,13 +73,14 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &dst){
 		float zero=0;
 		for (int i = 0; i < src.rows; i++ ){ 
 			for (int j = 0; j < src.cols; j++ ){
-				RetinexOut.ptr<float>(i)[j] += 1/3. *( log(Intensity.ptr<float>(i)[j])-log(GaussianOut.ptr<float>(i)[j]) +1); 
+				RetinexOut.ptr<float>(i)[j] += 1/3. *( log((float)Intensity.ptr<uchar>(i)[j]+1)-log((float)GaussianOut.ptr<uchar>(i)[j]+1.)); 
 			}   
 		}
 	}
 
 
 	//SimplestColorBalance, see IPOL for more information
+	cv::normalize(RetinexOut,RetinexOut,0,255,32);
 	SimplestColorBalance(RetinexOut,0.01,0.01);
 	RetinexOut.convertTo(RetinexOut,CV_8UC1);
 	MSR_Nor=RetinexOut.clone();

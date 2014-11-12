@@ -144,8 +144,9 @@ bool pixkit::enhancement::local::NRCIR2009( cv::Mat ori,cv::Mat &ret){
 	cv::divide(GLmapped_LabIndepen[0],E4_Domi,E4_Result);
 
 	//according to the flowchart(Fig5), perform histogram rescaling after Modified Retinex
-	SimplestColorBalance(E4_Result,0.01,0);
 	cv::normalize(E4_Result,E4_Result,0,255,32);
+	SimplestColorBalance(E4_Result,0.01,0);
+	
 
 	//obtain reference map, equation(8)
 	cv::Mat M_ref=cv::Mat::zeros(ori.size(),CV_32FC1);
@@ -179,6 +180,8 @@ bool pixkit::enhancement::local::NRCIR2009( cv::Mat ori,cv::Mat &ret){
 	cv::normalize(Final_Lab_In[0],Final_Lab_In[0],0,100,32);
 	cv::merge(Final_Lab_In,Final_Lab);
 	cv::cvtColor(Final_Lab,FinalResult,CV_Lab2BGR);
+	FinalResult=FinalResult*255;
+	FinalResult.convertTo(FinalResult,CV_8UC3);
 	ret=FinalResult.clone();
 	return 1;
 }
