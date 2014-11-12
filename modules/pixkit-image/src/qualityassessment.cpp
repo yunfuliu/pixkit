@@ -385,7 +385,7 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	q2.copyTo(q1);
 	tmp.copyTo(q2);
 
-	normalize(tdst1f, tdst1f, 0, 1, CV_MINMAX); // Transform the matrix with float values into a
+	normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
 	// viewable image form (float between values 0 and 1).
 
 	// copy
@@ -395,16 +395,14 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 
 	return true;
 }
-bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst){
+bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const int rounds){
 
 	Mat	src	=	_src.getMat();
 	const	int	unitsize	=	src.cols;
 
-	if(src.size()!=cv::Size(unitsize,unitsize*10)){
+	if(src.size()!=cv::Size(unitsize,unitsize*rounds)){
 		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] _src's height should be 10*_src.cols");
-	}
-	
-	const	int	rounds		=	10;
+	}	
 
 	Mat	tdst1f(cv::Size(unitsize,unitsize),CV_32FC1);
 	tdst1f.setTo(0);
