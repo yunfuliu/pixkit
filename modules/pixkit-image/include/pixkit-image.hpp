@@ -253,6 +253,7 @@ namespace pixkit{
 		/// Global methods
 		namespace global{
 			bool	RajuNair2014(const cv::Mat &src,cv::Mat &dst);
+			bool    LeeLeeKim2013(const cv::Mat ori,cv::Mat &ret,double alpha=2.5);
 			bool	CelikTjahjadi2012(cv::Mat &src,cv::Mat &dst,int N);
 			bool	MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r=2);
 			bool	WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);

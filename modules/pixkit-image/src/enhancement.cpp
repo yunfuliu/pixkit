@@ -1483,6 +1483,157 @@ bool pixkit::enhancement::global::RajuNair2014(const cv::Mat &src,cv::Mat &dst){
 
 	return true;
 }
+bool pixkit::enhancement::global::LeeLeeKim2013(const cv::Mat ori,cv::Mat &ret,double alpha){
+
+	if(ori.type()!=CV_8UC3){
+		printf("The type of input image should be CV_8UC3.\n");
+		CV_Assert(false);
+	}
+
+	std::vector <cv::Mat> YUV(3);
+	cv::Mat YUV_Mat;
+	cv::Mat_<cv::Vec3b> Result=cv::Mat::zeros(ori.rows,ori.cols,ori.type());
+	cv::Mat_<double> temp_h_l_k=cv::Mat::zeros(256,256,CV_64FC1);			//temp for equation(2)
+	cv::Mat_<double> h_l_k=cv::Mat::zeros(256,256,CV_64FC1);				//equation(2)
+	cv::Mat_<double> m_l=cv::Mat::zeros(256,256,CV_64FC1);					//equation(30)
+	cv::Mat_<double> oneT_u_l_k_Inverse=cv::Mat::zeros(256,256,CV_64FC1);	//part of the dominator of equation(21)
+	std::vector<cv::Mat>u_l_k(256);											//equation(28)					
+	for(int i=0;i<256;i++){													
+		u_l_k[i]=cv::Mat::zeros(256,256,CV_64FC1);	
+	}
+	cv::Mat_<double> phi_max=cv::Mat::zeros(1,256,CV_64FC1);			//phi_max equation(21)	
+	cv::Mat_<double> dl=cv::Mat::zeros(256,256,CV_64FC1);				//equation(22)
+	cv::Mat_<double> sl=cv::Mat::zeros(1,256,CV_64FC1);					//numerator of equation(23)
+	cv::Mat_<double> wl=cv::Mat::zeros(1,256,CV_64FC1);					//equation(23)
+	cv::Mat_<double> d=cv::Mat::zeros(1,256,CV_64FC1);					//equation(24)
+	cv::Mat_<double> TransFun=cv::Mat::zeros(1,256,CV_64FC1);			//equation(25)
+	
+	int patch=1;	//ideal value 
+	int patch_x=patch;
+	int patch_y=patch;
+	cv::cvtColor(ori,YUV_Mat,CV_BGR2YUV);
+	cv::split(YUV_Mat,YUV);
+	//------------------------reflect margin to solve the margin problem------------------------
+	unsigned char type=0;
+	cv::Mat Yenlarged;
+	copyMakeBorder(YUV[0],Yenlarged ,patch_x,patch_x,
+		patch_x,patch_x, cv::BORDER_REFLECT_101);
+	//------------------------reflect margin to solve the margin problem------------------------
+	
+	//calculate  h(k,k+layer) before equation(2)
+	for(int n=patch;n<ori.rows-patch;n++){
+		for(int m=patch;m<ori.cols-patch;m++){
+			if(Yenlarged.ptr<uchar>(n+1)[m]>Yenlarged.ptr<uchar>(n)[m])
+			temp_h_l_k.ptr<double>(Yenlarged.ptr<uchar>(n)[m])[abs(Yenlarged.ptr<uchar>(n)[m]-Yenlarged.ptr<uchar>(n+1)[m])]++;
+			if(Yenlarged.ptr<uchar>(n-1)[m]>Yenlarged.ptr<uchar>(n)[m])
+			temp_h_l_k.ptr<double>(Yenlarged.ptr<uchar>(n)[m])[abs(Yenlarged.ptr<uchar>(n)[m]-Yenlarged.ptr<uchar>(n-1)[m])]++;
+			if(Yenlarged.ptr<uchar>(n)[m+1]>Yenlarged.ptr<uchar>(n)[m])
+			temp_h_l_k.ptr<double>(Yenlarged.ptr<uchar>(n)[m])[abs(Yenlarged.ptr<uchar>(n)[m]-Yenlarged.ptr<uchar>(n)[m+1])]++;
+			if(Yenlarged.ptr<uchar>(n)[m-1]>Yenlarged.ptr<uchar>(n)[m])
+			temp_h_l_k.ptr<double>(Yenlarged.ptr<uchar>(n)[m])[abs(Yenlarged.ptr<uchar>(n)[m]-Yenlarged.ptr<uchar>(n)[m-1])]++;
+		}
+	}
+
+	//calculate equation(2), (layer,k)
+	for(int layer=1;layer<256;layer++){//n:layer
+		for(int k=0;k<=255-layer;k++){//m:k
+			h_l_k.ptr<double>(layer)[k]=log10(temp_h_l_k.ptr<double>(k)[layer]+ temp_h_l_k.ptr<double>(k+layer)[layer] +1);
+		}
+	}
+
+	//use (29) (30) to calculate (32) m_l
+	for(int layer=1;layer<256;layer++){//n:layer
+		for(int k=1;k<=255;k++){//m:k
+			int min=k-1>255-layer?255-layer:k-1;
+			int i=k-layer>0?k-layer:0;
+			for(;i<=min;i++){
+				m_l.ptr<double>(k)[layer]=m_l.ptr<double>(k)[layer]+h_l_k.ptr<double>(layer)[i];
+			}
+		}
+	}
+
+	//use (28) to calculate (31) u_l_k
+	for(int layer=1;layer<256;layer++){//n:layer
+		for(int k=1;k<=255;k++){//m:k
+			int min=k>256-layer?256-layer:k;
+			int max=k-layer>0?k-layer:0;
+			oneT_u_l_k_Inverse.ptr<double>(layer)[k]=1./(min-max);		//the diagonal elements of layer-th
+		}
+	}
+
+	// calculate (21) 
+	for(int layer=1;layer<=255;layer++){
+		double min=0;
+		cv::Mat imageROI=m_l(cv::Rect(1,layer,255,1));	//cv::Rect(400,10,50,50) x y length height
+		cv::minMaxLoc(imageROI, &min);
+		double front=0;
+		double back=0;
+		for(int k=1;k<=255;k++){
+			front=front+oneT_u_l_k_Inverse.ptr<double>(layer)[k]*m_l.ptr<double>(layer)[k];
+			back=back+min*oneT_u_l_k_Inverse.ptr<double>(layer)[k];
+		}
+		double denominator=(front-back);
+		if(front-back==0.)continue;
+		else phi_max.ptr<double>(0)[layer]=255/(front-back);
+		//calculate (22)
+		for(int k=1;k<=255;k++){
+			dl.ptr<double>(layer)[k]=phi_max.ptr<double>(0)[layer]*oneT_u_l_k_Inverse.ptr<double>(layer)[k]*
+				(m_l.ptr<double>(k)[layer]-min);
+		}
+	}
+
+	//calculate sl (numerator of equation(23))
+	for(int layer=1;layer<256;layer++){
+		for(int k=1;k<=255;k++){
+			sl.ptr<double>(0)[layer]=sl.ptr<double>(0)[layer]+h_l_k.ptr<double>(layer)[k];
+		}
+	}
+
+
+	//calculate equation(23)
+	double max;
+	cv::Mat imageROI=sl(cv::Rect(1,0,255,1));	//cv::Rect(400,10,50,50) x y length height
+	cv::minMaxLoc(imageROI,NULL, &max);
+	//calculate sl
+	for(int layer=1;layer<256;layer++){
+		wl.ptr<double>(0)[layer]=pow(sl.ptr<double>(0)[layer]/max,alpha);				//(23)
+	}
+
+
+	//calculate d ,equation (24)
+	double temp_24=0;
+	for(int layer=1;layer<256;layer++){
+		temp_24=temp_24+wl.ptr<double>(0)[layer];	
+	}
+	for(int layer=1;layer<256;layer++){
+		for(int k=1;k<=255;k++){
+			d.ptr<double>(0)[layer]=d.ptr<double>(0)[layer]+dl.ptr<double>(k)[layer]*wl.ptr<double>(0)[k];
+		}
+		d.ptr<double>(0)[layer]=d.ptr<double>(0)[layer]/temp_24;	
+			
+	}
+
+	//calculate TransFun ,equation (25)
+	TransFun.ptr<double>(0)[0]=0;
+	for(int k=1;k<=255;k++){
+		for(int i=0;i<=k-1;i++){
+			TransFun.ptr<double>(0)[k]=TransFun.ptr<double>(0)[k]+d.ptr<double>(0)[i+1];
+		}
+	}
+	cv::normalize(TransFun,TransFun,0,255,32);
+
+	//According to the TransFun, transform the Input Y[0]
+	for(int n=0;n<ori.rows;n++){
+		for(int m=0;m<ori.cols;m++){
+			YUV[0].ptr<uchar>(n)[m]=TransFun.ptr<double>(0)[YUV[0].ptr<uchar>(n)[m]];
+		}
+	}
+
+	cv::merge(YUV,ret);
+	cv::cvtColor(ret,ret,CV_YUV2BGR);
+	return 1;
+
+}
 bool pixkit::enhancement::global::MaryKim2008(const cv::Mat &src, cv::Mat &dst,int MorD , int r){
 
 	//////////////////////////////////////////////////////////////////////////
