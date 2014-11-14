@@ -403,19 +403,13 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 	if(src.size()!=cv::Size(unitsize,unitsize*rounds)){
 		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] _src's height should be 10*_src.cols");
 	}	
-
-	Mat	tdst1f(cv::Size(unitsize,unitsize),CV_32FC1);
+		
+	Mat	tdst1f(cv::Size(unitsize,unitsize),CV_32FC1),tps;
 	tdst1f.setTo(0);
 	for(int k=0;k<rounds;k++){
-
 		Rect	roi(0,unitsize*k,unitsize,unitsize);
-		Mat	tsrc	=	src(roi);
-
-		Mat	tps;	// temp power spectrum
-		PowerSpectrumDensity(tsrc,tps);	// get power spectrum
-
+		PowerSpectrumDensity(src(roi),tps);	// get power spectrum
 		tdst1f	=	tdst1f	+	tps;
-
 	}
 
 	tdst1f	=	tdst1f	/	static_cast<float>(rounds);
