@@ -175,26 +175,25 @@ inline bool calcAreaMean(const cv::Mat &src,
 	return true;
 }
 
-
-bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum,const cv::Mat &sqsum){
+ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum,const cv::Mat &sqsum){
 
 	//////////////////////////////////////////////////////////////////////////
-	// Exceptions
-	//////////////////////////////////////////////////////////////////////////
-	// larger problem
+	///// Exceptions
+	// blockSize
 	if(blockSize.height>=src.rows || blockSize.width>=src.cols){
 		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] block size should be smaller than image size. ");
 	}
-	// even/odd problem
 	if(blockSize.height%2==0 || blockSize.width%2==0){
-		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] either block's height or width is 0.");
+		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] both block's width and height should be odd.");
 	}
 	if(blockSize.height==1&&blockSize.width==1){
 		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] blockSize=(1,1) will turn entire image to dead white.");
 	}
-	if(src.type()!=CV_8UC1&&src.type()!=CV_32FC1){
-		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] src should be either CV_8UC1 or CV_32FC1");
+	// src
+	if(src.type()!=CV_8UC1&&src.type()!=CV_8UC3&&src.type()!=CV_32FC1){
+		CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] src should be one of CV_8UC1, CV_8UC3, and CV_32FC1.");
 	}
+	// sum and sqsum
 	if(!sum.empty()){
 		if(sum.type()!=CV_64FC1){
 			CV_Error(CV_StsBadArg,"[pixkit::enhancement::local::POHE2013] both sum and sqsum should be CV_64FC1");
@@ -207,17 +206,39 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 	}
 	
 	//////////////////////////////////////////////////////////////////////////
+	///// color image
+	cv::Mat	_src1x,_src3x;
+	if(src.channels()==1){
+		_src1x=src;
+	}else if(src.channels()==3){
+		// create space for _src1x
+		if(src.type()==CV_8UC3){
+			_src1x.create(src.size(),CV_8UC1);
+		}else if(src.type()==CV_32FC3){
+			_src1x.create(src.size(),CV_32FC1);
+		}else{
+			CV_Assert(false);
+		}
+		// convert color
+		cvtColor(src,_src3x,CV_BGR2Lab);
+		int	from_to[]={0,0};
+		mixChannels(&_src3x,1,&_src1x,1,from_to,1);
+	}else{
+		CV_Error(CV_StsUnsupportedFormat,"[pixkit::enhancement::local::POHE2013] images should be grayscale or color.");
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 	// initialization
 	cv::Mat	tdst;	// temp dst. To avoid that when src == dst occur.
-	tdst.create(src.size(),src.type());
-	const int &height=src.rows;
-	const int &width=src.cols;
+	tdst.create(_src1x.size(),_src1x.type());
+	const int &height=_src1x.rows;
+	const int &width=_src1x.cols;
 
 	//////////////////////////////////////////////////////////////////////////
 	///// create integral images
 	cv::Mat	tsum,tsqsum;
 	if(sum.empty()||sqsum.empty()){
-		cv::integral(src,tsum,tsqsum,CV_64F);
+		cv::integral(_src1x,tsum,tsqsum,CV_64F);
 	}else{
 		tsum	=	sum;
 		tsqsum	=	sqsum;
@@ -231,15 +252,15 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 			//////////////////////////////////////////////////////////////////////////
 			///// get mean and sd
 			double	mean,sd;
-			calcAreaMean(src,cv::Point(j,i),blockSize,tsum,&mean,tsqsum,&sd);
+			calcAreaMean(_src1x,cv::Point(j,i),blockSize,tsum,&mean,tsqsum,&sd);
 
 			//////////////////////////////////////////////////////////////////////////
 			// get current src value
 			double	current_src_value=0.;
-			if(src.type()==CV_8UC1){
-				current_src_value	=	src.ptr<uchar>(i)[j];
-			}else if(src.type()==CV_32FC1){
-				current_src_value	=	src.ptr<float>(i)[j];
+			if(_src1x.type()==CV_8UC1){
+				current_src_value	=	_src1x.ptr<uchar>(i)[j];
+			}else if(_src1x.type()==CV_32FC1){
+				current_src_value	=	_src1x.ptr<float>(i)[j];
 			}else{
 				assert(false);
 			}
@@ -270,6 +291,17 @@ bool pixkit::enhancement::local::POHE2013(const cv::Mat &src,cv::Mat &dst,const 
 		}
 	}
 
-	dst	=	tdst.clone();
+	//////////////////////////////////////////////////////////////////////////
+	///// copy to dst
+	if(src.channels()==1){
+		dst	=	tdst.clone();
+	}else if(src.channels()==3){
+		int	from_to[]={0,0};
+		mixChannels(&tdst,1,&_src3x,1,from_to,1);
+		cvtColor(_src3x,dst,CV_Lab2BGR);
+	}else{
+		CV_Error(CV_StsUnsupportedFormat,"[pixkit::enhancement::local::POHE2013] images should be grayscale or color.");
+	}
+	
 	return true;
 }
