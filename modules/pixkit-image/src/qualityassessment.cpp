@@ -395,21 +395,37 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 
 	return true;
 }
-bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const int rounds){
+bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const Size specSize,const int rounds,const bool rand_sample){
 
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(specSize.width!=specSize.height){
+		CV_Error(CV_StsBadArg,format("[pixkit::qualityassessment::spectralAnalysis_Bartlett] specSize's width (%d) and height (%d) should be the same",specSize.width,specSize.height));
+	}
 	Mat	src	=	_src.getMat();
-	const	int	unitsize	=	src.cols;
-
-	if(src.size()!=cv::Size(unitsize,unitsize*rounds)){
-		CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] _src's height should be 10*_src.cols");
-	}	
+	if(!rand_sample){
+		if(src.size()!=cv::Size(specSize.width,specSize.height*rounds)){	// conventional way
+			CV_Error(CV_StsBadSize,"[pixkit::qualityassessment::spectralAnalysis_Bartlett] _src's height should be **rounds** *_src.cols");
+		}	
+	}
 		
-	Mat	tdst1f(cv::Size(unitsize,unitsize),CV_32FC1),tps;
+	Mat	tdst1f(specSize,CV_32FC1),tps;
 	tdst1f.setTo(0);
-	for(int k=0;k<rounds;k++){
-		Rect	roi(0,unitsize*k,unitsize,unitsize);
-		PowerSpectrumDensity(src(roi),tps);	// get power spectrum
-		tdst1f	=	tdst1f	+	tps;
+	if(rand_sample){
+		srand(0);
+		for(int k=0;k<rounds;k++){
+			int	x	=	cvRound((float)(src.cols-specSize.width)*(float)rand()/(float)RAND_MAX);
+			int	y	=	cvRound((float)(src.rows-specSize.height)*(float)rand()/(float)RAND_MAX);
+			Rect	roi(x,y,specSize.width,specSize.height);
+			PowerSpectrumDensity(src(roi),tps);	// get power spectrum
+			tdst1f	=	tdst1f	+	tps;
+		}
+	}else{
+		for(int k=0;k<rounds;k++){
+			Rect	roi(0,specSize.height*k,specSize.width,specSize.height);
+			PowerSpectrumDensity(src(roi),tps);	// get power spectrum
+			tdst1f	=	tdst1f	+	tps;
+		}
 	}
 
 	tdst1f	=	tdst1f	/	static_cast<float>(rounds);

@@ -286,7 +286,7 @@ namespace pixkit{
 	
 		// Get averaged power spectrum density 
 		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);	
-		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const int rounds=10);
+		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const cv::Size specSize,const int rounds=10,const bool rand_sample=false);
 
 		// image similarity
 		float SSIM(const cv::Mat &src1, const cv::Mat &src2);	
