@@ -78,7 +78,7 @@ bool pixkit::thresholding::LAT2011(const cv::Mat &src,cv::Mat &dst,int windowSiz
 
 			localmean=new_local_mean(i+1,j+1, windowSize,new_integral_image);
 			deviation=src.data[i*src.cols+j]-localmean;
-			T=localmean*(1+k*((deviation/(1-deviation))-1))+1;
+			T=localmean*(1+k*((deviation/(1-deviation))-1));
 
 			if (src.data[i*src.cols+j]<=T){
 				dst.data[i*dst.cols+j]=0;
