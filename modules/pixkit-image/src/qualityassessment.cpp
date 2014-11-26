@@ -214,21 +214,20 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	if(src1.type()!=src2.type()){
 		CV_Error(CV_StsBadArg,"[qualityassessment::PSNR] both types of image do not match");
 	}
-	if(src1.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[qualityassessment::PSNR] image should be grayscale");
-	}
 
 	//////////////////////////////////////////////////////////////////////////
-	///// derive psnr
-	double	total_err=0.;
-	for(int i=0;i<src1.rows;i++){
-		for(int j=0;j<src1.cols;j++){
-			total_err+=(src1.data[i*src1.cols+j]-src2.data[i*src1.cols+j])*(src1.data[i*src1.cols+j]-src2.data[i*src1.cols+j]);
-		}
+	Mat	src1f,src2f,tmp1f;
+	if(src1.type()==CV_32FC1){
+		src1f=src1;
+		src2f=src2;
+	}else{
+		src1.convertTo(src1f,CV_32FC1);
+		src2.convertTo(src2f,CV_32FC1);	
 	}
-
-	// = = = = = Return PSNR = = = = = //
-	return 10*log10((double)(src1.cols)*(src1.rows)*(255.)*(255.)/total_err);
+	// get error and return
+ 	tmp1f=src1f-src2f;
+ 	float	mse=(float)sum(tmp1f.mul(tmp1f))[0]	/	(float)tmp1f.total();
+	return static_cast<float>(10.*log10(255.*255./mse));
 }
 float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,const int ksize){
 	
@@ -240,65 +239,23 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,
 	if(src1.type()!=src2.type()){
 		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] both types of image do not match");
 	}
-	if(src1.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[qualityassessment::HPSNR] image should be grayscale");
-	}
 
 	//////////////////////////////////////////////////////////////////////////
-	///// get Gaussian kernel. Please check the def of getGaussianKernel() for the exact value of the sigma (standard deviation)
-	int  wd_size = static_cast<int>(ksize/2.*2.);
+	// get Gaussian kernel. Please check the def of getGaussianKernel() for the exact value of the sigma (standard deviation)
 	Mat	coe1f	=	getGaussianKernel(ksize,-1,CV_32FC1);
-	mulTransposed(coe1f,coe1f,false);
-
-	//boundary extension ==========================
-	//wd_reg memory((IW+wd_size)*(IL+wd_size))
-	cv::Mat OriImageWd, ResImageWd;
-	OriImageWd.create(src1.rows+wd_size, src1.cols+wd_size, 0);
-	ResImageWd.create(src2.rows+wd_size, src2.cols+wd_size, 0);
-	
-	//WdImage((Height+wd_size)x(Width+wd_size)) <- Input(HeightxWidth)
-	for(int i=0; i<src1.rows; i++){
-		for(int j=0; j<src1.cols; j++){
-			OriImageWd.data[(i+wd_size/2)*(OriImageWd.cols) + (j+wd_size/2)] = src1.data[i*src1.cols +j];
-			ResImageWd.data[(i+wd_size/2)*(ResImageWd.cols) + (j+wd_size/2)] = src2.data[i*src2.cols +j];
-		}
+	// get blurred images
+	Mat	src11f,src21f;
+	if(src1.type()==CV_32FC1){
+		src11f	=	src1;
+		src21f	=	src2;
+	}else{
+		src1.convertTo(src11f,CV_32FC1);
+		src2.convertTo(src21f,CV_32FC1);
 	}
-
-	//copy(:, wd_size/2 ~wd_size/2+Width-1)
-	for(int j=0; j<src1.cols ;j++){
-		for(int k=0; k<wd_size/2; k++){
-			OriImageWd.data[(wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)];
-			ResImageWd.data[(wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)];
-			OriImageWd.data[(src1.rows+wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(src1.rows+wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)];
-			ResImageWd.data[(src2.rows+wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(src2.rows+wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)];
-		}
-	}
-
-	//copy(wd_size/2~wd_size/2+Width-1, : )
-	for(int i=0;i<OriImageWd.rows;i++){
-		for(int k=0;k<wd_size/2;k++){
-			OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2-k-1)] = OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2+k)];
-			ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2-k-1)] = ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2+k)];
-			OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2+k)] = OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2-k-1)];
-			ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2+k)] = ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2-k-1)];
-		}
-	}
-
-	//PSNR calculation =========================
-	double  mse = 0;
-	for(int i=0; i<src1.rows; i++){
-		for(int j=0; j<src1.cols; j++){
-			double temp = 0.0;
-			for(int x=0; x<ksize; x++){
-				for(int y=0; y<ksize; y++){
-					temp += (ResImageWd.data[(i+x)*ResImageWd.cols + (j+y)] - OriImageWd.data[(i+x)*OriImageWd.cols + (j+y)]) * coe1f.ptr<float>(x)[y];
-				}
-			}
-			mse += (temp*temp);
-		}
-	}
-	mse /= (src1.rows * src1.cols);
-	return static_cast<float>(20.*log10(255./sqrt(mse)));
+	sepFilter2D(src11f,src11f,-1,coe1f,coe1f,Point(-1,-1),0,BORDER_REFLECT_101);
+	sepFilter2D(src21f,src21f,-1,coe1f,coe1f,Point(-1,-1),0,BORDER_REFLECT_101);
+	// get error
+	return PSNR(src11f,src21f);
 }
  
 bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){

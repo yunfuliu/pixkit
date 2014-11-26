@@ -871,8 +871,7 @@ bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, 
 		}
 	}
 	// get halftone image
-	srand((unsigned char)time(NULL));
-	//	srand(7);
+	srand(7);	// for reproducibility 
 	for(int i=0;i<m_Height;i++){
 		for(int j=0;j<m_Width;j++){
 			double	temp=((double)rand())/32767.;
