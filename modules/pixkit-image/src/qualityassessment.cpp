@@ -6,6 +6,43 @@ using namespace cv;
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
+double pixkit::qualityassessment::LOE(const cv::Mat &src1,const cv::Mat &src2){
+
+	if(src1.type()!=CV_8UC1||src2.type()!=CV_8UC1){CV_Assert(false);}
+	cv::Mat Src1=src1.clone();
+	cv::Mat Src2=src2.clone();
+	float rate=50./(src1.rows<src1.cols?src1.rows:src1.cols);
+	cv::resize(Src1,Src1,cv::Size(Src1.cols*rate,Src1.rows*rate));
+	cv::resize(Src2,Src2,cv::Size(Src2.cols*rate,Src2.rows*rate));
+
+	bool U1=0;
+	bool U2=0;
+	double LOE=0;
+	cv::Mat RD=cv::Mat::zeros(Src1.rows,Src1.cols,CV_64FC1);
+
+	for(int y=0;y<Src1.rows;y++){
+		for(int x=0;x<Src1.cols;x++){
+			for(int i=0;i<Src1.rows;i++){
+				for(int j=0;j<Src1.cols;j++){
+					if(Src1.ptr<uchar>(y)[x]>=Src1.ptr<uchar>(i)[j])U1=true;
+					else U1=false;
+					if(Src2.ptr<uchar>(y)[x]>=Src2.ptr<uchar>(i)[j])U2=true;
+					else U2=false;
+					if(U1!=U2)RD.ptr<double>(y)[x]++;
+
+				}
+			}
+		}
+	}
+	for(int i=0;i<Src1.rows;i++){
+		for(int j=0;j<Src1.cols;j++){
+			LOE=RD.ptr<double>(i)[j]+LOE;
+		}
+	}
+
+	LOE=LOE/(Src1.rows*Src1.cols);
+	return LOE;
+}
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
 
 	//////////////////////////////////////////////////////////////////////////

@@ -2093,3 +2093,26 @@ bool pixkit::enhancement::global::GlobalHistogramEqualization1992(const cv::Mat 
 	return true;
 }
 
+bool pixkit::enhancement::SimplestColorBalance(const cv::Mat ori,cv::Mat ret,float upperthresh,float lowerthresh){
+	
+	int totalarea=ori.rows*ori.cols;
+	upperthresh=upperthresh*totalarea;
+	lowerthresh=lowerthresh*totalarea;
+	cv::Mat sorted_ori;
+	cv::Mat reshapeOri;
+	reshapeOri=ori.reshape(0,1);
+	cv::sort(reshapeOri,sorted_ori,CV_SORT_ASCENDING  );
+
+	int Vmin=(sorted_ori.at<float>(lowerthresh));
+	int Vmax=sorted_ori.at<float>((ori.rows*ori.cols-1)-upperthresh);
+	for (int i=0; i<ori.rows; i++ ){
+		for (int j=0; j<ori.cols; j++ ){
+			if(ori.ptr<float>(i)[j]<Vmin)ret.ptr<float>(i)[j]=0;
+			else if(ori.ptr<float>(i)[j]>Vmax)ret.ptr<float>(i)[j]=255;
+			else ret.ptr<float>(i)[j]= (ori.ptr<float>(i)[j]-Vmin)*255./(Vmax-Vmin);
+		}
+	}
+	
+	return 1;
+
+}
