@@ -43,6 +43,26 @@ double pixkit::qualityassessment::LOE(const cv::Mat &src1,const cv::Mat &src2){
 	LOE=LOE/(Src1.rows*Src1.cols);
 	return LOE;
 }
+float pixkit::qualityassessment::Entropy(const cv::Mat &src1){
+  if(src1.type()!=CV_8UC1){CV_Assert(false);}
+  float range[] = { 0, 256 } ;
+  int histSize = 256;
+  const float* histRange = { range };
+  bool uniform = true; bool accumulate = false;
+  cv::Mat b_hist;
+  /// Compute the histograms:
+  calcHist( &src1, 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
+  float entr = 0;
+  double total_size = src1.rows * src1.cols; //total size of all symbols in an image
+  for(int i=0;i<histSize;i++){
+    float sym_occur = b_hist.at<float>(0, i); //the number of times a sybmol has occured
+    if(sym_occur>0) //log of zero goes to infinity
+      {
+        entr += (sym_occur/total_size)*(log(total_size/sym_occur)/log(2.));
+      }
+  }
+  return entr;
+}
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
 
 	//////////////////////////////////////////////////////////////////////////

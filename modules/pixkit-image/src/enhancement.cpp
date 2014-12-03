@@ -2113,6 +2113,6 @@ bool pixkit::enhancement::SimplestColorBalance(const cv::Mat ori,cv::Mat ret,flo
 		}
 	}
 	
-	return 1;
+	return true;
 
 }

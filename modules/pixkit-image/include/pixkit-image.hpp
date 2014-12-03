@@ -267,9 +267,10 @@ namespace pixkit{
 	//////////////////////////////////////////////////////////////////////////
 	/// IQA related 
 	namespace qualityassessment{
-
-		// for contrast evaluation
+		// for naturalness evaluation
 		double LOE(const cv::Mat &src1,const cv::Mat &src2);
+		// for contrast evaluation
+		float Entropy(const cv::Mat &src1);
 		float EME(const cv::Mat &src,const cv::Size nBlocks,const short mode=1);
 		float TEN(const cv::Mat &src);
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
