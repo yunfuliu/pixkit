@@ -268,6 +268,7 @@ namespace pixkit{
 	namespace qualityassessment{
 
 		// for contrast evaluation
+		
 		float EME(const cv::Mat &src,const cv::Size nBlocks,const short mode=1);
 		float TEN(const cv::Mat &src);
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
@@ -278,7 +279,7 @@ namespace pixkit{
 
 		// signal similarity 
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
-
+		double IW_PSNR(const cv::Mat src1,const cv::Mat src2);
 		// signal similarity for halftone images
 		float HPSNR(const cv::Mat &src1, const cv::Mat &src2,const int ksize=7);
 
@@ -292,6 +293,7 @@ namespace pixkit{
 		float SSIM(const cv::Mat &src1, const cv::Mat &src2);	
 		float MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11,  double* lu_co_st=NULL);
 		float MS_SSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
+		double IW_SSIM(const cv::Mat src1,const cv::Mat src2);
 	}
 
 }
