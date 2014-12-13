@@ -43,7 +43,7 @@ double pixkit::qualityassessment::LOE(const cv::Mat &src1,const cv::Mat &src2){
 	LOE=LOE/(Src1.rows*Src1.cols);
 	return LOE;
 }
-float pixkit::qualityassessment::Entropy(const cv::Mat &src1){
+float pixkit::qualityassessment::DE(const cv::Mat &src1){
   if(src1.type()!=CV_8UC1){CV_Assert(false);}
   float range[] = { 0, 256 } ;
   int histSize = 256;
@@ -230,16 +230,17 @@ float pixkit::qualityassessment::CII(const cv::Mat &ori1b,const cv::Mat &pro1b){
 
 	//////////////////////////////////////////////////////////////////////////
 	double	c_proposed=0.,c_original=0.;
-	double	minv,maxv;
+	double	minOri,maxOri,minPro,maxPro;
 	// cal
 	for(int i=0;i<ori1b.rows-3;i++){
 		for(int j=0;j<ori1b.cols-3;j++){
 			Rect	roi(j,i,3,3);
 			Mat	tmat_ori1b(ori1b,roi),	tmat_pro1b(pro1b,roi);			
-			minMaxLoc(tmat_ori1b,&minv,&maxv);
-			c_original+=(maxv-minv)/(maxv+minv);
-			minMaxLoc(tmat_pro1b,&minv,&maxv);
-			c_proposed+=(maxv-minv)/(maxv+minv);
+			minMaxLoc(tmat_ori1b,&minOri,&maxOri);
+			minMaxLoc(tmat_pro1b,&minPro,&maxPro);
+			if((maxOri+minOri==0.)||(maxPro+minPro==0.))continue;
+			c_original+=(maxOri-minOri)/(maxOri+minOri);
+			c_proposed+=(maxPro-minPro)/(maxPro+minPro);
 		}
 	}
 	return	c_proposed/c_original;
@@ -357,7 +358,6 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,
 	mse /= (src1.rows * src1.cols);
 	return static_cast<float>(20.*log10(255./sqrt(mse)));
 }
- 
 bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){
 
 	cv::Mat	src1	=	_src1.getMat();
@@ -493,7 +493,6 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 
 	return true;
 }
-
 float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -547,7 +546,6 @@ float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 	// return result of SSIM
 	return SSIMresult;
 }
-
 float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize, double* lu_co_st)
 {
 	//////////////////////////////////////////////////////////////////////////
