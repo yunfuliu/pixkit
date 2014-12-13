@@ -6,6 +6,63 @@ using namespace cv;
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////
+double pixkit::qualityassessment::LOE(const cv::Mat &src1,const cv::Mat &src2){
+
+	if(src1.type()!=CV_8UC1||src2.type()!=CV_8UC1){CV_Assert(false);}
+	cv::Mat Src1=src1.clone();
+	cv::Mat Src2=src2.clone();
+	float rate=50./(src1.rows<src1.cols?src1.rows:src1.cols);
+	cv::resize(Src1,Src1,cv::Size(Src1.cols*rate,Src1.rows*rate));
+	cv::resize(Src2,Src2,cv::Size(Src2.cols*rate,Src2.rows*rate));
+
+	bool U1=0;
+	bool U2=0;
+	double LOE=0;
+	cv::Mat RD=cv::Mat::zeros(Src1.rows,Src1.cols,CV_64FC1);
+
+	for(int y=0;y<Src1.rows;y++){
+		for(int x=0;x<Src1.cols;x++){
+			for(int i=0;i<Src1.rows;i++){
+				for(int j=0;j<Src1.cols;j++){
+					if(Src1.ptr<uchar>(y)[x]>=Src1.ptr<uchar>(i)[j])U1=true;
+					else U1=false;
+					if(Src2.ptr<uchar>(y)[x]>=Src2.ptr<uchar>(i)[j])U2=true;
+					else U2=false;
+					if(U1!=U2)RD.ptr<double>(y)[x]++;
+
+				}
+			}
+		}
+	}
+	for(int i=0;i<Src1.rows;i++){
+		for(int j=0;j<Src1.cols;j++){
+			LOE=RD.ptr<double>(i)[j]+LOE;
+		}
+	}
+
+	LOE=LOE/(Src1.rows*Src1.cols);
+	return LOE;
+}
+float pixkit::qualityassessment::DE(const cv::Mat &src1){
+  if(src1.type()!=CV_8UC1){CV_Assert(false);}
+  float range[] = { 0, 256 } ;
+  int histSize = 256;
+  const float* histRange = { range };
+  bool uniform = true; bool accumulate = false;
+  cv::Mat b_hist;
+  /// Compute the histograms:
+  calcHist( &src1, 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
+  float entr = 0;
+  double total_size = src1.rows * src1.cols; //total size of all symbols in an image
+  for(int i=0;i<histSize;i++){
+    float sym_occur = b_hist.at<float>(0, i); //the number of times a sybmol has occured
+    if(sym_occur>0) //log of zero goes to infinity
+      {
+        entr += (sym_occur/total_size)*(log(total_size/sym_occur)/log(2.));
+      }
+  }
+  return entr;
+}
 float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,const short mode){
 
 	//////////////////////////////////////////////////////////////////////////
@@ -173,16 +230,17 @@ float pixkit::qualityassessment::CII(const cv::Mat &ori1b,const cv::Mat &pro1b){
 
 	//////////////////////////////////////////////////////////////////////////
 	double	c_proposed=0.,c_original=0.;
-	double	minv,maxv;
+	double	minOri,maxOri,minPro,maxPro;
 	// cal
 	for(int i=0;i<ori1b.rows-3;i++){
 		for(int j=0;j<ori1b.cols-3;j++){
 			Rect	roi(j,i,3,3);
 			Mat	tmat_ori1b(ori1b,roi),	tmat_pro1b(pro1b,roi);			
-			minMaxLoc(tmat_ori1b,&minv,&maxv);
-			c_original+=(maxv-minv)/(maxv+minv);
-			minMaxLoc(tmat_pro1b,&minv,&maxv);
-			c_proposed+=(maxv-minv)/(maxv+minv);
+			minMaxLoc(tmat_ori1b,&minOri,&maxOri);
+			minMaxLoc(tmat_pro1b,&minPro,&maxPro);
+			if((maxOri+minOri==0.)||(maxPro+minPro==0.))continue;
+			c_original+=(maxOri-minOri)/(maxOri+minOri);
+			c_proposed+=(maxPro-minPro)/(maxPro+minPro);
 		}
 	}
 	return	c_proposed/c_original;
@@ -257,7 +315,6 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,
 	// get error
 	return PSNR(src11f,src21f);
 }
- 
 bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){
 
 	cv::Mat	src1	=	_src1.getMat();
@@ -393,7 +450,6 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 
 	return true;
 }
-
 float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -447,7 +503,6 @@ float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 	// return result of SSIM
 	return SSIMresult;
 }
-
 float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize, double* lu_co_st)
 {
 	//////////////////////////////////////////////////////////////////////////

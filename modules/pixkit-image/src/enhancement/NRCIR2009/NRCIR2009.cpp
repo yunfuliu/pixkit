@@ -3,30 +3,8 @@
 #include <float.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-#include "../../include/pixkit-image.hpp"
-bool SimplestColorBalance(cv::Mat ori,float upperthresh,float lowerthresh){
+#include "../../../include/pixkit-image.hpp"
 
-	int totalarea=ori.rows*ori.cols;
-	upperthresh=upperthresh*totalarea;
-	lowerthresh=lowerthresh*totalarea;
-	cv::Mat sorted_ori;
-	cv::Mat reshapeOri;
-	reshapeOri=ori.reshape(0,1);
-	cv::sort(reshapeOri,sorted_ori,CV_SORT_ASCENDING  );
-
-	int Vmin=(sorted_ori.at<float>(lowerthresh));
-	int Vmax=sorted_ori.at<float>((ori.rows*ori.cols-1)-upperthresh);
-	for (int i=0; i<ori.rows; i++ ){
-		for (int j=0; j<ori.cols; j++ ){
-			if(ori.ptr<float>(i)[j]<Vmin)ori.ptr<float>(i)[j]=0;
-			else if(ori.ptr<float>(i)[j]>Vmax)ori.ptr<float>(i)[j]=255;
-			else ori.ptr<float>(i)[j]= (ori.ptr<float>(i)[j]-Vmin)*255./(Vmax-Vmin);
-		}
-	}
-
-	return 1;
-
-}
 bool pixkit::enhancement::local::NRCIR2009( cv::Mat ori,cv::Mat &ret){
 
 	if(ori.type()!=CV_8UC3){
@@ -111,7 +89,11 @@ bool pixkit::enhancement::local::NRCIR2009( cv::Mat ori,cv::Mat &ret){
 			}
 		}
 	}//until here, global tone mapping is done
-
+	else {
+		for(int z=0;z<ori.channels();z++){
+			RGB_GLmapped[z]=RGB_Indepen[z]/255;
+		}
+	}
 	cv::merge(RGB_GLmapped,GL_mapped);
 	cv::Mat GL_mapped_LAB;
 	cv::cvtColor(GL_mapped,GL_mapped_LAB,CV_BGR2Lab);
@@ -145,7 +127,7 @@ bool pixkit::enhancement::local::NRCIR2009( cv::Mat ori,cv::Mat &ret){
 
 	//according to the flowchart(Fig5), perform histogram rescaling after Modified Retinex
 	cv::normalize(E4_Result,E4_Result,0,255,32);
-	SimplestColorBalance(E4_Result,0.01,0);
+	SimplestColorBalance(E4_Result,E4_Result,0.01,0);
 	
 
 	//obtain reference map, equation(8)
@@ -176,7 +158,7 @@ bool pixkit::enhancement::local::NRCIR2009( cv::Mat ori,cv::Mat &ret){
 	cv::Mat FinalResult;
 	cv::cvtColor(enhancedRGB,Final_Lab,CV_BGR2Lab);
 	cv::split(Final_Lab,Final_Lab_In);
-	SimplestColorBalance(Final_Lab_In[0],0.01,0);
+	SimplestColorBalance(Final_Lab_In[0],Final_Lab_In[0],0.01,0);
 	cv::normalize(Final_Lab_In[0],Final_Lab_In[0],0,100,32);
 	cv::merge(Final_Lab_In,Final_Lab);
 	cv::cvtColor(Final_Lab,FinalResult,CV_Lab2BGR);

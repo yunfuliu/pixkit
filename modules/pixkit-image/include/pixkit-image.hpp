@@ -232,7 +232,7 @@ namespace pixkit{
 		namespace local{
 			bool	LCE_BSESCS2014(const cv::Mat &src,cv::Mat &dst,cv::Size blockSize);
 			bool	Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L = 0.03,float K1 = 10,float K2 =0.5);
-			bool	MSRCP2014(const cv::Mat &src,cv::Mat &dst);
+			bool	MSRCP2014(const cv::Mat &src,cv::Mat &dst,int *RetinexScales);
 			bool	WangZhengHuLi2013(const cv::Mat &src,cv::Mat &dst);
 			bool	Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N = 8);
 			bool	POHE2013(const cv::Mat &src,cv::Mat &dst,const cv::Size blockSize,const cv::Mat &sum=cv::Mat(),const cv::Mat &sqsum=cv::Mat());
@@ -260,14 +260,17 @@ namespace pixkit{
 			bool	WadudKabirDewanChae2007(const cv::Mat &src, cv::Mat &dst, const int x);
 			bool	GlobalHistogramEqualization1992(const cv::Mat &src,cv::Mat &dst);
 		}
+		bool SimplestColorBalance(const cv::Mat ori,cv::Mat ret,float upperthresh,float lowerthresh);
 
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/// IQA related 
 	namespace qualityassessment{
-
+		// for naturalness evaluation
+		double LOE(const cv::Mat &src1,const cv::Mat &src2);
 		// for contrast evaluation
+		float DE(const cv::Mat &src1);
 		float EME(const cv::Mat &src,const cv::Size nBlocks,const short mode=1);
 		float TEN(const cv::Mat &src);
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);

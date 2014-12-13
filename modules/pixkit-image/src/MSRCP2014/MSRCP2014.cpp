@@ -11,40 +11,18 @@ MSRCP
 #include <opencv\cv.h>
 #include "../../include/pixkit-image.hpp"
 
-
-bool SimplestColorBalance(cv::Mat ori,float upperthresh,float lowerthresh){
-
-	int totalarea=ori.rows*ori.cols;
-	upperthresh=upperthresh*totalarea;
-	lowerthresh=lowerthresh*totalarea;
-	cv::Mat sorted_ori;
-	cv::Mat reshapeOri;
-	reshapeOri=ori.reshape(0,1);
-	cv::sort(reshapeOri,sorted_ori,CV_SORT_ASCENDING  );
-
-	int Vmin=(sorted_ori.at<float>(lowerthresh));
-	int Vmax=sorted_ori.at<float>((ori.rows*ori.cols-1)-upperthresh);
-	for (int i=0; i<ori.rows; i++ ){
-		for (int j=0; j<ori.cols; j++ ){
-			if(ori.at<float>(i,j)<Vmin)ori.at<float>(i,j)=0;
-			else if(ori.at<float>(i,j)>Vmax)ori.at<float>(i,j)=255;
-			else ori.at<float>(i,j)= (ori.at<float>(i,j)-Vmin)*255./(Vmax-Vmin);
-
-		}
-	}
-
-	return 1;
-
-}
-bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &dst){
+bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &dst,int * RetinexScales){
 	
 	///// exceptions
 	if(src.type()!=CV_8UC3){
 		CV_Assert(false);
 	}
-	
+	if((RetinexScales[0]%2==0)||(RetinexScales[1]%2==0)||(RetinexScales[2]%2==0)){
+		printf("The input scale should be odd number.\n");
+		CV_Assert(false);
+	}
+
 	int Nscale=3;
-	int RetinexScales[3]={7,81,241};
 	float weight = 1.0f / Nscale;     
 	int NumChannel=src.channels();
 	cv::Mat GaussianOut;
@@ -81,7 +59,7 @@ bool pixkit::enhancement::local::MSRCP2014(const cv::Mat &src,cv::Mat &dst){
 
 	//SimplestColorBalance, see IPOL for more information
 	cv::normalize(RetinexOut,RetinexOut,0,255,32);
-	SimplestColorBalance(RetinexOut,0.01,0.01);
+	SimplestColorBalance(RetinexOut,RetinexOut,0.01,0.01);
 	RetinexOut.convertTo(RetinexOut,CV_8UC1);
 	MSR_Nor=RetinexOut.clone();
 
