@@ -2,19 +2,16 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 //opencv headers
-
 #include <iostream>
 #include <cmath>
-
 #include "..\include\pixkit-image.hpp"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 using namespace std;
 using namespace cv;
 
 //calculate mean value of each patch
-void patchmean(const cv::Mat src,cv::Mat &mean){	
+void patchmean(const cv::Mat &src,cv::Mat &mean){	
 
 	for(int i=1;i<src.rows-1;i++){
 		for(int j=1;j<src.cols-1;j++){
@@ -33,7 +30,7 @@ void patchmean(const cv::Mat src,cv::Mat &mean){
 }
 
 //funtion to calculate patchsigama
-void patchsigma(const cv::Mat src,const cv::Mat mean,cv::Mat &sigama){
+void patchsigma(const cv::Mat &src,const cv::Mat &mean,cv::Mat &sigama){
 
 	cv::Mat tmp=cv::Mat::zeros(src.rows,src.cols,CV_64FC1);
 	for(int i=1;i<src.rows-1;i++){
@@ -54,7 +51,7 @@ void patchsigma(const cv::Mat src,const cv::Mat mean,cv::Mat &sigama){
 }
 
 //funtion to calculate  the covariance of X and Y
-void covarianceXY(const cv::Mat X,const cv::Mat Y,const cv::Mat meanX,const cv::Mat meanY,cv::Mat &covariance){
+void covarianceXY(const cv::Mat &X,const cv::Mat &Y,const cv::Mat &meanX,const cv::Mat &meanY,cv::Mat &covariance){
 
 	for(int i=1;i<covariance.rows-1;i++){
 		for(int j=1;j<covariance.cols-1;j++){
@@ -72,7 +69,7 @@ void covarianceXY(const cv::Mat X,const cv::Mat Y,const cv::Mat meanX,const cv::
 }
 
 //function to calculate l Matrix
-void calculate_l(const cv::Mat meanX,const cv::Mat meanY,cv::Mat &l){
+void calculate_l(const cv::Mat &meanX,const cv::Mat &meanY,cv::Mat &l){
 	int L=255;
 	double K1=0.01;
 	double C1=pow(K1*L,2);
@@ -85,7 +82,7 @@ void calculate_l(const cv::Mat meanX,const cv::Mat meanY,cv::Mat &l){
 }
 
 //function to calculate c Matrix
-void calculate_c(const cv::Mat sigmaX,const cv::Mat sigmaY,cv::Mat &c){
+void calculate_c(const cv::Mat &sigmaX,const cv::Mat &sigmaY,cv::Mat &c){
 	int L=255;
 	double K2=0.03;
 	double C2=pow(K2*L,2);
@@ -97,7 +94,7 @@ void calculate_c(const cv::Mat sigmaX,const cv::Mat sigmaY,cv::Mat &c){
 }
 
 //function to calculate s Matrix
-void calculate_s(const cv::Mat sigmaX,const cv::Mat sigmaY,const cv::Mat covariance,cv::Mat &s){
+void calculate_s(const cv::Mat &sigmaX,const cv::Mat &sigmaY,const cv::Mat &covariance,cv::Mat &s){
 	int L=255;
 	double K2=0.03;
 	double C2=pow(K2*L,2);
@@ -111,15 +108,14 @@ void calculate_s(const cv::Mat sigmaX,const cv::Mat sigmaY,const cv::Mat covaria
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-
-double *IW_SSIMj(const cv::Mat X,const cv::Mat Y,double *SSIMj){
+float *IW_SSIMj(const cv::Mat &X,const cv::Mat &Y,float *SSIMj){
 
 	int scale_j=4;
 	//build 5 scale of original signal X and distorted signal Y
 	cv::vector<cv::Mat> ScaleX,ScaleY;
 	cv::buildPyramid(X,ScaleX,scale_j);
 	cv::buildPyramid(Y,ScaleY,scale_j);
-	//
+
 	for(int jth=0;jth<scale_j+1;jth++){
 		//create the mean of signal X and Y
 		cv::Mat meanX = cv::Mat::zeros(ScaleX[jth].rows,ScaleX[jth].cols,CV_64FC1);
@@ -134,17 +130,14 @@ double *IW_SSIMj(const cv::Mat X,const cv::Mat Y,double *SSIMj){
 		cv::Mat s= cv::Mat::zeros(ScaleX[jth].rows,ScaleX[jth].cols,CV_64FC1);
 		//announce need Matrix to store mean,sigma and covariance///////////////////////////////////////////////////////////////////
 
-		//calculate the  mean,sigma,and covariance of X and Y
+		//calculate the  mean,sigma,and covariance of X and Y and the value of l(x,y),c(x,y) and s(x,y)
 		patchmean(ScaleX[jth],meanX);
 		patchmean(ScaleY[jth],meanY);
 		patchsigma(ScaleX[jth],meanX,sigmaX);
 		patchsigma(ScaleY[jth],meanY,sigmaY);
 		covarianceXY(ScaleX[jth],ScaleY[jth],meanX,meanY,covariance);
-		//calculate l(Xi,Yi),c(Xi,Yi),s(Xi,Yi) and store value in Matrix l,c,s respectively
 		calculate_l(meanX,meanY,l);
-		//cout<<jth<<"'s scale of l at i=100,j=100 "<<"l "<<l.ptr<double>(100)[100]<<endl;
 		calculate_c(sigmaX,sigmaY,c);
-		//cout<<jth<<"'s scale of l at i=100,j=100 "<<"c "<<c.ptr<double>(100)[100]<<endl;
 		calculate_s(sigmaX,sigmaY,covariance,s);
 
 		int Nj=0;
@@ -160,18 +153,18 @@ double *IW_SSIMj(const cv::Mat X,const cv::Mat Y,double *SSIMj){
 	return SSIMj;
 }
 
-double pixkit::qualityassessment::IW_SSIM(const cv::Mat src1,cv::Mat src2){
+float pixkit::qualityassessment::IW_SSIM(const cv::Mat &src1,const cv::Mat &src2){
 
 	if(src1.type()!=CV_8UC1 || src2.type()!=CV_8UC1 ){CV_Assert(false);}
 	//initialize the value of each scale
-	double SSIMj[5]={0,0,0,0,0};
+	float SSIMj[5]={0,0,0,0,0};
 	//given constant of beta
-	double betaj[5]={0.0448,0.2856,0.3001,0.2363,0.1333};
+	float betaj[5]={0.0448,0.2856,0.3001,0.2363,0.1333};
 	// calculate the SSIM value of each scale
 	IW_SSIMj(src1,src2,SSIMj);
 	
 	// get IW_SSIM
-	double IW_SSIM=1.;
+	float IW_SSIM=1.;
 	for(int i=0;i<5;i++){
 		IW_SSIM*= pow(SSIMj[i],betaj[i]);
 	}
