@@ -670,7 +670,7 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 	}
 
 	// get halftone image
-	srand( static_cast<uchar>(time(NULL)));
+	srand(0);	// for reproducibility
 
 	// processing (serpentine scan)
 	for(int i=0; i<dst.rows; i++){	
