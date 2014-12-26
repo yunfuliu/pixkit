@@ -27,8 +27,8 @@ namespace pixkit{
 		void Stop();
 		void Reset();
 
-		bool Report();
-		bool StopAndReport() { Stop(); return Report(); }
+		float Report();
+		float StopAndReport() { Stop(); return Report(); }
 		float TimeInSeconds();
 
 		float AvgTime(){assert(is_started == false); return TimeInSeconds()/n_starts;}
