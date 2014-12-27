@@ -144,6 +144,8 @@ namespace pixkit{
 				int				m_CT_height;	// CT's height and width
 				int				m_CT_width;
 				unsigned char	**m_ct;
+				std::vector<std::vector<cv::Point>>	pointList;
+				cv::Size		imgSize_pointList;
 				CNADDCT();
 				~CNADDCT();
 				bool			generation(cv::Size ctSize);	// ct generation
