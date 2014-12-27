@@ -2092,23 +2092,13 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 	}
 
 	// = = = = = processing = = = = = //
-	std::vector<std::vector<int>>	ProcOrder(src.rows,std::vector<int>(src.cols,0));
-	std::vector<std::vector<double>>	tdst(src.rows,std::vector<double>(src.cols,0));
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			tdst[i][j]	=	src.data[i*src.cols+j];
-		}
-	}
-	// 取得處理順序
-	for(int i=0;i<src.rows;i+=ClassMatrixSize){
-		for(int j=0;j<src.cols;j+=ClassMatrixSize){
-			for(int m=0;m<ClassMatrixSize;m++){
-				for(int n=0;n<ClassMatrixSize;n++){
-					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
-						ProcOrder[i+m][j+n]=CM[m][n];
-					}
-				}
-			}
+	cv::Mat	tdst1d	=	src.clone();
+	tdst1d.convertTo(tdst1d,CV_64FC1);
+	// get point list
+	std::vector<cv::Point>	pointList(ClassMatrixSize*ClassMatrixSize);
+	for(int m=0;m<ClassMatrixSize;m++){
+		for(int n=0;n<ClassMatrixSize;n++){
+			pointList[CM[m][n]]	=	cv::Point(n,m);
 		}
 	}
 	// 進行dot_diffusion
@@ -2116,36 +2106,34 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 	int		OSCL=DiffusionMaskSize/2;
 	int		number=0;
 	while(number!=ClassMatrixSize*ClassMatrixSize){
-		for(int i=0;i<src.rows;i++){
-			for(int j=0;j<src.cols;j++){
-				if(ProcOrder[i][j]==number){
-					// 取得error
-					double	error;
-					if(tdst[i][j]<(float)(nColors-1.)/2.){
-						error=tdst[i][j];
-						tdst[i][j]=0.;
-					}else{
-						error=tdst[i][j]-(nColors-1.);
-						tdst[i][j]=(nColors-1.);
-					}
-					// 取得分母
-					double	fm=0.;
-					for(int m=-OSCW;m<=OSCW;m++){
-						for(int n=-OSCL;n<=OSCL;n++){
-							if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
-								if(ProcOrder[i+m][j+n]>number){		// 可以擴散的區域
-									fm+=DW[m+OSCW][n+OSCL];
-								}
+		for(int i=pointList[number].y;i<src.rows;i+=ClassMatrixSize){
+			for(int j=pointList[number].x;j<src.cols;j+=ClassMatrixSize){
+				// 取得error
+				double	error;
+				if(tdst1d.ptr<double>(i)[j]<(float)(nColors-1.)/2.){
+					error=tdst1d.ptr<double>(i)[j];
+					tdst1d.ptr<double>(i)[j]=0.;
+				}else{
+					error=tdst1d.ptr<double>(i)[j]-(nColors-1.);
+					tdst1d.ptr<double>(i)[j]=(nColors-1.);
+				}
+				// 取得分母
+				double	fm=0.;
+				for(int m=-OSCW;m<=OSCW;m++){
+					for(int n=-OSCL;n<=OSCL;n++){
+						if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
+							if(CM[(i+m)%ClassMatrixSize][(j+n)%ClassMatrixSize]>number){		// 可以擴散的區域
+								fm+=DW[m+OSCW][n+OSCL];
 							}
 						}
 					}
-					// 進行擴散
-					for(int m=-OSCW;m<=OSCW;m++){
-						for(int n=-OSCL;n<=OSCL;n++){
-							if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
-								if(ProcOrder[i+m][j+n]>number){		// 可以擴散的區域								
-									tdst[i+m][j+n]+=error*DW[m+OSCW][n+OSCL]/fm;
-								}
+				}
+				// 進行擴散
+				for(int m=-OSCW;m<=OSCW;m++){
+					for(int n=-OSCL;n<=OSCL;n++){
+						if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
+							if(CM[(i+m)%ClassMatrixSize][(j+n)%ClassMatrixSize]>number){		// 可以擴散的區域								
+								tdst1d.ptr<double>(i+m)[j+n]+=error*DW[m+OSCW][n+OSCL]/fm;
 							}
 						}
 					}
@@ -2155,15 +2143,16 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 		number++;
 	}
 
-
 	//////////////////////////////////////////////////////////////////////////
-	dst.create(src.size(),src.type());
+	dst	=	tdst1d;
+	dst.convertTo(dst,src.type());
+#if defined(_DEBUG)
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			dst.data[i*dst.cols+j]	=	static_cast<uchar>(tdst[i][j]+0.5);
-			assert(dst.data[i*dst.cols+j]==0||dst.data[i*dst.cols+j]==(nColors-1));
+			CV_Assert(dst.ptr<uchar>(i)[j]==0||dst.ptr<uchar>(i)[j]==(nColors-1));
 		}
 	}
+#endif
 
 	return true;
 }
