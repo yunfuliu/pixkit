@@ -49,5 +49,5 @@ float pixkit::Timer::TimeInSeconds(){
 		printf("pixkit::timer '%s' is started. Nothing done\n", title.c_str());
 		return 0;
 	}
-	return double(cumulative_clock) / cv::getTickFrequency();
+	return static_cast<float>(double(cumulative_clock) / cv::getTickFrequency());
 }
