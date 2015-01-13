@@ -1428,7 +1428,7 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 	if(Debug==1)
 		cv::imwrite("output.bmp", real_dst);
 	else if(Debug==2){
-		sprintf(out_file,".\\output\\0.bmp");
+		sprintf_s(out_file,".\\output\\0.bmp");
 		cv::imwrite(out_file, real_dst);
 	}
 
@@ -1607,7 +1607,7 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 		if(Debug==1)
 			cv::imwrite("output.bmp",real_dst);
 		else if(Debug==2){
-			sprintf(out_file,".\\output\\%d.bmp",iterations);
+			sprintf_s(out_file,".\\output\\%d.bmp",iterations);
 			cv::imwrite(out_file,real_dst);
 		}
 	}
