@@ -394,6 +394,90 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 	return true;
 }
 
+bool pixkit::qualityassessment::RadiallyAveragedPowerSpectralDensity( const cv::InputArray  &i_src , string FileName_Rapsd , string FileName_Anisotropy )
+{
+	//////////////////////////////////////////////////////////////////////////
+	///  input image must be a kind of halftone
+	try
+	{
+		FileName_Rapsd.substr( FileName_Rapsd.find(".xls") ,4) ;
+	}
+	catch (exception e)
+	{
+		printf("Rapsd FileName is not a .xls");
+		return false;
+	}
+
+	try
+	{
+		FileName_Anisotropy.substr( FileName_Anisotropy.find(".xls") ,4) ;
+	}
+	catch (exception e)
+	{
+		printf("Anisotropy FileName is not a .xls");
+		return false;
+	}
+
+	cv::Mat src ; 
+	try {	
+		src = i_src.getMat(); 
+	}
+	catch (exception e)
+	{
+		printf("Input Mat error !\n");
+		printf("Please use cv::Mat be image input \n");
+		return false;
+	}
+
+	if(src.rows != src.cols)
+	{
+		printf("Warring !! this image is not square !! \nIt may effect FFT Result!!");
+	}
+	else
+	{
+		int rowssize = src.rows;
+		int c = 0;
+		while ( rowssize != 0)
+		{
+			c += rowssize & (0x01);
+			rowssize = rowssize >> 1;
+		}
+
+		if( c != 1)
+			printf("Warring !! this image is not power of 2!! \nIt may effect FFT Result!!");
+
+	}
+
+
+
+	double *Rapsd,*Anso;
+	int CurGrayscale = 255 ;
+	///// "CurGrayscale" for the single tone value
+	Calculate_RadiallyAveragedPowerSpectralDensity( src , CurGrayscale , &Rapsd , &Anso );
+
+	///// calcute Rapsd Lenth (the same with Anso)  ///////   ///// Not very correct but seem can used
+	/////  if want to debug here    please see memory directly
+	double *RapsdNumber_t = Rapsd - 2 ;				/////// get this array size's address
+	int *RapsdNumber = (int *)RapsdNumber_t ;		/////// change this address type 
+	int RapsdNum = ( *RapsdNumber/sizeof(Rapsd) );	/////// Division sizeof(double) and get real size
+
+
+	FILE * fRapsd = fopen(FileName_Rapsd.c_str(),"a");
+	FILE * fAnso = fopen(FileName_Anisotropy.c_str(),"a");
+	for (int i=0; i<RapsdNum; i++)
+	{
+		fprintf(fRapsd,"%f\t",Rapsd[i]);
+		fprintf(fAnso,"%f\t",Anso[i]);
+	}
+	fprintf(fRapsd,"\n");
+	fprintf(fAnso,"\n");
+	fclose(fRapsd);
+	fclose(fAnso);
+
+
+	return true;	
+}
+
 float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 {
 	//////////////////////////////////////////////////////////////////////////
