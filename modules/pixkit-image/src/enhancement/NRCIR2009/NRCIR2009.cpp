@@ -3,8 +3,7 @@
 #include <float.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-//#include "../..include/pixkit-image.hpp"
-#include "../include/pixkit-image.hpp"
+#include "../../include/pixkit-image.hpp"
 bool SimplestColorBalance(cv::Mat ori,float upperthresh,float lowerthresh){
 
 	int totalarea=ori.rows*ori.cols;

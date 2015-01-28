@@ -256,18 +256,17 @@ bool pixkit::halftoning::errordiffusion::ShiauFan1996(const cv::Mat &src, cv::Ma
 }
 
 // Ostromoukhov halftoning processing
-bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst){
+bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src1b, cv::Mat &dst1b){
 	
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(src.type()!=CV_8U){
+	if(src1b.type()!=CV_8UC1){
 		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::Ostromoukhov2001] accepts only grayscale image");
 	}
-	dst.create(src.size(),src.type());
 
 	///////////////////////////////////////////////////////////////////////////
 	// error kernel coefficient (A_10, A_-11, A_01)
-	int Ostromoukhov_EDcoefficient[128][3]={
+	const int Ostromoukhov_EDcoefficient[128][3]={
 	13,		0,		5,
 	13,		0,		5,
 	21,		0,		10,
@@ -397,124 +396,113 @@ bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src, cv
 	395,	104,	101,
 	4,		1,		1	};
 
+	//////////////////////////////////////////////////////////////////////////
+	///// initialize
 	int sizeOfKernel = 3; // fixed size for Ostromoukhov's method
-	std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
-	std::vector< std::vector<double> > ErrorKernel(sizeOfKernel, std::vector<double>(sizeOfKernel));
-	// initialization of ErrorKernel
-	for (int i=0; i<sizeOfKernel; i++){
-		for(int j=0; j<sizeOfKernel; j++){
-			ErrorKernel[i][j] = 0;
-		}
-	}
-	int HalfSize = (static_cast<int>(ErrorKernel.size()) - 1) / 2;
+	Mat	errBuff1d	=	src1b.clone();	// copy src1b to tdst1b
+	errBuff1d.convertTo(errBuff1d,CV_64FC1);
+	dst1b.create(src1b.size(),src1b.type());
+	Mat	errKernel1d(Size(sizeOfKernel,sizeOfKernel),CV_64FC1);
+	errKernel1d.setTo(0);
+	int HalfSize = (static_cast<int>(sizeOfKernel) - 1) / 2;
 
-	//copy Input image to RegImage
-	for (int i=0; i<src.rows; i++){
-		for(int j=0; j<src.cols; j++){
-			RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
-		}
-	}
 
-	// processing (serpentine scan)
-	for(int i=0; i<dst.rows; i++){
-		
+	//////////////////////////////////////////////////////////////////////////
+	///// processing (serpentine scan)
+	for(int i=0; i<errBuff1d.rows; i++){		
+
 		if(i%2==0){ // for even rows
-			for(int j=0; j<dst.cols; j++){
+			for(int j=0; j<errBuff1d.cols; j++){
 
-				if(RegImage[i][j] >= 128){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
+				if(errBuff1d.ptr<double>(i)[j] >= 128){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
 				}else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
 				}
-
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
-				}
-
-				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
-
-				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = Ostromoukhov_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = Ostromoukhov_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = Ostromoukhov_EDcoefficient[grayscale][2];
-
-				double sum = 0;
-				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
-					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][y + HalfSize];
-					}
-				}
-
-				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
-					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][y + HalfSize] / sum);
-					}
-				}
-			}
-		}
-		else{  // for odd rows
-			for(int j=dst.cols-1; j>=0; j--){
-
-				if(RegImage[i][j] >= 128){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
-				}
-				else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
-				}
-		
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
 				}
 
 				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
 
 				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = Ostromoukhov_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = Ostromoukhov_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = Ostromoukhov_EDcoefficient[grayscale][2];
+				errKernel1d.ptr<double>(1)[2] = Ostromoukhov_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = Ostromoukhov_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = Ostromoukhov_EDcoefficient[grayscale][2];
 
 				double sum = 0;
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)];
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize];
 					}
 				}
 
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
 						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)] / sum);
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize] / sum);
 					}
 				}
 			}
 
+		}else{  // for odd rows
+			for(int j=errBuff1d.cols-1; j>=0; j--){
+
+				if(errBuff1d.ptr<double>(i)[j] >= 128){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
+				}else{
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
+				}		
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
+				}
+
+				// error value
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
+
+				// assign coefficients of Error Kernel with corresponding grayscale
+				errKernel1d.ptr<double>(1)[2] = Ostromoukhov_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = Ostromoukhov_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = Ostromoukhov_EDcoefficient[grayscale][2];
+
+				double sum = 0;
+				for(int x=-HalfSize; x<=HalfSize; x++){
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
+					for(int y=-HalfSize; y<=HalfSize; y++){
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)];
+					}
+				}
+				for(int x=-HalfSize; x<=HalfSize; x++){
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
+					for(int y=-HalfSize; y<=HalfSize; y++){
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
+						if(x!=0 || y!=0)
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)] / sum);
+					}
+				}
+			}
 		}
 	}
+
 	return true;
 }
 
 // Zhou-Fang halftoning processing
-bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Mat &dst){
+bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src1b, cv::Mat &dst1b){
 	
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(src.type()!=CV_8U){
+	if(src1b.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::ZhouFang2003] accepts only grayscale image");
-	}
-	dst.create(src.size(),src.type());
+	}	
 
 	///////////////////////////////////////////////////////////////////////////
 	// error kernel coefficient (A_10, A_-11, A_01)
@@ -651,110 +639,101 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 
 	const int randomScale[128]={0, 0, 1, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 9, 10, 11, 12, 12, 13, 14, 15, 15, 16, 17, 18, 18, 19, 20,   21,   21,   22,   23,   24,   24,   25,   26,   27,   27,   28,   29,   30,   31,   32,   33,   34,   34,   35,   36,   37,   38,   38,   39,   40,   41,   42,   42,   43,   44,   45,   46,   46,   47,   48,   49,   50,   53,   56,   59,   62,   65,   68,   71,   75,   78,   81,   84,   87,   90,   93,   96,   100,   100,   100,   100,   100,   100,   91,   83,   75,   66,   58,   50,   41,   33,   25,   17,   21,   26,   31,   35,   40,   45,   50,   54,   58,   62,   66,   70,   71,   73,   75,   77,   79,   80,   81,   83,   84,   86,   87,   88,   90,   91,   93,   94,   95,   97,   98,   100	};
 
+	//////////////////////////////////////////////////////////////////////////
+	///// initialization
 	int sizeOfKernel = 3; // fixed size for Ostromoukhov's method
-	std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
-	std::vector< std::vector<double> > ErrorKernel(sizeOfKernel, std::vector<double>(sizeOfKernel));
-	// initialization of ErrorKernel
-	for (int i=0; i<sizeOfKernel; i++){
-		for(int j=0; j<sizeOfKernel; j++){
-			ErrorKernel[i][j] = 0;
-		}
-	}
-	int HalfSize = (static_cast<int>(ErrorKernel.size()) - 1) / 2;
-
-	//copy Input image to RegImage
-	for (int i=0; i<src.rows; i++){
-		for(int j=0; j<src.cols; j++){
-			RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
-		}
-	}
+	Mat	errBuff1d	=	src1b.clone();
+	errBuff1d.convertTo(errBuff1d,CV_64FC1);
+	dst1b.create(src1b.size(),src1b.type());
+	Mat	errKernel1d(Size(sizeOfKernel,sizeOfKernel),CV_64FC1);
+	errKernel1d.setTo(0);
+	int HalfSize = (static_cast<int>(sizeOfKernel) - 1) / 2;
 
 	// get halftone image
 	srand(0);	// for reproducibility
 
 	// processing (serpentine scan)
-	for(int i=0; i<dst.rows; i++){	
+	for(int i=0; i<dst1b.rows; i++){	
 		if(i%2==0){ // for even rows
-			for(int j=0; j<dst.cols; j++){
+			for(int j=0; j<dst1b.cols; j++){
 
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
 				}
 				double threshold = 128 + (rand() % 128)*(randomScale[grayscale]/100.0);
 
-				if(RegImage[i][j] >= threshold){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
+				if(errBuff1d.ptr<double>(i)[j] >= threshold){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
 				}else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
 				}
 
 				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
 
 				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = ZhouFang_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = ZhouFang_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = ZhouFang_EDcoefficient[grayscale][2];
+				errKernel1d.ptr<double>(1)[2] = ZhouFang_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = ZhouFang_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = ZhouFang_EDcoefficient[grayscale][2];
 
 				double sum = 0;
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][y + HalfSize];
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize];
 					}
 				}
 
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
 						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][y + HalfSize] / sum);
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize] / sum);
 					}
 				}
 			}
-		}
-		else{  // for odd rows
-			for(int j=dst.cols-1; j>=0; j--){
 
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
+		}else{  // for odd rows
+			for(int j=dst1b.cols-1; j>=0; j--){
+
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
 				}
 				double threshold = 128 + (rand() % 128)*(randomScale[grayscale]/100.0);
 
-				if(RegImage[i][j] >= threshold){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
-				}
-				else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
+				if(errBuff1d.ptr<double>(i)[j] >= threshold){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
+				}else{
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
 				}
 
 				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
 
 				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = ZhouFang_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = ZhouFang_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = ZhouFang_EDcoefficient[grayscale][2];
+				errKernel1d.ptr<double>(1)[2] = ZhouFang_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = ZhouFang_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = ZhouFang_EDcoefficient[grayscale][2];
 
 				double sum = 0;
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)];
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)];
 					}
 				}
 
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
 						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)] / sum);
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)] / sum);
 					}
 				}
 			}
