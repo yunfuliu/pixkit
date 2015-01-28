@@ -393,90 +393,105 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 
 	return true;
 }
-
-bool pixkit::qualityassessment::RadiallyAveragedPowerSpectralDensity( const cv::InputArray  &i_src , string FileName_Rapsd , string FileName_Anisotropy )
+bool pixkit::qualityassessment::RAPSD( const cv::Mat Spectrum ,  cv::Mat &RAPSD , cv::Mat &Anisotropy  )
 {
-	//////////////////////////////////////////////////////////////////////////
-	///  input image must be a kind of halftone
-	try
-	{
-		FileName_Rapsd.substr( FileName_Rapsd.find(".xls") ,4) ;
-	}
-	catch (exception e)
-	{
-		printf("Rapsd FileName is not a .xls");
-		return false;
-	}
 
-	try
-	{
-		FileName_Anisotropy.substr( FileName_Anisotropy.find(".xls") ,4) ;
-	}
-	catch (exception e)
-	{
-		printf("Anisotropy FileName is not a .xls");
-		return false;
-	}
+	Mat map;
+	map.create(cvSize(Spectrum.rows,Spectrum.cols),CV_8UC1);
+	int im = 255;
+	int dr = 1;
+	double g = (double)im / 256.0 ;
+	double g2 = g * (1 - g);
+	double pi = 3.14159265;
+	// for dr == 1, dd means the maximum radius of the image, only for (width == height), still need to be modified
+	int dd = (int)sqrt( (double)2 * ( (Spectrum.rows/2) * (Spectrum.cols/2) ) );	
+	int Number_APS = (int)((dd)/dr);
+	double HalfImgWidth = Spectrum.rows / 2.0;
 
-	cv::Mat src ; 
-	try {	
-		src = i_src.getMat(); 
-	}
-	catch (exception e)
-	{
-		printf("Input Mat error !\n");
-		printf("Please use cv::Mat be image input \n");
-		return false;
-	}
+	#pragma region RAPSD	
+	Mat APS_m;
+	APS_m.create(1,Number_APS,CV_32FC1);
+	APS_m.setTo(0);
 
-	if(src.rows != src.cols)
+	for (int p=0; p<Number_APS; p++)
 	{
-		printf("Warring !! this image is not square !! \nIt may effect FFT Result!!");
-	}
-	else
-	{
-		int rowssize = src.rows;
-		int c = 0;
-		while ( rowssize != 0)
+		map.setTo(0);
+		double TotalE = 0;
+		int Counter = 0;
+		double r = p * dr;
+
+		for (double theta=0; theta<360; theta+=0.1)
 		{
-			c += rowssize & (0x01);
-			rowssize = rowssize >> 1;
+			double epi = (double)theta * pi / 180.0;
+			int x = (int) floor( (r * cos(epi)) +0.5 );
+			int y = (int) floor( (r * sin(epi)) +0.5 );
+
+			if ((int)HalfImgWidth+x < 0 || (int)HalfImgWidth+x >= Spectrum.rows)
+				continue;
+
+			if ((int)HalfImgWidth+y < 0 || (int)HalfImgWidth+y >= Spectrum.rows)
+				continue;
+
+			if (map.data[((int)HalfImgWidth+x) * map.cols + ((int)HalfImgWidth+y)] == 255)
+				continue;
+
+			TotalE = TotalE + Spectrum.ptr<float>(HalfImgWidth+x)[(int)HalfImgWidth+y] ; 
+
+			Counter = Counter + 1;
+
+			map.data[((int)(map.rows/2.0)+x) * map.cols + ((int)(map.cols/2.0)+y)] = 255;
 		}
 
-		if( c != 1)
-			printf("Warring !! this image is not power of 2!! \nIt may effect FFT Result!!");
-
+		if (Counter != 0 && TotalE != 0)
+			APS_m.ptr<float>(0)[p]=  (float) (TotalE / Counter);
 	}
+	#pragma endregion
 
-
-
-	double *Rapsd,*Anso;
-	int CurGrayscale = 255 ;
-	///// "CurGrayscale" for the single tone value
-	Calculate_RadiallyAveragedPowerSpectralDensity( src , CurGrayscale , &Rapsd , &Anso );
-
-	///// calcute Rapsd Lenth (the same with Anso)  ///////   ///// Not very correct but seem can used
-	/////  if want to debug here    please see memory directly
-	double *RapsdNumber_t = Rapsd - 2 ;				/////// get this array size's address
-	int *RapsdNumber = (int *)RapsdNumber_t ;		/////// change this address type 
-	int RapsdNum = ( *RapsdNumber/sizeof(Rapsd) );	/////// Division sizeof(double) and get real size
-
-
-	FILE * fRapsd = fopen(FileName_Rapsd.c_str(),"a");
-	FILE * fAnso = fopen(FileName_Anisotropy.c_str(),"a");
-	for (int i=0; i<RapsdNum; i++)
+	#pragma region Anisotropy
+	Mat AN_m ;
+	AN_m.create(1,Number_APS,CV_32FC1);
+	AN_m.setTo(0);
+	for (int p=0; p<Number_APS; p++)
 	{
-		fprintf(fRapsd,"%f\t",Rapsd[i]);
-		fprintf(fAnso,"%f\t",Anso[i]);
+		map.setTo(0);
+		double TotalE = 0;
+		int Counter = 0;
+		double r = p * dr;
+
+		for (double theta=0; theta<360; theta+=0.1)
+		{
+			double epi = (double)theta * pi / 180.0;
+			int x = (int) floor( (r * cos(epi)) +0.5 );
+			int y = (int) floor( (r * sin(epi)) +0.5 );
+
+			if ((int)HalfImgWidth+x < 0 || (int)HalfImgWidth+x >= Spectrum.rows)
+				continue;
+
+			if ((int)HalfImgWidth+y < 0 || (int)HalfImgWidth+y >= Spectrum.rows)
+				continue;
+
+			if (map.data[((int)HalfImgWidth+x) * map.cols + ((int)HalfImgWidth+y)] == 255)
+				continue;
+
+			TotalE = TotalE + 
+				(APS_m.ptr<float>(0)[p] - Spectrum.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]) * 
+				(APS_m.ptr<float>(0)[p] - Spectrum.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]);
+
+			Counter = Counter + 1;
+			map.data[((int)(map.rows/2.0)+x) * map.cols + ((int)(map.cols/2.0)+y)] = 255;
+		}
+
+		if (Counter != 0 && TotalE != 0)
+			AN_m.ptr<float>(0)[p] = 10*log10((TotalE / (Counter-1)) / (APS_m.ptr<float>(0)[p]*APS_m.ptr<float>(0)[p]));
 	}
-	fprintf(fRapsd,"\n");
-	fprintf(fAnso,"\n");
-	fclose(fRapsd);
-	fclose(fAnso);
+	#pragma endregion
 
+	RAPSD = APS_m;
+	Anisotropy = AN_m;
 
-	return true;	
+	return true;
 }
+
 
 float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 {

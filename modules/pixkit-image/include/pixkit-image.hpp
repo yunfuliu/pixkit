@@ -15,7 +15,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include "../src/qualityassessment/RAPSD/RAPSD_D.hpp"
 
 #ifndef __PIXKIT_IMAGE_HPP__
 #define __PIXKIT_IMAGE_HPP__
@@ -291,8 +290,7 @@ namespace pixkit{
 		// Get averaged power spectrum density 
 		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);	
 		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const cv::Size specSize,const int rounds=10,const bool rand_sample=false);
-		
-		bool RadiallyAveragedPowerSpectralDensity( const cv::InputArray  &i_src , std::string FileName_Rapsd , std::string FileName_Anisotropy );
+		bool RAPSD( const cv::Mat Spectrum ,  cv::Mat &RAPSD , cv::Mat &Anisotropy  );
 
 		// image similarity
 		float SSIM(const cv::Mat &src1, const cv::Mat &src2);	
