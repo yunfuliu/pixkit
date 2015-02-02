@@ -3,8 +3,18 @@
 using namespace	cv;
 using namespace std;
 
+// coordination correction
+inline int	cirCC(int cor,int limitation){
+	int	tempv	=	cor%limitation;
+	if(tempv>=0){
+		return	tempv;
+	}else{	// if(tempv<0)
+		return	limitation+tempv;
+	}
+}
+
 // SCDBS
-bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv::Mat &dst1b,double *autocoeData,int FilterSize){
+bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool first_grayscale,cv::Mat &dst1b,double *c_ppData,int FilterSize){
 
 	//////////////////////////////////////////////////////////////////////////
 	/// exceptions
@@ -19,8 +29,8 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 
 	//////////////////////////////////////////////////////////////////////////
 	/// initialization
-	const	int	&m_Height	=	src1b.rows;
-	const	int	&m_Width	=	src1b.cols;
+	const	int	&height	=	src1b.rows;
+	const	int	&width	=	src1b.cols;
 	Mat	dst1f;
 	dst1f.create(src1b.size(),CV_32FC1);
 
@@ -28,9 +38,9 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 	/// get autocorrelation.
 	int	exFS=FilterSize;
 	int	tempFS=FilterSize/2;
-	double	**	autocoe		=	new	double	*	[exFS];
+	double	**	c_pp		=	new	double	*	[exFS];
 	for(int i=0;i<exFS;i++){
-		autocoe[i]=&autocoeData[i*exFS];
+		c_pp[i]=&c_ppData[i*exFS];
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -50,34 +60,30 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 	em1f	=	dst1f	-	src1f;
 
 	/// get cross correlation
-	double	*	crosscoeData	=	new	double		[m_Height*m_Width];
-	double	**	crosscoe		=	new	double	*	[m_Height];
-	for(int i=0;i<m_Height;i++){
-		crosscoe[i]=&crosscoeData[i*m_Width];
-		for(int j=0;j<m_Width;j++){
-			crosscoe[i][j]=0.;
+	Mat	crosscoe1d(Size(width,height),CV_64FC1);
+	crosscoe1d.setTo(0);
+	for(int i=0;i<crosscoe1d.rows;i++){
+		for(int j=0;j<crosscoe1d.cols;j++){
 			for(int m=i-tempFS;m<=i+tempFS;m++){
 				for(int n=j-tempFS;n<=j+tempFS;n++){
-					if(m>=0&&m<m_Height&&n>=0&&n<m_Width){
-						crosscoe[i][j]+=em1f.ptr<float>(m)[n]*autocoe[tempFS+m-i][tempFS+n-j];
-					}
+					crosscoe1d.ptr<double>(i)[j]+=em1f.ptr<float>(cirCC(m,height))[cirCC(n,width)]*c_pp[tempFS+m-i][tempFS+n-j];
 				}
 			}
 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	/// DBS process
+	///// DBS process
 	int		BenefitPixelNumber;
 	double	dE[10],a0[10],a1[10];
 	while(1){
 		BenefitPixelNumber=0;
-		for(int i=0;i<m_Height;i++){	// entire image
-			for(int j=0;j<m_Width;j++){
+		for(int i=0;i<height;i++){	// entire image
+			for(int j=0;j<width;j++){
 
 				//////////////////////////////////////////////////////////////////////////
 				// check whether the current position is needed to be processed or not
-				if(!randGenInit){
+				if(!first_grayscale){
 					if(init1b.ptr<uchar>(i)[j]==255){	// inherit
 						float	initv	=	1 - (float)init1b.ptr<uchar>(i)[j]/255,	// change to absorb for comparison
 								dstv	=	dst1f.ptr<float>(i)[j];
@@ -122,27 +128,27 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 
 						//////////////////////////////////////////////////////////////////////////
 						// get dE
-						if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){
-							if(!randGenInit){
-								if(init1b.ptr<uchar>(i+m)[j+n]==255){	// inherit
-									continue;	// ignore 
-								}
+						if(!first_grayscale){
+							if(init1b.ptr<uchar>(cirCC(i+m,height))[cirCC(j+n,width)]==255){	// inherit
+								continue;	// ignore 
 							}
-							// get a0 and a1
-							if(dst1f.ptr<float>(i)[j]==1){
-								a0[mode]=-1;
-							}else{
-								a0[mode]=1;
-							}
-							if(dst1f.ptr<float>(i+m)[j+n]==1){
-								a1[mode]=-1;
-							}else{
-								a1[mode]=1;
-							}
-							// get error
-							if(dst1f.ptr<float>(i)[j]!=dst1f.ptr<float>(i+m)[j+n]){
-								dE[mode]=(a0[mode]*a0[mode]+a1[mode]*a1[mode])	*autocoe[tempFS][tempFS]	+	2.*a0[mode]	*crosscoe[i][j]		+	2.*a0[mode]*a1[mode]					*autocoe[tempFS+m][tempFS+n]	+	2.*a1[mode]								*crosscoe[i+m][j+n];
-							}
+						}
+						// get a0 and a1
+						if(dst1f.ptr<float>(i)[j]==1){
+							a0[mode]=-1;
+						}else{
+							a0[mode]=1;
+						}
+						if(dst1f.ptr<float>(cirCC(i+m,height))[cirCC(j+n,width)]==1){
+							a1[mode]=-1;
+						}else{
+							a1[mode]=1;
+						}
+						// get error
+						if(dst1f.ptr<float>(i)[j]!=dst1f.ptr<float>(cirCC(i+m,height))[cirCC(j+n,width)]){
+							dE[mode]=(a0[mode]*a0[mode]+a1[mode]*a1[mode])	*c_pp[tempFS][tempFS]	+	2.*a0[mode]	*crosscoe1d.ptr<double>(i)[j]		
+							+2.*a0[mode]*a1[mode]	*	c_pp[tempFS+m][tempFS+n]	
+							+2.*a1[mode]			*	crosscoe1d.ptr<double>(cirCC(i+m,height))[cirCC(j+n,width)];
 						}
 					}else if(mode==9){
 						if(dst1f.ptr<float>(i)[j]==1){
@@ -150,7 +156,7 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 						}else{
 							a0[mode]=1;
 						}
-						dE[mode]=	autocoe[tempFS][tempFS]	+	2.*a0[mode]*crosscoe[i][j];
+						dE[mode]=	c_pp[tempFS][tempFS]	+	2.*a0[mode]*crosscoe1d.ptr<double>(i)[j];
 					}
 				}
 
@@ -166,33 +172,12 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 				}
 
 				//////////////////////////////////////////////////////////////////////////
-				// check swap position
-				int nm,nn;
-				if(tempMinNumber==1){
-					nm=1;	nn=0;
-				}else if(tempMinNumber==2){
-					nm=1;	nn=1;
-				}else if(tempMinNumber==3){
-					nm=0;	nn=1;
-				}else if(tempMinNumber==4){
-					nm=-1;	nn=1;
-				}else if(tempMinNumber==5){
-					nm=-1;	nn=0;
-				}else if(tempMinNumber==6){
-					nm=-1;	nn=-1;
-				}else if(tempMinNumber==7){
-					nm=0;	nn=-1;
-				}else if(tempMinNumber==8){
-					nm=1;	nn=-1;
-				}
-
-				//////////////////////////////////////////////////////////////////////////
 				// = = = = = update part = = = = = //
 				if(tempMindE<0.){	// error is reduced
 					// update current hft position
-					dst1f.ptr<float>(i)[j]	=1.-dst1f.ptr<float>(i)[j];
+					dst1f.ptr<float>(i)[j]	=	saturate_cast<float>(1.-dst1f.ptr<float>(i)[j]);
 					if(tempMinNumber>=1&&tempMinNumber<=8){	// swap case
-						// get position
+						// get position, and check swap position
 						int nm,nn;
 						if(tempMinNumber==1){
 							nm=1;	nn=0;
@@ -212,26 +197,20 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 							nm=1;	nn=-1;
 						}
 						// update swapped hft position
-						dst1f.ptr<float>(i+nm)[j+nn]	=	1.	-	dst1f.ptr<float>(i+nm)[j+nn];
+						dst1f.ptr<float>(cirCC(i+nm,height))[cirCC(j+nn,width)]	=	saturate_cast<float>(1.	-	dst1f.ptr<float>(cirCC(i+nm,height))[cirCC(j+nn,width)]);
 						
 						// update cross correlation
 						for(int m=-tempFS;m<=tempFS;m++){
 							for(int n=-tempFS;n<=tempFS;n++){
-								if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){
-									crosscoe[i+m][j+n]+=a0[tempMinNumber]*autocoe[tempFS+m][tempFS+n];
-								}
-								if(i+m+nm>=0&&i+m+nm<m_Height&&j+n+nn>=0&&j+n+nn<m_Width){
-									crosscoe[i+m+nm][j+n+nn]+=a1[tempMinNumber]*autocoe[tempFS+m][tempFS+n];
-								}
+								crosscoe1d.ptr<double>(cirCC(i+m,height))[cirCC(j+n,width)]+=a0[tempMinNumber]*c_pp[tempFS+m][tempFS+n];
+								crosscoe1d.ptr<double>(cirCC(i+m+nm,height))[cirCC(j+n+nn,width)]+=a1[tempMinNumber]*c_pp[tempFS+m][tempFS+n];
 							}
 						}
 					}else if(tempMinNumber==9){	// toggle case
 						// update cross correlation
 						for(int m=-tempFS;m<=tempFS;m++){
 							for(int n=-tempFS;n<=tempFS;n++){
-								if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){
-									crosscoe[i+m][j+n]+=a0[tempMinNumber]*autocoe[tempFS+m][tempFS+n];
-								}
+								crosscoe1d.ptr<double>(cirCC(i+m,height))[cirCC(j+n,width)]+=a0[tempMinNumber]*c_pp[tempFS+m][tempFS+n];
 							}
 						}
 					}
@@ -247,28 +226,28 @@ bool SCDBS(const cv::Mat &src1b, const cv::Mat &init1b,const bool randGenInit,cv
 	//////////////////////////////////////////////////////////////////////////
 	/// Change absorb to grayscale
 	dst1b.create(src1b.size(),CV_8UC1);
-	for(int i=0;i<m_Height;i++){
-		for(int j=0;j<m_Width;j++){
-			dst1b.ptr<uchar>(i)[j]=(1.-dst1f.ptr<float>(i)[j])*255.;
+	for(int i=0;i<height;i++){
+		for(int j=0;j<width;j++){
+			dst1b.ptr<uchar>(i)[j]=cvRound((1.-dst1f.ptr<float>(i)[j])*255.);
 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////////
 	/// release space
-	delete	[]	crosscoeData;
-	delete	[]	crosscoe;
-	delete	[]	autocoe;
+	delete	[]	c_pp;
 
 	return true;
 }
 
 //////////////////////////////////////////////////////////////////////////
 bool pixkit::halftoning::ordereddithering::DMS_2Level2012_genDitherArray(cv::Mat &DA, int daSize){
-
+// the N defined in paper is supposed as daSize in this program.
+	
 	//////////////////////////////////////////////////////////////////////////
 	///// init
-	const	uchar	MAX_GRAYSCALE	=	255;
+	const	uchar	MAX_GRAYSCALE	=	255;	// defined R in paper
 	const	uchar	MIN_GRAYSCALE	=	0;
+	const	uchar	afa_1			=	0;		// parameter defined in paper
 
 	//////////////////////////////////////////////////////////////////////////
 	///// initialization 
@@ -281,38 +260,30 @@ bool pixkit::halftoning::ordereddithering::DMS_2Level2012_genDitherArray(cv::Mat
 	compressedTable1b.setTo(MIN_GRAYSCALE);
 	// get coe
 	Mat	hvs_model_cpp;
-	pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(hvs_model_cpp,43.2,38.7,0.02,0.06);
+	pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(hvs_model_cpp,43.2,38.7,0.02,0.06);	// checked
 
 	//////////////////////////////////////////////////////////////////////////
 	///// process for masks of 0 to 255
 	Mat	pre_dst1b;
 	Mat	init1b(Size(daSize, daSize), CV_8UC1);
-	init1b.setTo(MIN_GRAYSCALE);
-	for (int grayscale = MIN_GRAYSCALE; grayscale <= MAX_GRAYSCALE; grayscale++){
-		cout << "grayscale = " << (int)grayscale << endl;
+	init1b.setTo(afa_1);	// as described in paper, this value should be zero.
+	for (int eta = MIN_GRAYSCALE; eta <= MAX_GRAYSCALE; eta++){		// eta is defined as a grayscale in paper
+		cout << "grayscale = " << (int)eta << endl;
 
 		//////////////////////////////////////////////////////////////////////////
 		///// init
-		src1b.setTo(grayscale);
+		src1b.setTo(eta);
 		pre_dst1b = dst1b.clone(); // recode the result of dst(g-1)
 
 		//////////////////////////////////////////////////////////////////////////
-		///// rand generates the initial mask
-		bool	randGenInit	=false;
-		if(cv::sum(init1b)[0]==0){
-			randGenInit	=	true;
-			srand(0);
-			for(int i=0;i<init1b.rows;i++){
-				for(int j=0;j<init1b.cols;j++){
-					double	temp=((double)rand())/32767.;
-					init1b.ptr<uchar>(i)[j]=temp<0.5?MIN_GRAYSCALE:MAX_GRAYSCALE;
-				}
-			}
-		}		
-
-		//////////////////////////////////////////////////////////////////////////
 		///// process
-		SCDBS(src1b,init1b,randGenInit,dst1b,&(double&)hvs_model_cpp.data[0],hvs_model_cpp.rows);
+		// check whether it's the first grayscale
+		bool	first_grayscale	=false;
+		if(cv::sum(init1b)[0]==0){
+			first_grayscale	=	true;
+		}	
+		// process
+		SCDBS(src1b,init1b,first_grayscale,dst1b,&(double&)hvs_model_cpp.data[0],hvs_model_cpp.rows);
 
 		//////////////////////////////////////////////////////////////////////////
 		///// get init
@@ -323,7 +294,7 @@ bool pixkit::halftoning::ordereddithering::DMS_2Level2012_genDitherArray(cv::Mat
 		for (int i = 0; i < dst1b.rows; i++){
 			for (int j = 0; j < dst1b.cols; j++){
 				if (dst1b.ptr<uchar>(i)[j] == MAX_GRAYSCALE &&  pre_dst1b.ptr<uchar>(i)[j] == MIN_GRAYSCALE){
-					compressedTable1b.ptr<uchar>(i)[j]	=	grayscale;
+					compressedTable1b.ptr<uchar>(i)[j]	=	eta;
 				}
 			}
 		}
@@ -334,7 +305,7 @@ bool pixkit::halftoning::ordereddithering::DMS_2Level2012_genDitherArray(cv::Mat
 	return true;
 }
 
-bool pixkit::halftoning::ordereddithering::DMS_2Level2012(const cv::Mat &src1b, const cv::Mat &ditherarray1b,cv::Mat &dst1b){
+bool pixkit::halftoning::ordereddithering::DMS_2Level2012(const cv::Mat &src1b, const cv::Mat &ditherarray1b,cv::Mat &dst1b){	
 	dst1b.create(src1b.size(),src1b.type());
 	for(int i=0;i<src1b.rows;i++){
 		for(int j=0;j<src1b.cols;j++){
