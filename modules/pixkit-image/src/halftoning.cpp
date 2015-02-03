@@ -1675,20 +1675,19 @@ bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::
 //////////////////////////////////////////////////////////////////////////
 
 // Hft_OD_KackerAllebach1998 processing
-bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src, cv::Mat &dst){
+bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src1b, cv::Mat &dst1b){
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(src.type()!=CV_8U){
+	if(src1b.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::KackerAllebach1998] accepts only grayscale image");
 	}
-	dst.create(src.size(),src.type());
+	dst1b.create(src1b.size(),src1b.type());
 
 	//////////////////////////////////////////////////////////////////////////
 	// initialization: set initial parameters
-	const int	sizeDitherArray=32;
-	const int	nDitherArray=4;
-
+	const int	sizeDitherArray=32;	// defined in their Section 4. 
+	const int	nDitherArray=4;		// 4 is defined for their experiments. This value should >=3 for easing checkerboard pattern and periodicity as described in Section 2.3.
 	const int	DAs[4][32][32]={
 	{ {172,40,126,240,213,72,49,171,94,207,69,153,251,17,96,166,222,106,47,158,224,14,138,239,36,192,168,99,116,200,37,237}, {84,23,193,56,12,140,226,146,126,242,25,53,194,118,186,58,24,253,203,92,60,114,194,55,153,82,228,11,216,253,83,74}, {232,147,101,166,86,203,189,64,8,179,107,81,139,1,237,146,133,75,7,128,191,244,97,211,71,23,129,144,43,150,6,124}, {210,114,248,1,113,31,255,104,41,220,199,150,226,41,206,102,33,177,239,169,27,42,123,3,159,248,197,52,95,182,164,220}, {76,16,217,186,120,230,21,77,212,115,16,30,171,123,86,163,197,95,215,80,107,149,183,223,110,177,65,205,236,24,108,61}, {150,53,93,206,43,131,180,162,151,133,191,93,58,215,46,225,45,119,16,161,17,252,64,46,137,31,16,120,155,134,34,201}, {195,29,160,68,144,58,236,96,1,51,240,176,232,143,73,136,173,64,129,196,228,175,91,207,234,102,169,87,56,225,243,79}, {127,247,175,225,107,12,170,200,68,250,38,83,112,10,184,28,248,208,2,34,53,142,109,10,77,190,255,210,4,172,100,146}, {7,98,78,39,189,243,85,30,139,120,123,21,158,211,99,122,162,113,185,75,98,238,20,181,127,25,143,71,111,47,187,11}, {219,166,118,23,133,69,222,108,239,183,207,224,72,199,37,63,85,223,57,152,213,165,52,221,154,45,200,162,92,216,251,130}, {63,141,229,195,55,154,100,44,165,10,148,49,171,112,254,235,18,105,243,0,201,122,66,249,116,62,227,15,135,32,67,193}, {185,48,75,255,176,214,18,184,81,59,97,29,132,2,161,147,138,177,10,152,29,83,141,4,96,39,239,105,180,233,157,22},{12,159,111,88,1,116,66,203,128,231,197,215,247,91,79,50,187,115,92,215,230,48,176,194,216,188,122,78,54,147,106,86}, {128,240,210,30,234,168,143,250,160,17,105,154,179,66,204,33,240,71,39,182,131,106,245,34,73,148,167,253,7,202,42,242}, {198,38,101,150,130,46,93,23,35,57,136,85,0,124,136,221,102,249,148,70,81,15,204,88,125,60,28,208,69,119,176,217}, {85,167,20,57,252,190,221,109,188,201,245,45,192,226,9,172,24,156,4,212,164,27,154,170,241,13,223,130,97,231,18,60},
 	  {108,218,181,117,158,11,79,153,233,2,73,168,209,54,145,117,59,86,193,127,235,56,98,220,112,48,180,157,36,188,163,135}, {6,61,246,89,204,137,38,97,174,144,28,114,94,103,184,71,241,225,36,125,50,252,188,40,137,194,91,249,107,3,83,205}, {229,139,70,43,27,186,241,68,122,222,46,135,236,19,161,222,26,134,76,195,105,141,80,6,67,238,22,143,50,216,241,28}, {175,95,167,126,214,102,229,17,53,254,181,208,62,37,199,126,47,149,173,14,228,21,213,198,146,121,206,55,174,117,152,89}, {51,13,202,148,59,80,180,157,192,76,9,152,78,244,5,174,212,95,63,237,117,159,60,178,103,43,76,32,224,64,191,140}, {161,119,238,20,253,45,113,141,32,110,127,202,170,140,115,82,34,251,183,6,94,0,132,245,14,231,182,156,131,40,18,247}, {65,211,36,198,219,134,3,223,246,163,88,40,25,90,252,52,160,108,137,218,153,202,111,35,165,124,217,92,255,168,73,110}, {192,82,106,90,155,72,209,61,19,234,55,226,211,132,190,171,233,19,42,54,166,88,206,72,51,196,82,26,103,235,205,48}, {236,7,142,243,52,121,169,99,187,145,104,173,65,13,69,8,100,204,124,227,210,26,191,237,140,3,151,67,9,186,84,156}, {44,131,200,27,185,232,11,203,90,129,31,196,118,136,238,145,218,30,91,67,104,12,121,169,98,250,198,213,164,138,33,218}, {74,177,214,84,160,39,112,249,49,5,214,158,24,184,80,244,58,157,175,235,142,81,62,38,228,14,115,41,232,59,20,118}, {227,114,19,254,101,68,135,149,179,70,242,87,56,201,37,120,0,207,113,189,49,182,248,156,87,29,178,78,144,94,250,174}, {151,32,96,189,5,208,230,22,164,99,190,47,147,224,178,163,103,75,21,133,4,221,199,134,109,165,242,129,2,209,196,74}, {178,61,145,125,233,57,195,79,220,119,254,15,110,93,50,66,230,193,41,90,212,101,22,54,205,70,219,104,51,151,111,35}, {77,247,219,44,173,89,109,8,35,138,42,170,209,244,128,5,217,139,245,167,63,149,123,179,44,8,187,26,172,246,15,227}, {197,9,100,162,25,130,246,155,185,65,231,121,74,33,183,155,84,13,116,181,31,229,77,251,142,89,234,125,62,159,87,132} },
@@ -1701,34 +1700,40 @@ bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src
 	};
 
 	// = = = = = processing = = = = = //
+	// define map_m (to save the index of tiled dither array)
+	int	height_map_m	=	cvCeil(((float)src1b.rows)/((float)sizeDitherArray));
+	int	width_map_m		=	cvCeil(((float)src1b.cols)/((float)sizeDitherArray));
+	Mat	map_m1b(Size(width_map_m+1,height_map_m+1),CV_8UC1);
+	map_m1b.setTo(255);	// 255 denotes nothing
 	// get entire dither array
 	srand(3);
-	bool	doflag;
-	int		lable_formerDA=-1;
-	int		label_randomselectDA;
-	for(int i=0; i<src.rows; i+=sizeDitherArray){
-		for(int j=0; j<src.cols; j+=sizeDitherArray){
+	bool	doneflag;
+	for(int i=0; i<src1b.rows; i+=sizeDitherArray){
+		for(int j=0; j<src1b.cols; j+=sizeDitherArray){
 
-			doflag=false;
-			while(doflag != true){	// 不可與之前的DA label相同
+			uchar	&current_DA_index	=	map_m1b.ptr<uchar>(i/sizeDitherArray+1)[j/sizeDitherArray+1];	// current position is (+1,+1) rather than (0,0)
+			uchar	left_DA_index		=	map_m1b.ptr<uchar>(i/sizeDitherArray+1)[j/sizeDitherArray];
+			uchar	upper_DA_index		=	map_m1b.ptr<uchar>(i/sizeDitherArray)[j/sizeDitherArray+1];
+
+			doneflag=false;	// check whether the process is done
+			while(doneflag != true){	// 不可與之前的DA label相同
 
 				// get DA's label
-				label_randomselectDA = rand() % nDitherArray;	// 0 to 3
+				current_DA_index = rand() % nDitherArray;	// 0 to 3
 
 				// copy DA to entireDA
-				if(label_randomselectDA != lable_formerDA){	// then do halftoning
+				if((current_DA_index != left_DA_index) && (current_DA_index != upper_DA_index)){	// then do halftoning
 
-					doflag = true;
-					lable_formerDA = label_randomselectDA;
+					doneflag = true;
 
 					// halftoning
 					for(int m=0; m<sizeDitherArray; m++){ 
 						for(int n=0; n<sizeDitherArray; n++){
-							if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){
-								if(src.data[(i+m)*dst.cols + (j+n)] < DAs[label_randomselectDA][m][n]){
-									dst.data[(i+m)*dst.cols + (j+n)] = 0;
+							if(i+m>=0 && i+m<src1b.rows && j+n>=0 && j+n<src1b.cols){
+								if(src1b.ptr<uchar>(i+m)[j+n] < DAs[current_DA_index][m][n]){
+									dst1b.ptr<uchar>(i+m)[j+n] = 0;
 								}else{
-									dst.data[(i+m)*dst.cols + (j+n)] = 255;
+									dst1b.ptr<uchar>(i+m)[j+n] = 255;
 								}
 							}else{
 								// do nothing
@@ -1736,7 +1741,7 @@ bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src
 						}
 					}
 				}else{
-					doflag=false;
+					doneflag=false;
 				}
 			}
 		}

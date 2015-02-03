@@ -133,7 +133,7 @@ namespace pixkit{
 			enum DitherArray_TYPE { DispersedDot, ClusteredDot };
 			bool Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE = DispersedDot);
 
-			bool KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
+			bool KackerAllebach1998(const cv::Mat &src1b, cv::Mat &dst1b);
 		}
 
 		/// Dot diffusion related
