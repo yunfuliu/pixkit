@@ -4,7 +4,7 @@
 //opencv headers
 #include <iostream>
 #include <cmath>
-#include "..\include\pixkit-image.hpp"
+#include "..\..\include\pixkit-image.hpp"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 using namespace std;
