@@ -344,9 +344,7 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	q2.copyTo(q1);
 	tmp.copyTo(q2);
 
-	if(flag_display){
-		normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
-	}
+	normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
 	// viewable image form (float between values 0 and 1).
 
 	// copy
