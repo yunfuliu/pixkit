@@ -287,7 +287,7 @@ bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2
 
 	return true;
 }
-bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst){
+bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst, bool flag_display){
 // Original code: http://docs.opencv.org/doc/tutorials/core/discrete_fourier_transform/discrete_fourier_transform.html
 	
 	cv::Mat	src=_src.getMat();
@@ -322,7 +322,9 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	tdst1f.ptr<float>(0)[0]	=	(tdst1f.ptr<float>(0)[1]	+	tdst1f.ptr<float>(1)[0]	+	tdst1f.ptr<float>(1)[1])	/	3.;	
 	// scale 
  	tdst1f += Scalar::all(1);       // switch to logarithmic scale
- 	log(tdst1f, tdst1f);
+ 	if(flag_display){
+		log(tdst1f, tdst1f);
+	}
 
 	// crop	the spectrum, if it has an odd number of rows or columns
 	tdst1f = tdst1f(Rect(0, 0, tdst1f.cols & -2, tdst1f.rows & -2));
@@ -342,7 +344,9 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	q2.copyTo(q1);
 	tmp.copyTo(q2);
 
-	normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
+	if(flag_display){
+		normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
+	}
 	// viewable image form (float between values 0 and 1).
 
 	// copy
@@ -352,7 +356,7 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 
 	return true;
 }
-bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const Size specSize,const int rounds,const bool rand_sample){
+bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst1f,const Size specSize,const int rounds,const bool rand_sample,bool flag_display){
 
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions
@@ -374,21 +378,21 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 			int	x	=	cvRound((float)(src.cols-specSize.width)*(float)rand()/(float)RAND_MAX);
 			int	y	=	cvRound((float)(src.rows-specSize.height)*(float)rand()/(float)RAND_MAX);
 			Rect	roi(x,y,specSize.width,specSize.height);
-			PowerSpectrumDensity(src(roi),tps);	// get power spectrum
+			PowerSpectrumDensity(src(roi),tps,flag_display);	// get power spectrum
 			tdst1f	=	tdst1f	+	tps;
 		}
 	}else{
 		for(int k=0;k<rounds;k++){
 			Rect	roi(0,specSize.height*k,specSize.width,specSize.height);
-			PowerSpectrumDensity(src(roi),tps);	// get power spectrum
+			PowerSpectrumDensity(src(roi),tps,flag_display);	// get power spectrum
 			tdst1f	=	tdst1f	+	tps;
 		}
 	}
 
 	tdst1f	=	tdst1f	/	static_cast<float>(rounds);
 
-	_dst.create(tdst1f.size(),tdst1f.type());
-	Mat	dst	=	_dst.getMat();
+	_dst1f.create(tdst1f.size(),tdst1f.type());
+	Mat	dst	=	_dst1f.getMat();
 	tdst1f.copyTo(dst);
 
 	return true;
