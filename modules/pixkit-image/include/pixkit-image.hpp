@@ -125,10 +125,6 @@ namespace pixkit{
 		/// Ordered Dither related
 		namespace ordereddithering{
 
-			// dms
-			bool DMS_2Level2012_genDitherArray(cv::Mat &DA, int daSize);
-			bool DMS_2Level2012(const cv::Mat &src1b, const cv::Mat &ditherarray1b,cv::Mat &dst1b);
-
 			// conventional od methods
 			enum DitherArray_TYPE { DispersedDot, ClusteredDot };
 			bool Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE = DispersedDot);
@@ -206,6 +202,18 @@ namespace pixkit{
 			* @param	others: Please refer to the paper.
 			*/
 			bool generateTwoComponentGaussianModel(cv::Mat &dst1d,float k1=40.8,float k2=9.03,float sd1=0.0384,float sd2=0.105);
+
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// Multitoning
+	namespace multitoning{
+		namespace ordereddithering{
+
+			// dms
+			bool DMS2012_genDitherArray(std::vector<cv::Mat> &vec_DA1b, int daSize, int nColors);
+			bool DMS2012(const cv::Mat &src1b, const std::vector<cv::Mat> &vec_DA,cv::Mat &dst1b);
 
 		}
 	}
