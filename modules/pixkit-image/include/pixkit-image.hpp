@@ -215,6 +215,10 @@ namespace pixkit{
 			bool DMS2012_genDitherArray(std::vector<cv::Mat> &vec_DA1b, int daSize, int nColors);
 			bool DMS2012(const cv::Mat &src1b, const std::vector<cv::Mat> &vec_DA,cv::Mat &dst1b);
 
+			// generate green noise
+			bool ChanduStanichWuTrager2014_genDitherArray(std::vector<cv::Mat> &vec_DA1b, int daSize, int nColors,float D_min);
+			bool ChanduStanichWuTrager2014(const cv::Mat &src1b, const std::vector<cv::Mat> &vec_DA1b,cv::Mat &dst1b);
+
 		}
 	}
 
