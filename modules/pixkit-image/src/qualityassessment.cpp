@@ -397,10 +397,12 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 }
 bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &Anisotropy1f){
 
+	//////////////////////////////////////////////////////////////////////////
 	if(Spectrum1f.rows!=Spectrum1f.cols){
 		CV_Assert(false);
 	}
 	
+	//////////////////////////////////////////////////////////////////////////
 	Mat map1b;
 	map1b.create(Spectrum1f.size(),CV_8UC1);
 	int im = 255;
@@ -413,86 +415,82 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 	int Number_APS = (int)((dd)/dr);
 	double HalfImgWidth = Spectrum1f.rows / 2.0;
 
+	//////////////////////////////////////////////////////////////////////////
 	#pragma region RAPSD	
 	Mat APS_m1f;
 	APS_m1f.create(1,Number_APS,CV_32FC1);
 	APS_m1f.setTo(0);
-
 	for (int p=0; p<Number_APS; p++){
+		map1b.setTo(0);
+		double TotalE = 0;
+		int Counter = 0;
+		double r = p * dr;
+		for (double theta=0; theta<360; theta+=0.1){
 
+			double epi = (double)theta * pi / 180.0;
+			int x = (int) floor( (r * cos(epi)) +0.5 );
+			int y = (int) floor( (r * sin(epi)) +0.5 );
+			int	mod_x	=	cvRound(HalfImgWidth+x);
+			int	mod_y	=	cvRound(HalfImgWidth+y);
+
+			if (mod_x < 0 || mod_x >= Spectrum1f.rows)
+				continue;
+			if (mod_y < 0 || mod_y >= Spectrum1f.rows)
+				continue;
+			if (map1b.ptr<uchar>(mod_y)[mod_x] == 255)
+				continue;
+
+			TotalE	+=	Spectrum1f.ptr<float>(mod_y)[mod_x]; 
+			Counter+=1;
+			map1b.ptr<uchar>(mod_y)[mod_x] = 255;
+		}
+		if (Counter != 0 && TotalE != 0)
+			APS_m1f.ptr<float>(0)[p]=  (float) (TotalE / (float)Counter);
+	}
+	#pragma endregion
+
+	//////////////////////////////////////////////////////////////////////////
+	#pragma region Anisotropy
+	Mat AN_m1f ;
+	AN_m1f.create(1,Number_APS,CV_32FC1);
+	AN_m1f.setTo(0);
+	for (int p=0; p<Number_APS; p++){
 		map1b.setTo(0);
 		double TotalE = 0;
 		int Counter = 0;
 		double r = p * dr;
 
 		for (double theta=0; theta<360; theta+=0.1){
-
 			double epi = (double)theta * pi / 180.0;
 			int x = (int) floor( (r * cos(epi)) +0.5 );
 			int y = (int) floor( (r * sin(epi)) +0.5 );
+			int	mod_x	=	cvRound(HalfImgWidth+x);
+			int	mod_y	=	cvRound(HalfImgWidth+y);
 
-			if ((int)HalfImgWidth+x < 0 || (int)HalfImgWidth+x >= Spectrum1f.rows)
+			if (mod_x < 0 || mod_x >= Spectrum1f.rows)
+				continue;
+			if (mod_y < 0 || mod_y >= Spectrum1f.rows)
+				continue;
+			if (map1b.ptr<uchar>(mod_y)[mod_x] == 255)
 				continue;
 
-			if ((int)HalfImgWidth+y < 0 || (int)HalfImgWidth+y >= Spectrum1f.rows)
-				continue;
+			TotalE+=
+				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>(mod_y)[mod_x]) * 
+				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>(mod_y)[mod_x]);
 
-			if (map1b.data[((int)HalfImgWidth+x) * map1b.cols + ((int)HalfImgWidth+y)] == 255)
-				continue;
-
-			TotalE = TotalE + Spectrum1f.ptr<float>(HalfImgWidth+x)[(int)HalfImgWidth+y] ; 
-
-			Counter = Counter + 1;
-
-			map1b.data[((int)(map1b.rows/2.0)+x) * map1b.cols + ((int)(map1b.cols/2.0)+y)] = 255;
+			Counter+=1;
+			map1b.ptr<uchar>(mod_y)[mod_x] = 255;
 		}
 
 		if (Counter != 0 && TotalE != 0)
-			APS_m1f.ptr<float>(0)[p]=  (float) (TotalE / Counter);
+			AN_m1f.ptr<float>(0)[p] = 10.*log10((TotalE / (Counter-1)) / (APS_m1f.ptr<float>(0)[p]*APS_m1f.ptr<float>(0)[p]));
 	}
 	#pragma endregion
 
-	#pragma region Anisotropy
-	Mat AN_m ;
-	AN_m.create(1,Number_APS,CV_32FC1);
-	AN_m.setTo(0);
-	for (int p=0; p<Number_APS; p++)
-	{
-		map1b.setTo(0);
-		double TotalE = 0;
-		int Counter = 0;
-		double r = p * dr;
-
-		for (double theta=0; theta<360; theta+=0.1)
-		{
-			double epi = (double)theta * pi / 180.0;
-			int x = (int) floor( (r * cos(epi)) +0.5 );
-			int y = (int) floor( (r * sin(epi)) +0.5 );
-
-			if ((int)HalfImgWidth+x < 0 || (int)HalfImgWidth+x >= Spectrum1f.rows)
-				continue;
-
-			if ((int)HalfImgWidth+y < 0 || (int)HalfImgWidth+y >= Spectrum1f.rows)
-				continue;
-
-			if (map1b.data[((int)HalfImgWidth+x) * map1b.cols + ((int)HalfImgWidth+y)] == 255)
-				continue;
-
-			TotalE = TotalE + 
-				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]) * 
-				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]);
-
-			Counter = Counter + 1;
-			map1b.data[((int)(map1b.rows/2.0)+x) * map1b.cols + ((int)(map1b.cols/2.0)+y)] = 255;
-		}
-
-		if (Counter != 0 && TotalE != 0)
-			AN_m.ptr<float>(0)[p] = 10*log10((TotalE / (Counter-1)) / (APS_m1f.ptr<float>(0)[p]*APS_m1f.ptr<float>(0)[p]));
-	}
-	#pragma endregion
-
+	//////////////////////////////////////////////////////////////////////////
+	///// copy
 	RAPSD1f = APS_m1f;
-	Anisotropy1f = AN_m;
+	Anisotropy1f = AN_m1f;
 
 	return true;
 }
