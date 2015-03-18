@@ -397,8 +397,12 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 }
 bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &Anisotropy1f){
 
-	Mat map;
-	map.create(cvSize(Spectrum1f.rows,Spectrum1f.cols),CV_8UC1);
+	if(Spectrum1f.rows!=Spectrum1f.cols){
+		CV_Assert(false);
+	}
+	
+	Mat map1b;
+	map1b.create(Spectrum1f.size(),CV_8UC1);
 	int im = 255;
 	int dr = 1;
 	double g = (double)im / 256.0 ;
@@ -410,19 +414,19 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 	double HalfImgWidth = Spectrum1f.rows / 2.0;
 
 	#pragma region RAPSD	
-	Mat APS_m;
-	APS_m.create(1,Number_APS,CV_32FC1);
-	APS_m.setTo(0);
+	Mat APS_m1f;
+	APS_m1f.create(1,Number_APS,CV_32FC1);
+	APS_m1f.setTo(0);
 
-	for (int p=0; p<Number_APS; p++)
-	{
-		map.setTo(0);
+	for (int p=0; p<Number_APS; p++){
+
+		map1b.setTo(0);
 		double TotalE = 0;
 		int Counter = 0;
 		double r = p * dr;
 
-		for (double theta=0; theta<360; theta+=0.1)
-		{
+		for (double theta=0; theta<360; theta+=0.1){
+
 			double epi = (double)theta * pi / 180.0;
 			int x = (int) floor( (r * cos(epi)) +0.5 );
 			int y = (int) floor( (r * sin(epi)) +0.5 );
@@ -433,18 +437,18 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 			if ((int)HalfImgWidth+y < 0 || (int)HalfImgWidth+y >= Spectrum1f.rows)
 				continue;
 
-			if (map.data[((int)HalfImgWidth+x) * map.cols + ((int)HalfImgWidth+y)] == 255)
+			if (map1b.data[((int)HalfImgWidth+x) * map1b.cols + ((int)HalfImgWidth+y)] == 255)
 				continue;
 
 			TotalE = TotalE + Spectrum1f.ptr<float>(HalfImgWidth+x)[(int)HalfImgWidth+y] ; 
 
 			Counter = Counter + 1;
 
-			map.data[((int)(map.rows/2.0)+x) * map.cols + ((int)(map.cols/2.0)+y)] = 255;
+			map1b.data[((int)(map1b.rows/2.0)+x) * map1b.cols + ((int)(map1b.cols/2.0)+y)] = 255;
 		}
 
 		if (Counter != 0 && TotalE != 0)
-			APS_m.ptr<float>(0)[p]=  (float) (TotalE / Counter);
+			APS_m1f.ptr<float>(0)[p]=  (float) (TotalE / Counter);
 	}
 	#pragma endregion
 
@@ -454,7 +458,7 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 	AN_m.setTo(0);
 	for (int p=0; p<Number_APS; p++)
 	{
-		map.setTo(0);
+		map1b.setTo(0);
 		double TotalE = 0;
 		int Counter = 0;
 		double r = p * dr;
@@ -471,23 +475,23 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 			if ((int)HalfImgWidth+y < 0 || (int)HalfImgWidth+y >= Spectrum1f.rows)
 				continue;
 
-			if (map.data[((int)HalfImgWidth+x) * map.cols + ((int)HalfImgWidth+y)] == 255)
+			if (map1b.data[((int)HalfImgWidth+x) * map1b.cols + ((int)HalfImgWidth+y)] == 255)
 				continue;
 
 			TotalE = TotalE + 
-				(APS_m.ptr<float>(0)[p] - Spectrum1f.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]) * 
-				(APS_m.ptr<float>(0)[p] - Spectrum1f.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]);
+				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]) * 
+				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>((int)HalfImgWidth+x)[(int)HalfImgWidth+y]);
 
 			Counter = Counter + 1;
-			map.data[((int)(map.rows/2.0)+x) * map.cols + ((int)(map.cols/2.0)+y)] = 255;
+			map1b.data[((int)(map1b.rows/2.0)+x) * map1b.cols + ((int)(map1b.cols/2.0)+y)] = 255;
 		}
 
 		if (Counter != 0 && TotalE != 0)
-			AN_m.ptr<float>(0)[p] = 10*log10((TotalE / (Counter-1)) / (APS_m.ptr<float>(0)[p]*APS_m.ptr<float>(0)[p]));
+			AN_m.ptr<float>(0)[p] = 10*log10((TotalE / (Counter-1)) / (APS_m1f.ptr<float>(0)[p]*APS_m1f.ptr<float>(0)[p]));
 	}
 	#pragma endregion
 
-	RAPSD1f = APS_m;
+	RAPSD1f = APS_m1f;
 	Anisotropy1f = AN_m;
 
 	return true;
