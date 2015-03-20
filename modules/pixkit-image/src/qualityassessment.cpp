@@ -321,8 +321,8 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	// eliminate the DC value
 	tdst1f.ptr<float>(0)[0]	=	(tdst1f.ptr<float>(0)[1]	+	tdst1f.ptr<float>(1)[0]	+	tdst1f.ptr<float>(1)[1])	/	3.;	
 	// scale 
- 	tdst1f += Scalar::all(1);       // switch to logarithmic scale
- 	if(flag_display){
+	if(flag_display){
+ 		tdst1f += Scalar::all(1);       // switch to logarithmic scale
 		log(tdst1f, tdst1f);
 	}
 
@@ -344,8 +344,10 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	q2.copyTo(q1);
 	tmp.copyTo(q2);
 
-	normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
-	// viewable image form (float between values 0 and 1).
+	if(flag_display){
+		normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX);	// Transform the matrix with float values into a
+														// viewable image form (float between values 0 and 1).
+	}
 
 	// copy
 	_dst.create(src.size(),tdst1f.type());
@@ -402,6 +404,10 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 		CV_Assert(false);
 	}
 	
+	//////////////////////////////////////////////////////////////////////////
+	///// get mean
+	float mean = (float)sum(Spectrum1f)[0] / (float)Spectrum1f.total();
+
 	//////////////////////////////////////////////////////////////////////////
 	Mat map1b;
 	map1b.create(Spectrum1f.size(),CV_8UC1);
@@ -489,7 +495,7 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 
 	//////////////////////////////////////////////////////////////////////////
 	///// copy
-	RAPSD1f = APS_m1f;
+	RAPSD1f = APS_m1f	/	mean;
 	Anisotropy1f = AN_m1f;
 
 	return true;
