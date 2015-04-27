@@ -226,8 +226,8 @@ namespace pixkit{
 	/// Image compression
 	namespace comp{
 
+		// BTC
 		bool	DBSBTC2011(cv::Mat src, cv::Mat &dst, int blockSize = 8);
-
 		bool	DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize);
 		enum	ODBTC_TYPE{ODBTC_TYPE_ClusteredDot,ODBTC_TYPE_DispersedDot};
 		bool	ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYPE type);
@@ -235,7 +235,9 @@ namespace pixkit{
 		bool	EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYPE type);
 		bool	BTC(const cv::Mat &src,cv::Mat &dst,int blockSize);
 		bool	YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b, const int K = 256);
-
+		
+		// JPEG
+		bool	JPEG(const cv::Mat &src1b, cv::Mat &dst1b, const int jpeg_quality);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
