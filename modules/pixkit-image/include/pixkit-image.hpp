@@ -135,6 +135,49 @@ namespace pixkit{
 		/// Dot diffusion related
 		namespace dotdiffusion{
 
+			class CLiuGuo2015{
+
+			public:
+
+				CLiuGuo2015(std::string pth_resources);
+				virtual	~CLiuGuo2015();
+
+				// halftoning process
+				bool process(const cv::Mat &src1b, cv::Mat &dst1b);
+
+				// Get the processing orders of the pixels.
+				void getPointList(const cv::Size imgSize);
+
+			private:
+				class CPARAMS{
+				public:
+					/*
+					*	@[0]	threshold
+					*	@[1]	afa
+					*	@[2]	beta
+					*/
+					float	coe[3];
+				};
+
+				cv::Size	cmsize;		// class matrix size.
+				cv::Mat		cct;		// class tiling
+				cv::Mat		cct_ori;	// original class tiling
+				std::vector<std::vector<CPARAMS>>	paramsmap;	// parameters
+				std::vector<std::vector<cv::Point>>	pointlist;	// processing order location list.
+
+				/*
+				*	read class tiling (CT)
+				*/
+				bool ctread(std::string fname, const cv::Size cmsize, cv::Mat &cct1b);
+
+				/*
+				*	read the map of parameters
+				*	@param	paramsmap[grayscale][order]
+				*/
+				bool read_paramsmap(std::vector<std::string> &fname, std::vector<std::vector<CPARAMS>> &paramsmap);
+
+			};
+
 			class CNADDCT{
 			public:
 				int				m_CT_height;	// CT's height and width
