@@ -236,6 +236,10 @@ namespace pixkit{
 		bool	BTC(const cv::Mat &src,cv::Mat &dst,int blockSize);
 		bool	YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b, const int K = 256);
 
+		//// Color BTC series
+		bool    IBTC_KQ2014(cv::Mat &src,cv::Mat &dst, int BlockSize);
+		bool    FS_BMO2014(cv::Mat &src,cv::Mat &dst, int BlockSize, int MoreCompressFlag=1, int THBO=15);
+		bool    CCC1986(cv::Mat &src,cv::Mat &dst, int BlockSize);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

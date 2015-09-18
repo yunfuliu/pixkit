@@ -344,8 +344,10 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	q2.copyTo(q1);
 	tmp.copyTo(q2);
 
-	normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
+	if(flag_display){
+		normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
 	// viewable image form (float between values 0 and 1).
+	}
 
 	// copy
 	_dst.create(src.size(),tdst1f.type());
@@ -396,6 +398,15 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 	return true;
 }
 bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &Anisotropy1f){
+
+	//////////////////////////////////////////////////////////////////////////
+	if(Spectrum1f.rows!=Spectrum1f.cols){
+		CV_Assert(false);
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	///// get mean
+	float mean = (float)sum(Spectrum1f)[0] / (float)Spectrum1f.total();
 
 	Mat map;
 	map.create(cvSize(Spectrum1f.rows,Spectrum1f.cols),CV_8UC1);
@@ -487,7 +498,7 @@ bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &A
 	}
 	#pragma endregion
 
-	RAPSD1f = APS_m;
+	RAPSD1f = APS_m	/ mean;;
 	Anisotropy1f = AN_m;
 
 	return true;
