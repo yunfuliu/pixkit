@@ -139,6 +139,10 @@ namespace pixkit{
 
 			public:
 
+
+				/*
+				*	@param	pth_resources: Please indicate this path to `PIXKIT_ROOT/data/LiuGuo2015/` for the performance of the paper. 
+				*/
 				CLiuGuo2015(std::string pth_resources);
 				virtual	~CLiuGuo2015();
 
