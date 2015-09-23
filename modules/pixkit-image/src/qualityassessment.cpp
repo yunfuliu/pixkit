@@ -126,9 +126,15 @@ float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,c
 float pixkit::qualityassessment::TEN(const cv::Mat &src){
 
 	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if (src.type()!=CV_8UC1){
+		CV_Assert(false);
+	}
+	
+	//////////////////////////////////////////////////////////////////////////
 	cv::Mat	est;	
 	// process
-	edgedetection::Sobel(src,est);
+	edgedetection::Sobel(src,est);	// it returns the gradient magnitude. 
 
 	//////////////////////////////////////////////////////////////////////////
 	// estimation
