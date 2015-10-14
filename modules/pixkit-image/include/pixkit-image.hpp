@@ -358,6 +358,7 @@ namespace pixkit{
 		float MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11,  double* lu_co_st=NULL);
 		float MS_SSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
 		float IW_SSIM(const cv::Mat &src1,const cv::Mat &src2);
+		float GMSD(const cv::Mat &src1, const cv::Mat &src2, cv::Mat &dst);
 	}
 
 }
