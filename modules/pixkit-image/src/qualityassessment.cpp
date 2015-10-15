@@ -658,3 +658,55 @@ float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2,
 	SSIMresult /= (src1.rows * src1.cols);
 	return SSIMresult;			
 }
+
+float pixkit::qualityassessment::GMSD(const cv::Mat &src1,const cv::Mat &src2 , cv::Mat &dst){
+
+	//////////////////////////////////////////////////////////////////////////
+	//	inputs:
+	//	
+	//	Y1 - the reference image(grayscale image, double t type, 0~255)
+	//  Y2 - the distorted image (grayscale image, double type, 0~255)
+	//
+	//	outputs :
+	//
+	//	score : distortion degree of the distorted image
+	//	dst : local quality map of the distorted image
+	//	
+	//////////////////////////////////////////////////////////////////////////
+
+	cv::Mat Y1 = src1;
+	cv::Mat Y2 = src2;
+
+	float avgKernelData[9] = { 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0 };
+	cv::Mat avgKernel = cv::Mat(2, 2, CV_32F, avgKernelData);
+	cv::filter2D(Y1, Y1, Y1.depth(), avgKernel);
+	cv::filter2D(Y2, Y2, Y2.depth(), avgKernel);
+
+	cv::resize(Y1, Y1, cv::Size(Y1.cols / 2, Y1.rows / 2), 0, 0, 0);
+	cv::resize(Y2, Y2, cv::Size(Y2.cols / 2, Y2.rows / 2), 0, 0, 0);
+
+	float dxKernelData[3][3] = { { 1.0 / 3.0, 0, -1.0 / 3.0 }, { 1.0 / 3.0, 0, -1.0 / 3.0 }, { 1.0 / 3.0, 0, -1.0 / 3.0 } };
+	float dyKernelData[3][3] = { { 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0 }, { 0, 0, 0 }, { -1.0 / 3.0, -1.0 / 3.0, -1.0 / 3.0 } };
+	cv::Mat dxKernel = cv::Mat(3, 3, CV_32F, dxKernelData);
+	cv::Mat dyKernel = cv::Mat(3, 3, CV_32F, dyKernelData);
+
+	cv::Mat IxY1, IyY1, IxY2, IyY2;
+	cv::filter2D(Y1, IxY1, Y1.depth(), dxKernel);
+	cv::filter2D(Y1, IyY1, Y1.depth(), dyKernel);
+	cv::filter2D(Y2, IxY2, Y2.depth(), dxKernel);
+	cv::filter2D(Y2, IyY2, Y2.depth(), dyKernel);
+
+	cv::Mat gradientMap1;
+	cv::Mat gradientMap2;
+	pow(IxY1.mul(IxY1) + IyY1.mul(IyY1), 0.5, gradientMap1);
+	pow(IxY2.mul(IxY2) + IyY2.mul(IyY2), 0.5, gradientMap2);
+
+	float T = 170;
+	dst = (2 * gradientMap1.mul(gradientMap2) + T) / (gradientMap1.mul(gradientMap1) + gradientMap2.mul(gradientMap2) + T);
+
+	cv::Scalar m, stdv;
+	cv::meanStdDev(dst, m, stdv);
+	float score = stdv(0);
+
+	return score;
+}
