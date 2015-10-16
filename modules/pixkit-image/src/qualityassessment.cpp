@@ -664,8 +664,8 @@ float pixkit::qualityassessment::GMSD(const cv::Mat &src1,const cv::Mat &src2 , 
 	//////////////////////////////////////////////////////////////////////////
 	//	inputs:
 	//	
-	//	Y1 - the reference image(grayscale image, double t type, 0~255)
-	//  Y2 - the distorted image (grayscale image, double type, 0~255)
+	//	Y1 - the reference image(grayscale image, CV_32FC1, 0~255)
+	//  Y2 - the distorted image(grayscale image, CV_32FC1, 0~255)
 	//
 	//	outputs :
 	//
