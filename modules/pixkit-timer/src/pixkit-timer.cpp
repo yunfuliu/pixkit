@@ -35,19 +35,19 @@ void pixkit::Timer::Reset(){
 	}
 	start_clock = 0;	cumulative_clock = 0;	n_starts = 0;
 }
-bool pixkit::Timer::Report(){
+float pixkit::Timer::Report(){
 	if (is_started){
 		printf("pixkit::timer '%s' is started.\n Cannot provide a time report.", title.c_str());
 		return false;
 	}
 	float timeUsed = TimeInSeconds();
 	printf("[%s] CumuTime: %4gs, #run: %4d, AvgTime: %4gs\n", title.c_str(), timeUsed, n_starts, timeUsed/n_starts);
-	return true;
+	return timeUsed/(float)n_starts;
 }
 float pixkit::Timer::TimeInSeconds(){
 	if (is_started){
 		printf("pixkit::timer '%s' is started. Nothing done\n", title.c_str());
 		return 0;
 	}
-	return double(cumulative_clock) / cv::getTickFrequency();
+	return static_cast<float>(double(cumulative_clock) / cv::getTickFrequency());
 }

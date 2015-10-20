@@ -126,9 +126,15 @@ float pixkit::qualityassessment::EME(const cv::Mat &src,const cv::Size nBlocks,c
 float pixkit::qualityassessment::TEN(const cv::Mat &src){
 
 	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if (src.type()!=CV_8UC1){
+		CV_Assert(false);
+	}
+	
+	//////////////////////////////////////////////////////////////////////////
 	cv::Mat	est;	
 	// process
-	edgedetection::Sobel(src,est);
+	edgedetection::Sobel(src,est);	// it returns the gradient magnitude. 
 
 	//////////////////////////////////////////////////////////////////////////
 	// estimation
@@ -214,21 +220,20 @@ float pixkit::qualityassessment::PSNR(const cv::Mat &src1,const cv::Mat &src2){
 	if(src1.type()!=src2.type()){
 		CV_Error(CV_StsBadArg,"[qualityassessment::PSNR] both types of image do not match");
 	}
-	if(src1.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[qualityassessment::PSNR] image should be grayscale");
-	}
 
 	//////////////////////////////////////////////////////////////////////////
-	///// derive psnr
-	double	total_err=0.;
-	for(int i=0;i<src1.rows;i++){
-		for(int j=0;j<src1.cols;j++){
-			total_err+=(src1.data[i*src1.cols+j]-src2.data[i*src1.cols+j])*(src1.data[i*src1.cols+j]-src2.data[i*src1.cols+j]);
-		}
+	Mat	src1f,src2f,tmp1f;
+	if(src1.type()==CV_32FC1){
+		src1f=src1;
+		src2f=src2;
+	}else{
+		src1.convertTo(src1f,CV_32FC1);
+		src2.convertTo(src2f,CV_32FC1);	
 	}
-
-	// = = = = = Return PSNR = = = = = //
-	return 10*log10((double)(src1.cols)*(src1.rows)*(255.)*(255.)/total_err);
+	// get error and return
+ 	tmp1f=src1f-src2f;
+ 	float	mse=(float)sum(tmp1f.mul(tmp1f))[0]	/	(float)tmp1f.total();
+	return static_cast<float>(10.*log10(255.*255./mse));
 }
 float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,const int ksize){
 	
@@ -240,65 +245,23 @@ float pixkit::qualityassessment::HPSNR(const cv::Mat &src1, const cv::Mat &src2,
 	if(src1.type()!=src2.type()){
 		CV_Error(CV_StsBadArg,"[qualityassessment::HPSNR] both types of image do not match");
 	}
-	if(src1.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[qualityassessment::HPSNR] image should be grayscale");
-	}
 
 	//////////////////////////////////////////////////////////////////////////
-	///// get Gaussian kernel. Please check the def of getGaussianKernel() for the exact value of the sigma (standard deviation)
-	int  wd_size = static_cast<int>(ksize/2.*2.);
+	// get Gaussian kernel. Please check the def of getGaussianKernel() for the exact value of the sigma (standard deviation)
 	Mat	coe1f	=	getGaussianKernel(ksize,-1,CV_32FC1);
-	mulTransposed(coe1f,coe1f,false);
-
-	//boundary extension ==========================
-	//wd_reg memory((IW+wd_size)*(IL+wd_size))
-	cv::Mat OriImageWd, ResImageWd;
-	OriImageWd.create(src1.rows+wd_size, src1.cols+wd_size, 0);
-	ResImageWd.create(src2.rows+wd_size, src2.cols+wd_size, 0);
-	
-	//WdImage((Height+wd_size)x(Width+wd_size)) <- Input(HeightxWidth)
-	for(int i=0; i<src1.rows; i++){
-		for(int j=0; j<src1.cols; j++){
-			OriImageWd.data[(i+wd_size/2)*(OriImageWd.cols) + (j+wd_size/2)] = src1.data[i*src1.cols +j];
-			ResImageWd.data[(i+wd_size/2)*(ResImageWd.cols) + (j+wd_size/2)] = src2.data[i*src2.cols +j];
-		}
+	// get blurred images
+	Mat	src11f,src21f;
+	if(src1.type()==CV_32FC1){
+		src11f	=	src1;
+		src21f	=	src2;
+	}else{
+		src1.convertTo(src11f,CV_32FC1);
+		src2.convertTo(src21f,CV_32FC1);
 	}
-
-	//copy(:, wd_size/2 ~wd_size/2+Width-1)
-	for(int j=0; j<src1.cols ;j++){
-		for(int k=0; k<wd_size/2; k++){
-			OriImageWd.data[(wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)];
-			ResImageWd.data[(wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)];
-			OriImageWd.data[(src1.rows+wd_size/2+k)*(OriImageWd.cols) + (j+wd_size/2)] = OriImageWd.data[(src1.rows+wd_size/2-k-1)*(OriImageWd.cols) + (j+wd_size/2)];
-			ResImageWd.data[(src2.rows+wd_size/2+k)*(ResImageWd.cols) + (j+wd_size/2)] = ResImageWd.data[(src2.rows+wd_size/2-k-1)*(ResImageWd.cols) + (j+wd_size/2)];
-		}
-	}
-
-	//copy(wd_size/2~wd_size/2+Width-1, : )
-	for(int i=0;i<OriImageWd.rows;i++){
-		for(int k=0;k<wd_size/2;k++){
-			OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2-k-1)] = OriImageWd.data[i*(OriImageWd.cols) + (wd_size/2+k)];
-			ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2-k-1)] = ResImageWd.data[i*(ResImageWd.cols) + (wd_size/2+k)];
-			OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2+k)] = OriImageWd.data[i*(OriImageWd.cols) + (src1.cols+wd_size/2-k-1)];
-			ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2+k)] = ResImageWd.data[i*(ResImageWd.cols) + (src2.cols+wd_size/2-k-1)];
-		}
-	}
-
-	//PSNR calculation =========================
-	double  mse = 0;
-	for(int i=0; i<src1.rows; i++){
-		for(int j=0; j<src1.cols; j++){
-			double temp = 0.0;
-			for(int x=0; x<ksize; x++){
-				for(int y=0; y<ksize; y++){
-					temp += (ResImageWd.data[(i+x)*ResImageWd.cols + (j+y)] - OriImageWd.data[(i+x)*OriImageWd.cols + (j+y)]) * coe1f.ptr<float>(x)[y];
-				}
-			}
-			mse += (temp*temp);
-		}
-	}
-	mse /= (src1.rows * src1.cols);
-	return static_cast<float>(20.*log10(255./sqrt(mse)));
+	sepFilter2D(src11f,src11f,-1,coe1f,coe1f,Point(-1,-1),0,BORDER_REFLECT_101);
+	sepFilter2D(src21f,src21f,-1,coe1f,coe1f,Point(-1,-1),0,BORDER_REFLECT_101);
+	// get error
+	return PSNR(src11f,src21f);
 }
  
 bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2,double sd){
@@ -330,7 +293,7 @@ bool pixkit::qualityassessment::GaussianDiff(InputArray &_src1,InputArray &_src2
 
 	return true;
 }
-bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst){
+bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst, bool flag_display){
 // Original code: http://docs.opencv.org/doc/tutorials/core/discrete_fourier_transform/discrete_fourier_transform.html
 	
 	cv::Mat	src=_src.getMat();
@@ -364,8 +327,10 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	// eliminate the DC value
 	tdst1f.ptr<float>(0)[0]	=	(tdst1f.ptr<float>(0)[1]	+	tdst1f.ptr<float>(1)[0]	+	tdst1f.ptr<float>(1)[1])	/	3.;	
 	// scale 
- 	tdst1f += Scalar::all(1);       // switch to logarithmic scale
- 	log(tdst1f, tdst1f);
+	if(flag_display){
+ 		tdst1f += Scalar::all(1);       // switch to logarithmic scale
+		log(tdst1f, tdst1f);
+	}
 
 	// crop	the spectrum, if it has an odd number of rows or columns
 	tdst1f = tdst1f(Rect(0, 0, tdst1f.cols & -2, tdst1f.rows & -2));
@@ -385,8 +350,10 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 	q2.copyTo(q1);
 	tmp.copyTo(q2);
 
-	normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX); // Transform the matrix with float values into a
-	// viewable image form (float between values 0 and 1).
+	if(flag_display){
+		normalize(tdst1f, tdst1f, 0, 1, NORM_MINMAX);	// Transform the matrix with float values into a
+														// viewable image form (float between values 0 and 1).
+	}
 
 	// copy
 	_dst.create(src.size(),tdst1f.type());
@@ -395,7 +362,7 @@ bool pixkit::qualityassessment::PowerSpectrumDensity(cv::InputArray &_src,cv::Ou
 
 	return true;
 }
-bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const Size specSize,const int rounds,const bool rand_sample){
+bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst1f,const Size specSize,const int rounds,const bool rand_sample,bool flag_display){
 
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions
@@ -417,25 +384,129 @@ bool pixkit::qualityassessment::spectralAnalysis_Bartlett(cv::InputArray &_src,c
 			int	x	=	cvRound((float)(src.cols-specSize.width)*(float)rand()/(float)RAND_MAX);
 			int	y	=	cvRound((float)(src.rows-specSize.height)*(float)rand()/(float)RAND_MAX);
 			Rect	roi(x,y,specSize.width,specSize.height);
-			PowerSpectrumDensity(src(roi),tps);	// get power spectrum
+			PowerSpectrumDensity(src(roi),tps,flag_display);	// get power spectrum
 			tdst1f	=	tdst1f	+	tps;
 		}
 	}else{
 		for(int k=0;k<rounds;k++){
 			Rect	roi(0,specSize.height*k,specSize.width,specSize.height);
-			PowerSpectrumDensity(src(roi),tps);	// get power spectrum
+			PowerSpectrumDensity(src(roi),tps,flag_display);	// get power spectrum
 			tdst1f	=	tdst1f	+	tps;
 		}
 	}
 
 	tdst1f	=	tdst1f	/	static_cast<float>(rounds);
 
-	_dst.create(tdst1f.size(),tdst1f.type());
-	Mat	dst	=	_dst.getMat();
+	_dst1f.create(tdst1f.size(),tdst1f.type());
+	Mat	dst	=	_dst1f.getMat();
 	tdst1f.copyTo(dst);
 
 	return true;
 }
+bool pixkit::qualityassessment::RAPSD(const Mat Spectrum1f, Mat &RAPSD1f, Mat &Anisotropy1f){
+
+	//////////////////////////////////////////////////////////////////////////
+	if(Spectrum1f.rows!=Spectrum1f.cols){
+		CV_Assert(false);
+	}
+	
+	//////////////////////////////////////////////////////////////////////////
+	///// get mean
+	float mean = (float)sum(Spectrum1f)[0] / (float)Spectrum1f.total();
+
+	//////////////////////////////////////////////////////////////////////////
+	Mat map1b;
+	map1b.create(Spectrum1f.size(),CV_8UC1);
+	int im = 255;
+	int dr = 1;
+	double g = (double)im / 256.0 ;
+	double g2 = g * (1 - g);
+	double pi = 3.14159265;
+	// for dr == 1, dd means the maximum radius of the image, only for (width == height), still need to be modified
+	int dd = (int)sqrt( (double)2 * ( (Spectrum1f.rows/2) * (Spectrum1f.cols/2) ) );	
+	int Number_APS = (int)((dd)/dr);
+	double HalfImgWidth = Spectrum1f.rows / 2.0;
+
+	//////////////////////////////////////////////////////////////////////////
+	#pragma region RAPSD	
+	Mat APS_m1f;
+	APS_m1f.create(1,Number_APS,CV_32FC1);
+	APS_m1f.setTo(0);
+	for (int p=0; p<Number_APS; p++){
+		map1b.setTo(0);
+		double TotalE = 0;
+		int Counter = 0;
+		double r = p * dr;
+		for (double theta=0; theta<360; theta+=0.1){
+
+			double epi = (double)theta * pi / 180.0;
+			int x = (int) floor( (r * cos(epi)) +0.5 );
+			int y = (int) floor( (r * sin(epi)) +0.5 );
+			int	mod_x	=	cvRound(HalfImgWidth+x);
+			int	mod_y	=	cvRound(HalfImgWidth+y);
+
+			if (mod_x < 0 || mod_x >= Spectrum1f.rows)
+				continue;
+			if (mod_y < 0 || mod_y >= Spectrum1f.rows)
+				continue;
+			if (map1b.ptr<uchar>(mod_y)[mod_x] == 255)
+				continue;
+
+			TotalE	+=	Spectrum1f.ptr<float>(mod_y)[mod_x]; 
+			Counter+=1;
+			map1b.ptr<uchar>(mod_y)[mod_x] = 255;
+		}
+		if (Counter != 0 && TotalE != 0)
+			APS_m1f.ptr<float>(0)[p]=  (float) (TotalE / (float)Counter);
+	}
+	#pragma endregion
+
+	//////////////////////////////////////////////////////////////////////////
+	#pragma region Anisotropy
+	Mat AN_m1f ;
+	AN_m1f.create(1,Number_APS,CV_32FC1);
+	AN_m1f.setTo(0);
+	for (int p=0; p<Number_APS; p++){
+		map1b.setTo(0);
+		double TotalE = 0;
+		int Counter = 0;
+		double r = p * dr;
+
+		for (double theta=0; theta<360; theta+=0.1){
+			double epi = (double)theta * pi / 180.0;
+			int x = (int) floor( (r * cos(epi)) +0.5 );
+			int y = (int) floor( (r * sin(epi)) +0.5 );
+			int	mod_x	=	cvRound(HalfImgWidth+x);
+			int	mod_y	=	cvRound(HalfImgWidth+y);
+
+			if (mod_x < 0 || mod_x >= Spectrum1f.rows)
+				continue;
+			if (mod_y < 0 || mod_y >= Spectrum1f.rows)
+				continue;
+			if (map1b.ptr<uchar>(mod_y)[mod_x] == 255)
+				continue;
+
+			TotalE+=
+				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>(mod_y)[mod_x]) * 
+				(APS_m1f.ptr<float>(0)[p] - Spectrum1f.ptr<float>(mod_y)[mod_x]);
+
+			Counter+=1;
+			map1b.ptr<uchar>(mod_y)[mod_x] = 255;
+		}
+
+		if (Counter != 0 && TotalE != 0)
+			AN_m1f.ptr<float>(0)[p] = 10.*log10((TotalE / (Counter-1)) / (APS_m1f.ptr<float>(0)[p]*APS_m1f.ptr<float>(0)[p]));
+	}
+	#pragma endregion
+
+	//////////////////////////////////////////////////////////////////////////
+	///// copy
+	RAPSD1f = APS_m1f	/	mean;
+	Anisotropy1f = AN_m1f;
+
+	return true;
+}
+
 
 float pixkit::qualityassessment::SSIM(const cv::Mat &src1, const cv::Mat &src2)
 {
@@ -586,4 +657,56 @@ float pixkit::qualityassessment::MSSIM(const cv::Mat &src1, const cv::Mat &src2,
 	}
 	SSIMresult /= (src1.rows * src1.cols);
 	return SSIMresult;			
+}
+
+float pixkit::qualityassessment::GMSD(const cv::Mat &src1,const cv::Mat &src2 , cv::Mat &dst){
+
+	//////////////////////////////////////////////////////////////////////////
+	//	inputs:
+	//	
+	//	Y1 - the reference image(grayscale image, CV_32FC1, 0~255)
+	//  Y2 - the distorted image(grayscale image, CV_32FC1, 0~255)
+	//
+	//	outputs :
+	//
+	//	score : distortion degree of the distorted image
+	//	dst : local quality map of the distorted image
+	//	
+	//////////////////////////////////////////////////////////////////////////
+
+	cv::Mat Y1 = src1;
+	cv::Mat Y2 = src2;
+
+	float avgKernelData[9] = { 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0, 1.0 / 4.0 };
+	cv::Mat avgKernel = cv::Mat(2, 2, CV_32F, avgKernelData);
+	cv::filter2D(Y1, Y1, Y1.depth(), avgKernel);
+	cv::filter2D(Y2, Y2, Y2.depth(), avgKernel);
+
+	cv::resize(Y1, Y1, cv::Size(Y1.cols / 2, Y1.rows / 2), 0, 0, 0);
+	cv::resize(Y2, Y2, cv::Size(Y2.cols / 2, Y2.rows / 2), 0, 0, 0);
+
+	float dxKernelData[3][3] = { { 1.0 / 3.0, 0, -1.0 / 3.0 }, { 1.0 / 3.0, 0, -1.0 / 3.0 }, { 1.0 / 3.0, 0, -1.0 / 3.0 } };
+	float dyKernelData[3][3] = { { 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0 }, { 0, 0, 0 }, { -1.0 / 3.0, -1.0 / 3.0, -1.0 / 3.0 } };
+	cv::Mat dxKernel = cv::Mat(3, 3, CV_32F, dxKernelData);
+	cv::Mat dyKernel = cv::Mat(3, 3, CV_32F, dyKernelData);
+
+	cv::Mat IxY1, IyY1, IxY2, IyY2;
+	cv::filter2D(Y1, IxY1, Y1.depth(), dxKernel);
+	cv::filter2D(Y1, IyY1, Y1.depth(), dyKernel);
+	cv::filter2D(Y2, IxY2, Y2.depth(), dxKernel);
+	cv::filter2D(Y2, IyY2, Y2.depth(), dyKernel);
+
+	cv::Mat gradientMap1;
+	cv::Mat gradientMap2;
+	pow(IxY1.mul(IxY1) + IyY1.mul(IyY1), 0.5, gradientMap1);
+	pow(IxY2.mul(IxY2) + IyY2.mul(IyY2), 0.5, gradientMap2);
+
+	float T = 170;
+	dst = (2 * gradientMap1.mul(gradientMap2) + T) / (gradientMap1.mul(gradientMap1) + gradientMap2.mul(gradientMap2) + T);
+
+	cv::Scalar m, stdv;
+	cv::meanStdDev(dst, m, stdv);
+	float score = stdv(0);
+
+	return score;
 }

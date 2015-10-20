@@ -125,25 +125,70 @@ namespace pixkit{
 		/// Ordered Dither related
 		namespace ordereddithering{
 
-			// dms
-			bool DMS_2Level2012_genDitherArray(cv::Mat &DA, int daSize);
-			bool DMS_2Level2012(const cv::Mat &src1b, const cv::Mat &ditherarray1b,cv::Mat &dst1b);
-
 			// conventional od methods
 			enum DitherArray_TYPE { DispersedDot, ClusteredDot };
 			bool Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE = DispersedDot);
 
-			bool KackerAllebach1998(const cv::Mat &src, cv::Mat &dst);
+			bool KackerAllebach1998(const cv::Mat &src1b, cv::Mat &dst1b);
 		}
 
 		/// Dot diffusion related
 		namespace dotdiffusion{
+
+			class CLiuGuo2015{
+
+			public:
+
+
+				/*
+				*	@param	pth_resources: Please indicate this path to `PIXKIT_ROOT/data/LiuGuo2015/` for the performance of the paper. 
+				*/
+				CLiuGuo2015(std::string pth_resources);
+				virtual	~CLiuGuo2015();
+
+				// halftoning process
+				bool process(const cv::Mat &src1b, cv::Mat &dst1b);
+
+				// Get the processing orders of the pixels.
+				void getPointList(const cv::Size imgSize);
+
+			private:
+				class CPARAMS{
+				public:
+					/*
+					*	@[0]	threshold
+					*	@[1]	afa
+					*	@[2]	beta
+					*/
+					float	coe[3];
+				};
+
+				cv::Size	cmsize;		// class matrix size.
+				cv::Mat		cct;		// class tiling
+				cv::Mat		cct_ori;	// original class tiling
+				std::vector<std::vector<CPARAMS>>	paramsmap;	// parameters
+				std::vector<std::vector<cv::Point>>	pointlist;	// processing order location list.
+
+				/*
+				*	read class tiling (CT)
+				*/
+				bool ctread(std::string fname, const cv::Size cmsize, cv::Mat &cct1b);
+
+				/*
+				*	read the map of parameters
+				*	@param	paramsmap[grayscale][order]
+				*/
+				bool read_paramsmap(std::vector<std::string> &fname, std::vector<std::vector<CPARAMS>> &paramsmap);
+
+			};
 
 			class CNADDCT{
 			public:
 				int				m_CT_height;	// CT's height and width
 				int				m_CT_width;
 				unsigned char	**m_ct;
+				std::vector<std::vector<cv::Point>>	pointList;
+				cv::Size		imgSize_pointList;
 				CNADDCT();
 				~CNADDCT();
 				bool			generation(cv::Size ctSize);	// ct generation
@@ -209,11 +254,27 @@ namespace pixkit{
 	}
 
 	//////////////////////////////////////////////////////////////////////////
+	///// Multitoning
+	namespace multitoning{
+		namespace ordereddithering{
+
+			// dms
+			bool DMS2012_genDitherArray(std::vector<cv::Mat> &vec_DA1b, int daSize, int nColors);
+			bool DMS2012(const cv::Mat &src1b, const std::vector<cv::Mat> &vec_DA,cv::Mat &dst1b);
+
+			// generate green noise
+			bool ChanduStanichWuTrager2014_genDitherArray(std::vector<cv::Mat> &vec_DA1b, int daSize, int nColors,float D_min);
+			bool ChanduStanichWuTrager2014(const cv::Mat &src1b, const std::vector<cv::Mat> &vec_DA1b,cv::Mat &dst1b);
+
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
 	/// Image compression
 	namespace comp{
 
+		// BTC
 		bool	DBSBTC2011(cv::Mat src, cv::Mat &dst, int blockSize = 8);
-
 		bool	DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize);
 		enum	ODBTC_TYPE{ODBTC_TYPE_ClusteredDot,ODBTC_TYPE_DispersedDot};
 		bool	ODBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,ODBTC_TYPE type);
@@ -221,7 +282,9 @@ namespace pixkit{
 		bool	EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYPE type);
 		bool	BTC(const cv::Mat &src,cv::Mat &dst,int blockSize);
 		bool	YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b, const int K = 256);
-
+		
+		// JPEG
+		bool	JPEG(const cv::Mat &src1b, cv::Mat &dst1b, const int jpeg_quality);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -268,6 +331,7 @@ namespace pixkit{
 	namespace qualityassessment{
 
 		// for contrast evaluation
+		
 		float EME(const cv::Mat &src,const cv::Size nBlocks,const short mode=1);
 		float TEN(const cv::Mat &src);
 		float AMBE(const cv::Mat &src1,const cv::Mat &src2);
@@ -278,20 +342,23 @@ namespace pixkit{
 
 		// signal similarity 
   		float PSNR(const cv::Mat &src1,const cv::Mat &src2);
-
+		float IW_PSNR(const cv::Mat &src1,const cv::Mat &src2);
 		// signal similarity for halftone images
-		float HPSNR(const cv::Mat &src1, const cv::Mat &src2,const int ksize=9);
+		float HPSNR(const cv::Mat &src1, const cv::Mat &src2,const int ksize=7);
 
 		bool GaussianDiff(cv::InputArray &_src1,cv::InputArray &_src2,double sd=1.);
 	
 		// Get averaged power spectrum density 
-		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst);	
-		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst,const cv::Size specSize,const int rounds=10,const bool rand_sample=false);
+		bool PowerSpectrumDensity(cv::InputArray &_src,cv::OutputArray &_dst, bool flag_display=true);	
+		bool spectralAnalysis_Bartlett(cv::InputArray &_src,cv::OutputArray &_dst1f,const cv::Size specSize,const int rounds=10,const bool rand_sample=false,bool flag_display=true);
+		bool RAPSD(const cv::Mat Spectrum1f, cv::Mat &RAPSD1f, cv::Mat &Anisotropy1f);
 
 		// image similarity
 		float SSIM(const cv::Mat &src1, const cv::Mat &src2);	
 		float MSSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11,  double* lu_co_st=NULL);
 		float MS_SSIM(const cv::Mat &src1, const cv::Mat &src2, int HVSsize=11);
+		float IW_SSIM(const cv::Mat &src1,const cv::Mat &src2);
+		float GMSD(const cv::Mat &src1, const cv::Mat &src2, cv::Mat &dst);
 	}
 
 }

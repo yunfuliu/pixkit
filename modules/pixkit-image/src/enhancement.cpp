@@ -653,6 +653,7 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 		tempv2	=	(int)	tempv2+1.;
 	}
 	cv::Size	blockSize((int)tempv1,(int)tempv2);
+	// step size
 	tempv1	=	(float)src.cols/S.width;
 	tempv2	=	(float)src.rows/S.height;
 	if((int)tempv1!=tempv1){
@@ -668,9 +669,9 @@ bool pixkit::enhancement::local::LambertiMontrucchioSanna2006(const cv::Mat &src
 	if(blockSize.height>src.rows||blockSize.width>src.cols||blockSize.height==1||blockSize.width==1){	// block size should be even (S3P5-Step.2)
 		return false;
 	}
-	if(stepsize.height>blockSize.height/2||stepsize.width>blockSize.width/2){
-		return false;
-	}
+// 	if(stepsize.height>blockSize.height/2||stepsize.width>blockSize.width/2){	// step size should be smaller than 1/2 of the block size. 
+// 		return false;
+// 	}
 
 	//////////////////////////////////////////////////////////////////////////
 // 	// output image

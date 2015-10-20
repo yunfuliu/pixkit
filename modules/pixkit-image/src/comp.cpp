@@ -653,3 +653,22 @@ bool pixkit::comp::DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize){
 	dst	=	tdst.clone();
 	return true;
 }
+
+bool pixkit::comp::JPEG(const cv::Mat &src1b, cv::Mat &dst1b, const int jpeg_quality){
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	CV_Assert(jpeg_quality >= 0 && jpeg_quality <= 100);
+
+	//////////////////////////////////////////////////////////////////////////
+	///// process
+	// encode
+	std::vector<uchar>	buff;
+	std::vector<int> param = std::vector<int>(2);
+	param[0] = CV_IMWRITE_JPEG_QUALITY;
+	param[1] = jpeg_quality;	// default(95) 0-100
+	// decode
+	imencode(".jpg", src1b, buff, param);
+	dst1b = imdecode(cv::Mat(buff), CV_LOAD_IMAGE_UNCHANGED);
+
+	return true;
+}
