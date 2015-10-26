@@ -653,6 +653,310 @@ bool pixkit::comp::DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize){
 	dst	=	tdst.clone();
 	return true;
 }
+bool pixkit::comp::ColorBTC::CCC1986(const cv::Mat &src,cv::Mat &dst, int BlockSize){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0){
+		printf("input size error\n");
+		system("pause");
+		exit(0);
+	}
+
+	cv::Mat B(src.size(),CV_32FC1),G(src.size(),CV_32FC1),R(src.size(),CV_32FC1),Lumin(src.size(),CV_32FC1);
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			B.ptr<float>(i)[j]=(float)src.at<cv::Vec3b>(i,j)[0];
+			G.ptr<float>(i)[j]=(float)src.at<cv::Vec3b>(i,j)[1];
+			R.ptr<float>(i)[j]=(float)src.at<cv::Vec3b>(i,j)[2];
+			Lumin.ptr<float>(i)[j]=0.3*R.ptr<float>(i)[j]+0.59*G.ptr<float>(i)[j]+0.11*B.ptr<float>(i)[j];
+		}
+	}
+
+	double LuminMean=0;
+	double CountAmount[2]={0},QuantB[2]={0},QuantG[2]={0},QuantR[2]={0}; //0 small, 1 big
+	cv::Mat tdst(src.size(),src.type());
+	for(int i=0; i<src.rows; i+=BlockSize){
+		for(int j=0; j<src.cols; j+=BlockSize){
+			LuminMean=0;
+			for(int m=i; m<i+BlockSize; m++)
+				for(int n=j; n<j+BlockSize; n++)
+					LuminMean+=Lumin.ptr<float>(m)[n];
+			LuminMean/=(BlockSize*BlockSize);
+
+			CountAmount[0]=0;
+			CountAmount[1]=0;
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean)
+						CountAmount[1]++;
+					else
+						CountAmount[0]++;
+				}
+			}
+
+			//Quant
+			for(int m=0; m<2; m++){
+				QuantB[m]=0;
+				QuantG[m]=0;
+				QuantR[m]=0;
+			}
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean){
+						QuantB[1]+=B.ptr<float>(m)[n];
+						QuantG[1]+=G.ptr<float>(m)[n];
+						QuantR[1]+=R.ptr<float>(m)[n];
+					}						
+					else{
+						QuantB[0]+=B.ptr<float>(m)[n];
+						QuantG[0]+=G.ptr<float>(m)[n];
+						QuantR[0]+=R.ptr<float>(m)[n];
+					}
+				}
+			}
+			for(int m=0; m<2; m++){
+				QuantB[m]/=CountAmount[m];
+				QuantG[m]/=CountAmount[m];
+				QuantR[m]/=CountAmount[m];
+			}
+
+			//output
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean){
+						tdst.at<cv::Vec3b>(m,n)[0]=QuantB[1];
+						tdst.at<cv::Vec3b>(m,n)[1]=QuantG[1];
+						tdst.at<cv::Vec3b>(m,n)[2]=QuantR[1];
+					}
+					else{
+						tdst.at<cv::Vec3b>(m,n)[0]=QuantB[0];
+						tdst.at<cv::Vec3b>(m,n)[1]=QuantG[0];
+						tdst.at<cv::Vec3b>(m,n)[2]=QuantR[0];
+					}
+				}
+			}
+
+		}
+	}
+
+	dst=tdst.clone();
+
+	return true;
+}
+bool pixkit::comp::ColorBTC::FS_BMO2014(const cv::Mat &src,cv::Mat &dst, int BlockSize, int MoreCompressFlag, int THBO){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0){
+		printf("input size error\n");
+		system("pause");
+		exit(0);
+	}
+
+	int **FSBitmap = new int *[BlockSize];
+	for(int i=0; i<BlockSize; i++)
+		FSBitmap[i] = new int [BlockSize];
+
+	double CountAmount[2]={0},Quant[3][2]={0},EuDistance[2]={0}; //0 small, 1 big
+	cv::Mat tdst(src.size(),src.type());
+
+	double ChannelMean[3]={0};
+	int OutputCode[3]; // 0=use BMO tech , 1=use SBM tech
+	int CountOutputBits=0;
+
+	for(int i=0; i<src.rows; i+=BlockSize){
+		for(int j=0; j<src.cols; j+=BlockSize){
+			for(int channel=0; channel<3; channel++){
+
+				for(int m=i; m<i+BlockSize; m++)
+					for(int n=j; n<j+BlockSize; n++)
+						ChannelMean[channel]+=src.at<cv::Vec3b>(m,n)[channel];
+				ChannelMean[channel]/=(BlockSize*BlockSize);
+
+				CountAmount[0]=0;
+				CountAmount[1]=0;
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						if(src.at<cv::Vec3b>(m,n)[channel]>=ChannelMean[channel])
+							CountAmount[1]++;
+						else
+							CountAmount[0]++;
+					}
+				}
+
+				//Quant
+				for(int quantlevel=0; quantlevel<2; quantlevel++)
+					Quant[channel][quantlevel]=0;
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						if(src.at<cv::Vec3b>(m,n)[channel]>=ChannelMean[channel])
+							Quant[channel][1]+=src.at<cv::Vec3b>(m,n)[channel];
+						else
+							Quant[channel][0]+=src.at<cv::Vec3b>(m,n)[channel];
+					}
+				}
+				for(int quantlevel=0; quantlevel<2; quantlevel++)
+					Quant[channel][quantlevel]/=CountAmount[quantlevel];
+
+			}
+
+			//Recalculate
+			CountAmount[0]=0;
+			CountAmount[1]=0;
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					EuDistance[0]=pow(src.at<cv::Vec3b>(m,n)[0]-Quant[0][0],2)+pow(src.at<cv::Vec3b>(m,n)[1]-Quant[1][0],2)+pow(src.at<cv::Vec3b>(m,n)[2]-Quant[2][0],2);
+					EuDistance[1]=pow(src.at<cv::Vec3b>(m,n)[0]-Quant[0][1],2)+pow(src.at<cv::Vec3b>(m,n)[1]-Quant[1][1],2)+pow(src.at<cv::Vec3b>(m,n)[2]-Quant[2][1],2);
+					if(EuDistance[0]<=EuDistance[1]){
+						FSBitmap[m%BlockSize][n%BlockSize]=0;
+						CountAmount[0]++;
+					}
+					else{
+						FSBitmap[m%BlockSize][n%BlockSize]=1;
+						CountAmount[1]++;
+					}
+				}
+			}
+
+			//New Quant
+			for(int m=0; m<2; m++){
+				Quant[0][m]=0;
+				Quant[1][m]=0;
+				Quant[2][m]=0;
+			}
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(FSBitmap[m%BlockSize][n%BlockSize]==1){
+						Quant[0][1]+=src.at<cv::Vec3b>(m,n)[0];
+						Quant[1][1]+=src.at<cv::Vec3b>(m,n)[1];
+						Quant[2][1]+=src.at<cv::Vec3b>(m,n)[2];
+					}						
+					else{
+						Quant[0][0]+=src.at<cv::Vec3b>(m,n)[0];
+						Quant[1][0]+=src.at<cv::Vec3b>(m,n)[1];
+						Quant[2][0]+=src.at<cv::Vec3b>(m,n)[2];
+					}
+				}
+			}
+			for(int quantlevel=0; quantlevel<2; quantlevel++){
+				Quant[0][quantlevel]/=CountAmount[quantlevel];
+				Quant[1][quantlevel]/=CountAmount[quantlevel];
+				Quant[2][quantlevel]/=CountAmount[quantlevel];
+			}
+
+			//more compress			
+			if(MoreCompressFlag==1){
+				CountOutputBits+=3;
+				for(int channel=0; channel<3; channel++){
+					if(abs(Quant[channel][0]-Quant[channel][1])<=THBO)
+						OutputCode[channel]=0;
+					else
+						OutputCode[channel]=1;
+				}
+				if(OutputCode[0]==0&&OutputCode[1]==0&&OutputCode[2]==0)
+					CountOutputBits+=3*8;
+				else{
+					CountOutputBits+=BlockSize*BlockSize;
+					for(int channel=0; channel<3; channel++){
+						if(OutputCode[channel]==0)
+							CountOutputBits+=8;
+						else
+							CountOutputBits+=2*8;
+					}
+				}
+			}
+
+			//output
+			if(MoreCompressFlag==1){
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						for(int channel=0; channel<3; channel++){
+							if(OutputCode[channel]==0)
+								tdst.at<cv::Vec3b>(m,n)[channel]=ChannelMean[channel];
+							else{
+								if(FSBitmap[m%BlockSize][n%BlockSize]==1)
+									tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][1];
+								else
+									tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][0];
+							}
+						}					
+					}
+				}
+			}
+			else{
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						for(int channel=0; channel<3; channel++){
+							if(FSBitmap[m%BlockSize][n%BlockSize]==1)
+								tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][1];
+							else
+								tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][0];
+						}
+					}
+				}
+			}
+		}
+	}
+
+	dst=tdst.clone();
+	delete [] FSBitmap;
+	return true;
+}
+bool pixkit::comp::ColorBTC::IBTC_KQ2014(const cv::Mat &src,cv::Mat &dst, int BlockSize){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0){
+		printf("input size error\n");
+		system("pause");
+		exit(0);
+	}
+
+	cv::Mat HSV;
+	//Tool::RGBtransHSV(src,HSV);
+	cv::Mat tsrc;
+	src.convertTo(tsrc,CV_32FC3);
+	cv::cvtColor(tsrc,HSV,CV_BGR2HSV);
+
+	//k-means set
+	cv::Mat Data(BlockSize*BlockSize,1,CV_32FC1), Cluster, Centers;
+	int ClusterK=4;
+	int Attempts=10;
+
+	for(int i=0; i<src.rows; i+=BlockSize){
+		for(int j=0; j<src.cols; j+=BlockSize){
+
+			for(int channel=0; channel<3; channel++){
+
+				for(int m=i; m<i+BlockSize; m++)
+					for(int n=j; n<j+BlockSize; n++)
+						Data.ptr<float>((m%BlockSize)*BlockSize+(n%BlockSize))[0]=HSV.at<cv::Vec3f>(m,n)[channel];
+
+				cv::kmeans(Data, ClusterK, Cluster, cv::TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 10, 0.1), Attempts, cv::KMEANS_PP_CENTERS, Centers);
+
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						int ClusterIdx = Cluster.at<int>((m%BlockSize)*BlockSize+(n%BlockSize));
+						HSV.at<cv::Vec3f>(m,n)[channel]=Centers.ptr<float>(ClusterIdx)[0];
+					}
+				}
+			}
+
+		}
+	}
+
+	cv::Mat tdst;
+	cv::cvtColor(HSV,tdst,CV_HSV2BGR);
+	cv::normalize(tdst,tdst,0,255,32);
+	tdst.convertTo(tdst,CV_8UC3);
+	dst=tdst.clone();
+	return true;
+
+}
 
 bool pixkit::comp::JPEG(const cv::Mat &src1b, cv::Mat &dst1b, const int jpeg_quality){
 	//////////////////////////////////////////////////////////////////////////
