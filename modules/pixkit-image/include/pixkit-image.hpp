@@ -141,9 +141,9 @@ namespace pixkit{
 
 
 				/*
-				*	@param	pth_resources: Please indicate this path to `PIXKIT_ROOT/data/LiuGuo2015/` for the performance of the paper. 
+				*	@param	pthfname_resources: Please indicate this to `PIXKIT_ROOT/data/LiuGuo2015/data_LiuGuo2015.xml` for the performance of the paper. 
 				*/
-				CLiuGuo2015(std::string pth_resources);
+				CLiuGuo2015(std::string pthfname_resources);
 				virtual	~CLiuGuo2015();
 
 				// halftoning process
@@ -172,13 +172,13 @@ namespace pixkit{
 				/*
 				*	read class tiling (CT)
 				*/
-				bool ctread(std::string fname, const cv::Size cmsize, cv::Mat &cct1b);
+				bool ctread(const cv::Mat &src, const cv::Size cmsize, cv::Mat &cct1b);
 
 				/*
 				*	read the map of parameters
 				*	@param	paramsmap[grayscale][order]
 				*/
-				bool read_paramsmap(std::vector<std::string> &fname, std::vector<std::vector<CPARAMS>> &paramsmap);
+				bool read_paramsmap(std::vector<cv::Mat> &vec_src, std::vector<std::vector<CPARAMS>> &paramsmap);
 
 			};
 
