@@ -281,13 +281,16 @@ namespace pixkit{
 		enum	EDBTC_TYPE{EDBTC_TYPE_Floyd,EDBTC_TYPE_Jarvis,EDBTC_TYPE_Stucki};
 		bool	EDBTC(const cv::Mat &src,cv::Mat &dst,int blockSize,EDBTC_TYPE type);
 		bool	BTC(const cv::Mat &src,cv::Mat &dst,int blockSize);
-		bool	YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b, const int K = 256);
 		
 		// ColorBTC
 		namespace ColorBTC{
-			bool	CCC1986(const cv::Mat &src,cv::Mat &dst, int BlockSize);
-			bool	FS_BMO2014(const cv::Mat &src,cv::Mat &dst, int BlockSize, int MoreCompressFlag=1, int THBO=15);
-			bool	IBTC_KQ2014(const cv::Mat &src,cv::Mat &dst, int BlockSize);
+			bool	YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b, const int K = 256);
+			bool	CAMBTC1984(const cv::Mat &src3b, cv::Mat &dst3b, const int BlockSize);
+			bool	CCC1986(const cv::Mat &src3b, cv::Mat &dst3b, const int BlockSize);
+			bool	CEBTC2010(const cv::Mat &src3b, cv::Mat &dst3b, const int BlockSize);
+			bool	FS_BMO2014(const cv::Mat &src3b, cv::Mat &dst3b, const int BlockSize, int MoreCompressFlag=1, int THBO=15);
+			bool	IBTC_KQ2014(const cv::Mat &src3b, cv::Mat &dst3b, const int BlockSize);
+			bool	CDDBTC2015(const cv::Mat &src3b, cv::Mat &dst3b, const int BlockSize);
 		}
 
 		// JPEG

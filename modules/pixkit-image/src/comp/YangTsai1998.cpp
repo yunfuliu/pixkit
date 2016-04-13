@@ -203,7 +203,7 @@ bool box_splitting(vector<vector<float>> &box_range, vector<vector<float>> &tabl
 
 	return true;
 }
-bool pixkit::comp::YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b,const int K){
+bool pixkit::comp::ColorBTC::YangTsai1998(const cv::Mat &src3b, cv::Mat &dst3b,const int K){
 
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions
