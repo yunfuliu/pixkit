@@ -77,7 +77,7 @@ void Tradition_KNN_Process(vector<pixkit::classification::SSample>& sample, cons
 			if (tds[cit->second] > weight){
 				weight = tds[cit->second];
 				type = cit->second;
-			}
+			} 
 		}
 		for (map<string, double>::const_iterator cit = tds.begin(); cit != tds.end(); ++cit){
 			cout<<cit->first <<"="<<cit->second<<'\n'<<endl;

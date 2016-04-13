@@ -1076,6 +1076,9 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 	if(stepsize.height>blockSize.height/2||stepsize.width>blockSize.width/2){
 		return false;
 	}
+	if (stepsize.height <= 0 || stepsize.width <= 0){
+		return false;
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	std::vector<std::vector<float>>	tdst(src.rows,std::vector<float>(src.cols,0));

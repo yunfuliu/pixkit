@@ -40,21 +40,31 @@
 using namespace cv;
 using namespace std;
 
-pixkit::halftoning::dotdiffusion::CLiuGuo2015::CLiuGuo2015(std::string pth_resources){
+pixkit::halftoning::dotdiffusion::CLiuGuo2015::CLiuGuo2015(std::string pthfname_resources){
 
 	cmsize = cv::Size(8, 8);	// defined in paper.
+	const	int	num_coe = 3;
+
+	// read resources
+	cv::FileStorage file(pthfname_resources, cv::FileStorage::READ);
+	vector<Mat> buff(num_coe);
+	vector<cv::SparseMat>	spmat(num_coe);
+	Mat	ct_src;
+	file["table_256"] >> ct_src;
+	file["paramsmap"] >> spmat;
+	file.release();
+
+	// sparse matrix convert to mat
+	for (int k = 0; k < num_coe; k++){
+		spmat[k].convertTo(buff[k], CV_32FC3);
+	}
 
 	// read class tiling (CT)
-	string	pthfname_CT = pth_resources + format("table_256.bmp");
-	ctread(pthfname_CT, cmsize, cct);
-	ctread(pthfname_CT, cv::Size(16, 16), cct_ori);
+	ctread(ct_src, cmsize, cct);
+	ctread(ct_src, cv::Size(16, 16), cct_ori);
 
 	// read parameters
-	vector<string>	pthfname_params;
-	pthfname_params.push_back(pth_resources + format("0.txt"));
-	pthfname_params.push_back(pth_resources + format("1.txt"));
-	pthfname_params.push_back(pth_resources + format("2.txt"));
-	read_paramsmap(pthfname_params, paramsmap);
+	read_paramsmap(buff, paramsmap);
 
 }
 pixkit::halftoning::dotdiffusion::CLiuGuo2015::~CLiuGuo2015(){}
@@ -62,16 +72,16 @@ pixkit::halftoning::dotdiffusion::CLiuGuo2015::~CLiuGuo2015(){}
 /************************************************************************/
 /* INADD                                                                */
 /************************************************************************/
-bool pixkit::halftoning::dotdiffusion::CLiuGuo2015::ctread(string fname, const Size cmsize, Mat &cct1b){
+bool pixkit::halftoning::dotdiffusion::CLiuGuo2015::ctread(const Mat &src, const Size cmsize, Mat &cct1b){
 
-	cct1b	=	imread(fname,CV_8UC1);
+	cct1b.create(src.size(), src.type());
 	int	fz	=	cmsize.area();
 	static	float	L	=	255;
 	// 
 	float	tv;
-	for(int i=0;i<cct1b.rows;i++){
-		for(int j=0;j<cct1b.cols;j++){			
- 			tv	=	((float)cct1b.ptr<uchar>(i)[j])	*	fz	/	(L+1.);
+	for (int i = 0; i<src.rows; i++){
+		for (int j = 0; j<src.cols; j++){
+			tv = ((float)src.ptr<uchar>(i)[j])	*	fz / (L + 1.);
 			cct1b.ptr<uchar>(i)[j]	=	cvFloor(tv);
 		}
 	}
@@ -79,7 +89,7 @@ bool pixkit::halftoning::dotdiffusion::CLiuGuo2015::ctread(string fname, const S
 	return true;
 }
 
-bool pixkit::halftoning::dotdiffusion::CLiuGuo2015::read_paramsmap(std::vector<std::string> &fname, vector<vector<CPARAMS>> &paramsmap){
+bool pixkit::halftoning::dotdiffusion::CLiuGuo2015::read_paramsmap(std::vector<cv::Mat> &vec_src, vector<vector<CPARAMS>> &paramsmap){
 
 	// get space
 	paramsmap.resize(128);	// g
@@ -87,20 +97,14 @@ bool pixkit::halftoning::dotdiffusion::CLiuGuo2015::read_paramsmap(std::vector<s
 		paramsmap[i].resize(256);	// s
 	}
 
-	for (int k = 0; k < fname.size(); k++){
-		ifstream	ifs(fname[k]);
+	// get values
+	for (int k = 0; k < 3; k++){
 		double	value;
 		for (int j = 0; j < paramsmap[0].size(); j++){		// s
-			for (int i = 0; i < paramsmap.size(); i++){	// g					
-				if (ifs >> value){
-					paramsmap[i][j].coe[k] = value;
-				}
-				else{
-					break;
-				}
+			for (int i = 0; i < paramsmap.size(); i++){	// g			
+				paramsmap[i][j].coe[k] = vec_src[k].ptr<float>(i)[j];
 			}
 		}
-		ifs.close();
 	}
 	
 	return true;
@@ -124,6 +128,9 @@ bool pixkit::halftoning::dotdiffusion::CLiuGuo2015::process(const cv::Mat &src1b
 	}
 	if(src1b.empty()){
 		CV_Error(CV_StsBadArg,"src is empty.");
+	}
+	if (pointlist.empty()){
+		CV_Error(CV_StsInternal, "`pointlist` is empty. Please run `getPointList()` with the source image size to get the `pointlist`.");
 	}
 
 	//////////////////////////////////////////////////////////////////////////
