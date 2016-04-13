@@ -1,4 +1,5 @@
 #include "../../../include/pixkit-image.hpp"
+#include <map>
 
 using namespace	cv;
 using namespace std;
