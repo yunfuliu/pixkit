@@ -266,6 +266,10 @@ namespace pixkit{
 			bool ChanduStanichWuTrager2014_genDitherArray(std::vector<cv::Mat> &vec_DA1b, int daSize, int nColors,float D_min);
 			bool ChanduStanichWuTrager2014(const cv::Mat &src1b, const std::vector<cv::Mat> &vec_DA1b,cv::Mat &dst1b);
 
+			// Green noise screening
+			bool iCLUDMS2016_genDitherArray(std::vector<cv::Mat> &vec_DA1b, int daSize, int nTones,float sd_init,float sd_update);
+			bool iCLUDMS2016(const cv::Mat &src1b, const std::vector<cv::Mat> &vec_DA1b,cv::Mat &dst1b);
+
 		}
 	}
 
