@@ -653,3 +653,736 @@ bool pixkit::comp::DDBTC2014(const cv::Mat &src,cv::Mat &dst,int blockSize){
 	dst	=	tdst.clone();
 	return true;
 }
+bool pixkit::comp::ColorBTC::CAMBTC1984(const cv::Mat &src, cv::Mat &dst, const int BlockSize){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0){
+		CV_Error(CV_StsBadArg,"[pixkit::comp::BTC::ColorBTC] Src size mod block size sould be 0");
+	}
+
+	double CountAmount[2]={0},Quant[3][2]={0},EuDistance[2]={0}; //0 small, 1 big
+	cv::Mat tdst(src.size(),src.type());
+	for(int i=0; i<src.rows; i+=BlockSize){
+		for(int j=0; j<src.cols; j+=BlockSize){
+			for(int channel=0; channel<3; channel++){
+
+				double ChannelMean=0;
+				for(int m=i; m<i+BlockSize; m++)
+					for(int n=j; n<j+BlockSize; n++)
+						ChannelMean+=src.at<cv::Vec3b>(m,n)[channel];
+				ChannelMean/=(BlockSize*BlockSize);
+
+				//大於跟小於的數量
+				CountAmount[0]=0;
+				CountAmount[1]=0;
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						if(src.at<cv::Vec3b>(m,n)[channel]>=ChannelMean)
+							CountAmount[1]++;
+						else
+							CountAmount[0]++;
+					}
+				}
+
+				//Quant
+				for(int m=0; m<2; m++)
+					Quant[channel][m]=0;
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						if(src.at<cv::Vec3b>(m,n)[channel]>=ChannelMean)
+							Quant[channel][1]+=src.at<cv::Vec3b>(m,n)[channel];
+						else
+							Quant[channel][0]+=src.at<cv::Vec3b>(m,n)[channel];
+					}
+				}
+				for(int m=0; m<2; m++)
+					Quant[channel][m]/=CountAmount[m];
+
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						if(src.at<cv::Vec3b>(m,n)[channel]>=ChannelMean){
+							tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][1];
+						}
+						else{
+							tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][0];
+						}
+					}
+				}
+			}
+
+		}
+	}
+
+	dst=tdst.clone();
+
+	return true;
+}
+bool pixkit::comp::ColorBTC::CCC1986(const cv::Mat &src, cv::Mat &dst, const int BlockSize){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0){
+		CV_Error(CV_StsBadArg,"[pixkit::comp::BTC::ColorBTC] Src size mod block size sould be 0");
+	}
+
+	cv::Mat B(src.size(),CV_32FC1),G(src.size(),CV_32FC1),R(src.size(),CV_32FC1),Lumin(src.size(),CV_32FC1);
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+			B.ptr<float>(i)[j]=(float)src.at<cv::Vec3b>(i,j)[0];
+			G.ptr<float>(i)[j]=(float)src.at<cv::Vec3b>(i,j)[1];
+			R.ptr<float>(i)[j]=(float)src.at<cv::Vec3b>(i,j)[2];
+			Lumin.ptr<float>(i)[j]=0.3*R.ptr<float>(i)[j]+0.59*G.ptr<float>(i)[j]+0.11*B.ptr<float>(i)[j];
+		}
+	}
+
+	double LuminMean=0;
+	double CountAmount[2]={0},QuantB[2]={0},QuantG[2]={0},QuantR[2]={0}; //0 small, 1 big
+	cv::Mat tdst(src.size(),src.type());
+	for(int i=0; i<src.rows; i+=BlockSize){
+		for(int j=0; j<src.cols; j+=BlockSize){
+			LuminMean=0;
+			for(int m=i; m<i+BlockSize; m++)
+				for(int n=j; n<j+BlockSize; n++)
+					LuminMean+=Lumin.ptr<float>(m)[n];
+			LuminMean/=(BlockSize*BlockSize);
+
+			CountAmount[0]=0;
+			CountAmount[1]=0;
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean)
+						CountAmount[1]++;
+					else
+						CountAmount[0]++;
+				}
+			}
+
+			//Quant
+			for(int m=0; m<2; m++){
+				QuantB[m]=0;
+				QuantG[m]=0;
+				QuantR[m]=0;
+			}
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean){
+						QuantB[1]+=B.ptr<float>(m)[n];
+						QuantG[1]+=G.ptr<float>(m)[n];
+						QuantR[1]+=R.ptr<float>(m)[n];
+					}						
+					else{
+						QuantB[0]+=B.ptr<float>(m)[n];
+						QuantG[0]+=G.ptr<float>(m)[n];
+						QuantR[0]+=R.ptr<float>(m)[n];
+					}
+				}
+			}
+			for(int m=0; m<2; m++){
+				QuantB[m]/=CountAmount[m];
+				QuantG[m]/=CountAmount[m];
+				QuantR[m]/=CountAmount[m];
+			}
+
+			//output
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean){
+						tdst.at<cv::Vec3b>(m,n)[0]=QuantB[1];
+						tdst.at<cv::Vec3b>(m,n)[1]=QuantG[1];
+						tdst.at<cv::Vec3b>(m,n)[2]=QuantR[1];
+					}
+					else{
+						tdst.at<cv::Vec3b>(m,n)[0]=QuantB[0];
+						tdst.at<cv::Vec3b>(m,n)[1]=QuantG[0];
+						tdst.at<cv::Vec3b>(m,n)[2]=QuantR[0];
+					}
+				}
+			}
+
+		}
+	}
+
+	dst=tdst.clone();
+
+	return true;
+}
+bool pixkit::comp::ColorBTC::CEBTC2010(const cv::Mat &src, cv::Mat &dst, const int BlockSize){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+
+	int AQCBits = 3;
+	int AQCRows,AQCCols;
+	AQCRows=2*BlockSize;
+	AQCCols=2*BlockSize;
+
+	cv::Mat tsrc;
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0)
+		cv::copyMakeBorder(src, tsrc, 0, BlockSize-(src.rows%BlockSize), 0, BlockSize-(src.cols%BlockSize), cv::BORDER_REPLICATE );
+	else if(src.cols%AQCCols!=0 || src.rows%AQCRows!=0)
+		cv::copyMakeBorder(src, tsrc, 0, AQCRows-(src.rows%AQCRows), 0, AQCCols-(src.cols%AQCCols), cv::BORDER_REPLICATE );
+	else
+		tsrc = src.clone();
+
+	cv::Mat B(tsrc.size(),CV_32FC1),G(tsrc.size(),CV_32FC1),R(tsrc.size(),CV_32FC1),Lumin(tsrc.size(),CV_32FC1);
+	for(int i=0; i<tsrc.rows; i++){
+		for(int j=0; j<tsrc.cols; j++){
+			B.ptr<float>(i)[j]=(float)tsrc.at<cv::Vec3b>(i,j)[0];
+			G.ptr<float>(i)[j]=(float)tsrc.at<cv::Vec3b>(i,j)[1];
+			R.ptr<float>(i)[j]=(float)tsrc.at<cv::Vec3b>(i,j)[2];
+			Lumin.ptr<float>(i)[j]=R.ptr<float>(i)[j]+2*G.ptr<float>(i)[j]+B.ptr<float>(i)[j];
+		}
+	}
+
+	double LuminMean=0;
+	double CountAmount[2]={0},QuantB[2]={0},QuantG[2]={0},QuantR[2]={0}; //0 small, 1 big
+	cv::Mat tdst(tsrc.size(),tsrc.type());
+	for(int i=0; i<tsrc.rows; i+=BlockSize){
+		for(int j=0; j<tsrc.cols; j+=BlockSize){
+
+			LuminMean=0;
+			for(int m=i; m<i+BlockSize; m++)
+				for(int n=j; n<j+BlockSize; n++)
+					LuminMean+=Lumin.ptr<float>(m)[n];
+			LuminMean/=(BlockSize*BlockSize);
+			
+			CountAmount[0]=0;
+			CountAmount[1]=0;
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean)
+						CountAmount[1]++;
+					else
+						CountAmount[0]++;
+				}
+			}
+
+			//Quant
+			for(int m=0; m<2; m++){
+				QuantB[m]=0;
+				QuantG[m]=0;
+				QuantR[m]=0;
+			}
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean){
+						QuantB[1]+=B.ptr<float>(m)[n];
+						QuantG[1]+=G.ptr<float>(m)[n];
+						QuantR[1]+=R.ptr<float>(m)[n];
+					}						
+					else{
+						QuantB[0]+=B.ptr<float>(m)[n];
+						QuantG[0]+=G.ptr<float>(m)[n];
+						QuantR[0]+=R.ptr<float>(m)[n];
+					}
+				}
+			}
+			for(int m=0; m<2; m++){
+				QuantB[m]/=CountAmount[m];
+				QuantG[m]/=CountAmount[m];
+				QuantR[m]/=CountAmount[m];
+			}
+
+			//output
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(Lumin.ptr<float>(m)[n]>=LuminMean){
+						tdst.at<cv::Vec3b>(m,n)[0]=QuantB[1];
+						tdst.at<cv::Vec3b>(m,n)[1]=QuantG[1];
+						tdst.at<cv::Vec3b>(m,n)[2]=QuantR[1];
+					}
+					else{
+						tdst.at<cv::Vec3b>(m,n)[0]=QuantB[0];
+						tdst.at<cv::Vec3b>(m,n)[1]=QuantG[0];
+						tdst.at<cv::Vec3b>(m,n)[2]=QuantR[0];
+					}
+				}
+			}
+
+		}
+	}
+
+	cv::Mat tmp = tdst.clone();
+
+	double min,max,QuantAmount=pow(2.0,AQCBits);
+	int Qcode, output_tmp;
+	int BGRMin[3], BGRQstep[3]; 
+	cv::Mat t_src[3];
+	for(int i=0; i<tsrc.rows; i+=AQCRows){
+		for(int j=0; j<tsrc.cols; j+=AQCCols){
+
+			cv::split(tdst,t_src);
+			for(int channel=0; channel<3; channel++){
+				min=255; max=0;
+				cv::minMaxLoc(t_src[channel](cv::Rect(j,i,AQCCols,AQCRows)),&min,&max);
+				BGRQstep[channel]=cvRound((max-min)/QuantAmount);
+				if(BGRQstep[channel]==0)
+					BGRQstep[channel]=1;
+				BGRMin[channel]=min;
+			}
+
+			for(int m=i; m<i+AQCRows; m++){
+				for(int n=j; n<j+AQCCols; n++){
+					Qcode = cvRound((tdst.at<cv::Vec3b>(m,n)[0]-BGRMin[0])/BGRQstep[0]);
+					for(int channel=0; channel<3; channel++){
+						output_tmp = BGRMin[channel]+Qcode*BGRQstep[channel];
+						if(output_tmp>255)
+							output_tmp = 255;
+						if(output_tmp<0)
+							output_tmp = 0;
+						tdst.at<cv::Vec3b>(m,n)[channel]=output_tmp;
+					}
+				}
+			}
+		}
+	}
+
+	dst=tdst(cv::Rect(0,0,src.cols,src.rows)).clone();
+	
+	return true;
+}
+bool pixkit::comp::ColorBTC::FS_BMO2014(const cv::Mat &src, cv::Mat &dst, const int BlockSize, int MoreCompressFlag, int THBO){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0){
+		CV_Error(CV_StsBadArg,"[pixkit::comp::BTC::ColorBTC] Src size mod block size sould be 0");
+	}
+
+	int **FSBitmap = new int *[BlockSize];
+	for(int i=0; i<BlockSize; i++)
+		FSBitmap[i] = new int [BlockSize];
+
+	double CountAmount[2]={0},Quant[3][2]={0},EuDistance[2]={0}; //0 small, 1 big
+	cv::Mat tdst(src.size(),src.type());
+
+	double ChannelMean[3]={0};
+	int OutputCode[3]; // 0=use BMO tech , 1=use SBM tech
+	int CountOutputBits=0;
+
+	for(int i=0; i<src.rows; i+=BlockSize){
+		for(int j=0; j<src.cols; j+=BlockSize){
+			for(int channel=0; channel<3; channel++){
+
+				for(int m=i; m<i+BlockSize; m++)
+					for(int n=j; n<j+BlockSize; n++)
+						ChannelMean[channel]+=src.at<cv::Vec3b>(m,n)[channel];
+				ChannelMean[channel]/=(BlockSize*BlockSize);
+
+				CountAmount[0]=0;
+				CountAmount[1]=0;
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						if(src.at<cv::Vec3b>(m,n)[channel]>=ChannelMean[channel])
+							CountAmount[1]++;
+						else
+							CountAmount[0]++;
+					}
+				}
+
+				//Quant
+				for(int quantlevel=0; quantlevel<2; quantlevel++)
+					Quant[channel][quantlevel]=0;
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						if(src.at<cv::Vec3b>(m,n)[channel]>=ChannelMean[channel])
+							Quant[channel][1]+=src.at<cv::Vec3b>(m,n)[channel];
+						else
+							Quant[channel][0]+=src.at<cv::Vec3b>(m,n)[channel];
+					}
+				}
+				for(int quantlevel=0; quantlevel<2; quantlevel++)
+					Quant[channel][quantlevel]/=CountAmount[quantlevel];
+
+			}
+
+			//Recalculate
+			CountAmount[0]=0;
+			CountAmount[1]=0;
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					EuDistance[0]=pow(src.at<cv::Vec3b>(m,n)[0]-Quant[0][0],2)+pow(src.at<cv::Vec3b>(m,n)[1]-Quant[1][0],2)+pow(src.at<cv::Vec3b>(m,n)[2]-Quant[2][0],2);
+					EuDistance[1]=pow(src.at<cv::Vec3b>(m,n)[0]-Quant[0][1],2)+pow(src.at<cv::Vec3b>(m,n)[1]-Quant[1][1],2)+pow(src.at<cv::Vec3b>(m,n)[2]-Quant[2][1],2);
+					if(EuDistance[0]<=EuDistance[1]){
+						FSBitmap[m%BlockSize][n%BlockSize]=0;
+						CountAmount[0]++;
+					}
+					else{
+						FSBitmap[m%BlockSize][n%BlockSize]=1;
+						CountAmount[1]++;
+					}
+				}
+			}
+
+			//New Quant
+			for(int m=0; m<2; m++){
+				Quant[0][m]=0;
+				Quant[1][m]=0;
+				Quant[2][m]=0;
+			}
+			for(int m=i; m<i+BlockSize; m++){
+				for(int n=j; n<j+BlockSize; n++){
+					if(FSBitmap[m%BlockSize][n%BlockSize]==1){
+						Quant[0][1]+=src.at<cv::Vec3b>(m,n)[0];
+						Quant[1][1]+=src.at<cv::Vec3b>(m,n)[1];
+						Quant[2][1]+=src.at<cv::Vec3b>(m,n)[2];
+					}						
+					else{
+						Quant[0][0]+=src.at<cv::Vec3b>(m,n)[0];
+						Quant[1][0]+=src.at<cv::Vec3b>(m,n)[1];
+						Quant[2][0]+=src.at<cv::Vec3b>(m,n)[2];
+					}
+				}
+			}
+			for(int quantlevel=0; quantlevel<2; quantlevel++){
+				Quant[0][quantlevel]/=CountAmount[quantlevel];
+				Quant[1][quantlevel]/=CountAmount[quantlevel];
+				Quant[2][quantlevel]/=CountAmount[quantlevel];
+			}
+
+			//more compress			
+			if(MoreCompressFlag==1){
+				CountOutputBits+=3;
+				for(int channel=0; channel<3; channel++){
+					if(abs(Quant[channel][0]-Quant[channel][1])<=THBO)
+						OutputCode[channel]=0;
+					else
+						OutputCode[channel]=1;
+				}
+				if(OutputCode[0]==0&&OutputCode[1]==0&&OutputCode[2]==0)
+					CountOutputBits+=3*8;
+				else{
+					CountOutputBits+=BlockSize*BlockSize;
+					for(int channel=0; channel<3; channel++){
+						if(OutputCode[channel]==0)
+							CountOutputBits+=8;
+						else
+							CountOutputBits+=2*8;
+					}
+				}
+			}
+
+			//output
+			if(MoreCompressFlag==1){
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						for(int channel=0; channel<3; channel++){
+							if(OutputCode[channel]==0)
+								tdst.at<cv::Vec3b>(m,n)[channel]=ChannelMean[channel];
+							else{
+								if(FSBitmap[m%BlockSize][n%BlockSize]==1)
+									tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][1];
+								else
+									tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][0];
+							}
+						}					
+					}
+				}
+			}
+			else{
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						for(int channel=0; channel<3; channel++){
+							if(FSBitmap[m%BlockSize][n%BlockSize]==1)
+								tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][1];
+							else
+								tdst.at<cv::Vec3b>(m,n)[channel]=Quant[channel][0];
+						}
+					}
+				}
+			}
+		}
+	}
+
+	dst=tdst.clone();
+	delete [] FSBitmap;
+	return true;
+}
+bool pixkit::comp::ColorBTC::IBTC_KQ2014(const cv::Mat &src, cv::Mat &dst, const int BlockSize){
+
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(src.cols%BlockSize!=0 || src.rows%BlockSize!=0){
+		CV_Error(CV_StsBadArg,"[pixkit::comp::BTC::ColorBTC] Src size mod block size sould be 0");
+	}
+
+	cv::Mat HSV;
+	//Tool::RGBtransHSV(src,HSV);
+	cv::Mat tsrc;
+	src.convertTo(tsrc,CV_32FC3);
+	cv::cvtColor(tsrc,HSV,CV_BGR2HSV);
+
+	//k-means set
+	cv::Mat Data(BlockSize*BlockSize,1,CV_32FC1), Cluster, Centers;
+	int ClusterK=4;
+	int Attempts=10;
+
+	for(int i=0; i<src.rows; i+=BlockSize){
+		for(int j=0; j<src.cols; j+=BlockSize){
+
+			for(int channel=0; channel<3; channel++){
+
+				for(int m=i; m<i+BlockSize; m++)
+					for(int n=j; n<j+BlockSize; n++)
+						Data.ptr<float>((m%BlockSize)*BlockSize+(n%BlockSize))[0]=HSV.at<cv::Vec3f>(m,n)[channel];
+
+				cv::kmeans(Data, ClusterK, Cluster, cv::TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 10, 0.1), Attempts, cv::KMEANS_PP_CENTERS, Centers);
+
+				for(int m=i; m<i+BlockSize; m++){
+					for(int n=j; n<j+BlockSize; n++){
+						int ClusterIdx = Cluster.at<int>((m%BlockSize)*BlockSize+(n%BlockSize));
+						HSV.at<cv::Vec3f>(m,n)[channel]=Centers.ptr<float>(ClusterIdx)[0];
+					}
+				}
+			}
+
+		}
+	}
+
+	cv::Mat tdst;
+	cv::cvtColor(HSV,tdst,CV_HSV2BGR);
+	cv::normalize(tdst,tdst,0,255,32);
+	tdst.convertTo(tdst,CV_8UC3);
+	dst=tdst.clone();
+	return true;
+
+}
+bool pixkit::comp::ColorBTC::CDDBTC2015(const cv::Mat &src, cv::Mat &dst, const int BlockSize){
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	if(src.type()!=CV_8UC3){
+		CV_Error(CV_BadNumChannels,"[pixkit::comp::BTC::ColorBTC] image should be color");
+	}
+	if(BlockSize!=4&&BlockSize!=8&&BlockSize!=16){
+		CV_Error(CV_StsBadArg,"[pixkit::comp::BTC::ColorBTC] CDDBTC BlockSize should be 4, 8 or 16.");
+	}
+
+	// 	Mat GrayImage;
+	// 	cvtColor(src, GrayImage, CV_BGR2GRAY);
+	cv::Mat GrayImage(src.size(),CV_8UC1);
+	for(int i=0;i<src.rows;i++)
+		for(int j=0;j<src.cols;j++)
+			GrayImage.ptr<uchar>(i)[j] = cvRound((src.ptr<uchar>(i,j)[0]+src.ptr<uchar>(i,j)[1]+src.ptr<uchar>(i,j)[2])/3.);
+
+	// = = = = = pre-defined data = = = = = //
+	short			CM_Size=BlockSize;	// class matrix size
+	const	short	DM_Size=3;			// diffused weighting size
+	const	short	CM4[4][4]={		
+		{8,		11,		6,		1},	
+		{14,	2,		4,		12},	
+		{5,		9,		7,		3},	
+		{13,	15,		0,		10}};
+	const	float	DW4[3][3]={	{0.271630,	1.000000,	0.271630},	
+	{1.000000,	0.000000,	1.000000},	
+	{0.271630,	1.000000,	0.271630}};
+	const	short	CM8[8][8]={		
+		{42,	47,	46,	45,	16,	13,	11,	2},	
+		{61,	57,	53,	8,	27,	22,	9,	50},	
+		{63,	58,	0,	15,	26,	31,	40,	30},	
+		{10,	4,	17,	21,	3,	44,	18,	6},	
+		{14,	24,	25,	7,	5,	48,	52,	39},	
+		{20,	28,	23,	32,	38,	51,	54,	60},
+		{19,	33,	36,	37,	49,	43,	56,	55},	
+		{12,	62,	29,	35,	1,	59,	41,	34}};
+	const	float	DW8[3][3]={	{0.271630,	1.000000,	0.271630},	
+	{1.000000,	0.000000,	1.000000},	
+	{0.271630,	1.000000,	0.271630}};
+	const	short	CM16[16][16]={	{6,	7	,20		,10		,53		,55		,66	,	87 ,	137,	142,	143,	144,	172,	122,	175,	164},	
+	{3,	9	,23		,50		,60		,51		,65	,	74,		130,	145,	138,	148,	179,	180,	214,	221},	
+	{0,	14	,24		,37		,67		,79		,96	,	116,	39,		149,	162,	198,	12,		146,	224,	1},	
+	{15,26	,43		,28		,71		,54		,128,	112,	78,		159,	177,	201,	208,	223,	225,	242},	
+	{22,4	,48		,32		,94		,98		,80	,	135,	157,	173,	113,	182,	222,	226,	227,	16},	
+	{40,85	,72		,83		,104	,117	,163,	133,	168,	184,	200,	219,	244,	237,	183,	21},	
+	{47,120	,101	,105	,123	,132	,170,	176,	190,	202,	220,	230,	245,	235,	17,	41},
+	{76,73	,127	,109	,97		,134	,178,	181,	206,	196,	229,	231,	246,	19,		42,	49},	
+	{103,99	,131	,147	,169	,171	,166,	203,	218,	232,	243,	248,	247,	33,		52,	68},	
+	{108,107,	140	,102	,185	,167	,204,	217,	233,	106,	249,	255,	44,		45,		70,	69},	
+	{110,141,	88	,75		,192	,205	,195,	234,	241,	250,	254,	38,		46,		77,		5,	100},	
+	{111,158,	160	,174	,119	,215	,207,	240,	251,	252,	253,	61,		62,		93,		84,	125},	
+	{151,136,	189	,199	,197	,216	,236,	239,	25,		31,		56,		82,		92,		95,		124,	114},	
+	{156,188,	191	,209	,213	,228	,238,	29,		36,		59,		64,		91,		118,	139,	115,	155},	
+	{187,194,	165	,212	,2		,13		,30	,	35,		58,		63,		90,		86,		152,	129,	154,	161},	
+	{193,210,	211	,8		,11		,27		,34	,	57,		18,		89,		81,		121,	126,	153,	150,	186}};
+	const	float	DW16[3][3]={{0.305032,	1.000000,	0.305032},	
+	{1.000000,	0.000000,	1.000000},	
+	{0.305032,	1.000000,	0.305032}};
+
+	// = = = = = give cm and dw data = = = = = //
+	std::vector<std::vector<short>>	CM(CM_Size,std::vector<short>(CM_Size,0));
+	std::vector<std::vector<float>>	DM(DM_Size,std::vector<float>(DM_Size,0));
+	if(BlockSize==4){
+		for(int i=0;i<CM_Size;i++){
+			for(int j=0;j<CM_Size;j++){
+				CM[i][j]=CM4[i][j];
+			}
+		}
+		for(int i=0;i<DM_Size;i++){
+			for(int j=0;j<DM_Size;j++){
+				DM[i][j]=DW4[i][j];
+			}
+		}
+	}else if(BlockSize==8){
+		for(int i=0;i<CM_Size;i++){
+			for(int j=0;j<CM_Size;j++){
+				CM[i][j]=CM8[i][j];
+			}
+		}
+		for(int i=0;i<DM_Size;i++){
+			for(int j=0;j<DM_Size;j++){
+				DM[i][j]=DW8[i][j];
+			}
+		}
+	}else if(BlockSize==16){
+		for(int i=0;i<CM_Size;i++){
+			for(int j=0;j<CM_Size;j++){
+				CM[i][j]=CM16[i][j];
+			}
+		}
+		for(int i=0;i<DM_Size;i++){
+			for(int j=0;j<DM_Size;j++){
+				DM[i][j]=DW16[i][j];
+			}
+		}
+	}
+
+	// = = = = = create Temp space = = = = = //
+	cv::Mat tmp(src.size(), CV_32FC1);
+	for(int i=0;i<src.rows;i++)
+		for(int j=0;j<src.cols;j++)
+			tmp.ptr<float>(i)[j]=GrayImage.ptr<uchar>(i)[j];
+
+	// = = = = = get processing positions = = = = = //
+	std::vector<std::vector<short>>	ProPo(CM_Size*CM_Size,std::vector<short>(2,0));
+	for(int m=0;m<CM_Size;m++){
+		for(int n=0;n<CM_Size;n++){
+			ProPo[CM[m][n]][0]=m;
+			ProPo[CM[m][n]][1]=n;
+		}
+	}
+
+	// = = = = = get bitmap = = = = = //
+	std::vector<std::vector<char>>	DoMap(src.rows,std::vector<char>(src.cols,false));	// it is originally the bool, not the current char, because that the process of vector<bool> is "very" slow. 
+
+	//////////////////////////////////////////////////////////////////////////
+	cv::Mat	tdst[3], rdst = src.clone();	
+	split(src,tdst);
+	double	maxc[3]={0.},minc[3]={255.};
+	double	maxg = 0.,	 ming = 255.;
+
+	// = = = = = process01 = = = = = //
+	for(int i=0;i<src.rows;i+=CM_Size){
+		for(int j=0;j<src.cols;j+=CM_Size){
+
+			// = = = = = 彌補不該出現之顏色的處理方法 = = = = = //
+			// derive the local mean, maxv and minv
+			float	mean=0.;
+			short	count_mean=0;
+			for(int channel=0; channel<3; channel++){
+				minc[channel] = 255.;
+				maxc[channel] = 0.;
+				cv::minMaxLoc(tdst[channel](cv::Rect(j,i,CM_Size,CM_Size)),&minc[channel],&maxc[channel]);
+			}
+			ming = 255.;
+			maxg = 0.;
+			cv::minMaxLoc(GrayImage(cv::Rect(j,i,CM_Size,CM_Size)),&ming,&maxg);
+			for(int m=0;m<CM_Size;m++){
+				for(int n=0;n<CM_Size;n++){
+					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
+						count_mean++;
+						mean+=GrayImage.ptr<uchar>(i+m)[j+n];
+					}					
+				}
+			}
+			mean/=(float)count_mean;
+
+			// = = = = = diffusion = = = = = //
+			int memberIndex=0;
+			while(memberIndex!=CM_Size*CM_Size){
+
+				// to decide whether the prospective coordinate is out of scope or not
+				int		ni=i+ProPo[memberIndex][0],nj=j+ProPo[memberIndex][1];
+				if(ni>=0&&ni<src.rows&&nj>=0&&nj<src.cols){
+					// = = = = = dot diffusion = = = = = //
+					// get error	// for maintain the dot diffusion structure, here have to take DifMap into account				
+					double	error;
+					if(tmp.ptr<float>(ni)[nj]<mean){
+						error=tmp.ptr<float>(ni)[nj]-ming;
+						rdst.ptr<uchar>(ni,nj)[0]=0;
+					}else{
+						error=tmp.ptr<float>(ni)[nj]-maxg;
+						rdst.ptr<uchar>(ni,nj)[0]=1;
+					}
+					DoMap[ni][nj]=true;
+
+					// get fm
+					double	fm=0;		
+					int		hDM_Size=DM_Size/2;
+					for(int m=-hDM_Size;m<=hDM_Size;m++){
+						for(int n=-hDM_Size;n<=hDM_Size;n++){
+							if(ni+m>=0&&ni+m<src.rows&&nj+n>=0&&nj+n<src.cols){
+								if(DoMap[ni+m][nj+n]==false){
+									fm+=DM[m+hDM_Size][n+hDM_Size];
+								}
+							}
+						}
+					}
+
+					// diffusing
+					for(int m=-hDM_Size;m<=hDM_Size;m++){
+						for(int n=-hDM_Size;n<=hDM_Size;n++){
+							if(ni+m>=0&&ni+m<src.rows&&nj+n>=0&&nj+n<src.cols){
+								if(DoMap[ni+m][nj+n]==false){
+									tmp.ptr<float>(ni+m)[nj+n]+=static_cast<float>(error*DM[m+hDM_Size][n+hDM_Size]/fm);
+								}
+							}
+						}
+					}
+				}				
+				memberIndex++;
+			}
+
+			for(int m=0;m<CM_Size;m++){
+				for(int n=0;n<CM_Size;n++){
+					if(rdst.ptr<uchar>(i+m,j+n)[0] == 0)
+						for(int channel=0; channel<3; channel++)
+							rdst.ptr<uchar>(i+m,j+n)[channel] = minc[channel];
+					else
+						for(int channel=0; channel<3; channel++)
+							rdst.ptr<uchar>(i+m,j+n)[channel] = maxc[channel];
+				}
+			}					
+
+		}
+	}
+
+	dst	=	rdst.clone();
+
+	return true;
+
+}
+
+bool pixkit::comp::JPEG(const cv::Mat &src1b, cv::Mat &dst1b, const int jpeg_quality){
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
+	CV_Assert(jpeg_quality >= 0 && jpeg_quality <= 100);
+
+	//////////////////////////////////////////////////////////////////////////
+	///// process
+	// encode
+	std::vector<uchar>	buff;
+	std::vector<int> param = std::vector<int>(2);
+	param[0] = CV_IMWRITE_JPEG_QUALITY;
+	param[1] = jpeg_quality;	// default(95) 0-100
+	// decode
+	imencode(".jpg", src1b, buff, param);
+	dst1b = imdecode(cv::Mat(buff), CV_LOAD_IMAGE_UNCHANGED);
+
+	return true;
+}

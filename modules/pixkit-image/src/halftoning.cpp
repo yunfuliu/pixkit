@@ -8,6 +8,7 @@
 #include <ctime>
 
 using namespace	cv;
+using namespace	std;
 
 ////////////////////////////////////////////////////////////////////////
 //	error diffusion
@@ -256,18 +257,17 @@ bool pixkit::halftoning::errordiffusion::ShiauFan1996(const cv::Mat &src, cv::Ma
 }
 
 // Ostromoukhov halftoning processing
-bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src, cv::Mat &dst){
+bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src1b, cv::Mat &dst1b){
 	
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(src.type()!=CV_8U){
+	if(src1b.type()!=CV_8UC1){
 		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::Ostromoukhov2001] accepts only grayscale image");
 	}
-	dst.create(src.size(),src.type());
 
 	///////////////////////////////////////////////////////////////////////////
 	// error kernel coefficient (A_10, A_-11, A_01)
-	int Ostromoukhov_EDcoefficient[128][3]={
+	const int Ostromoukhov_EDcoefficient[128][3]={
 	13,		0,		5,
 	13,		0,		5,
 	21,		0,		10,
@@ -397,124 +397,113 @@ bool pixkit::halftoning::errordiffusion::Ostromoukhov2001(const cv::Mat &src, cv
 	395,	104,	101,
 	4,		1,		1	};
 
+	//////////////////////////////////////////////////////////////////////////
+	///// initialize
 	int sizeOfKernel = 3; // fixed size for Ostromoukhov's method
-	std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
-	std::vector< std::vector<double> > ErrorKernel(sizeOfKernel, std::vector<double>(sizeOfKernel));
-	// initialization of ErrorKernel
-	for (int i=0; i<sizeOfKernel; i++){
-		for(int j=0; j<sizeOfKernel; j++){
-			ErrorKernel[i][j] = 0;
-		}
-	}
-	int HalfSize = (static_cast<int>(ErrorKernel.size()) - 1) / 2;
+	Mat	errBuff1d	=	src1b.clone();	// copy src1b to tdst1b
+	errBuff1d.convertTo(errBuff1d,CV_64FC1);
+	dst1b.create(src1b.size(),src1b.type());
+	Mat	errKernel1d(Size(sizeOfKernel,sizeOfKernel),CV_64FC1);
+	errKernel1d.setTo(0);
+	int HalfSize = (static_cast<int>(sizeOfKernel) - 1) / 2;
 
-	//copy Input image to RegImage
-	for (int i=0; i<src.rows; i++){
-		for(int j=0; j<src.cols; j++){
-			RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
-		}
-	}
 
-	// processing (serpentine scan)
-	for(int i=0; i<dst.rows; i++){
-		
+	//////////////////////////////////////////////////////////////////////////
+	///// processing (serpentine scan)
+	for(int i=0; i<errBuff1d.rows; i++){		
+
 		if(i%2==0){ // for even rows
-			for(int j=0; j<dst.cols; j++){
+			for(int j=0; j<errBuff1d.cols; j++){
 
-				if(RegImage[i][j] >= 128){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
+				if(errBuff1d.ptr<double>(i)[j] >= 128){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
 				}else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
 				}
-
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
-				}
-
-				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
-
-				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = Ostromoukhov_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = Ostromoukhov_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = Ostromoukhov_EDcoefficient[grayscale][2];
-
-				double sum = 0;
-				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
-					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][y + HalfSize];
-					}
-				}
-
-				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
-					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][y + HalfSize] / sum);
-					}
-				}
-			}
-		}
-		else{  // for odd rows
-			for(int j=dst.cols-1; j>=0; j--){
-
-				if(RegImage[i][j] >= 128){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
-				}
-				else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
-				}
-		
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
 				}
 
 				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
 
 				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = Ostromoukhov_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = Ostromoukhov_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = Ostromoukhov_EDcoefficient[grayscale][2];
+				errKernel1d.ptr<double>(1)[2] = Ostromoukhov_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = Ostromoukhov_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = Ostromoukhov_EDcoefficient[grayscale][2];
 
 				double sum = 0;
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)];
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize];
 					}
 				}
 
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
 						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)] / sum);
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize] / sum);
 					}
 				}
 			}
 
+		}else{  // for odd rows
+			for(int j=errBuff1d.cols-1; j>=0; j--){
+
+				if(errBuff1d.ptr<double>(i)[j] >= 128){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
+				}else{
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
+				}		
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
+				}
+
+				// error value
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
+
+				// assign coefficients of Error Kernel with corresponding grayscale
+				errKernel1d.ptr<double>(1)[2] = Ostromoukhov_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = Ostromoukhov_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = Ostromoukhov_EDcoefficient[grayscale][2];
+
+				double sum = 0;
+				for(int x=-HalfSize; x<=HalfSize; x++){
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
+					for(int y=-HalfSize; y<=HalfSize; y++){
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)];
+					}
+				}
+				for(int x=-HalfSize; x<=HalfSize; x++){
+					if(i+x<0 || i+x>=errBuff1d.rows)	continue;
+					for(int y=-HalfSize; y<=HalfSize; y++){
+						if(j+y<0 || j+y>=errBuff1d.cols)	continue;
+						if(x!=0 || y!=0)
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)] / sum);
+					}
+				}
+			}
 		}
 	}
+
 	return true;
 }
 
 // Zhou-Fang halftoning processing
-bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Mat &dst){
+bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src1b, cv::Mat &dst1b){
 	
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(src.type()!=CV_8U){
+	if(src1b.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[halftoning::errordiffusion::ZhouFang2003] accepts only grayscale image");
-	}
-	dst.create(src.size(),src.type());
+	}	
 
 	///////////////////////////////////////////////////////////////////////////
 	// error kernel coefficient (A_10, A_-11, A_01)
@@ -651,110 +640,101 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 
 	const int randomScale[128]={0, 0, 1, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 9, 10, 11, 12, 12, 13, 14, 15, 15, 16, 17, 18, 18, 19, 20,   21,   21,   22,   23,   24,   24,   25,   26,   27,   27,   28,   29,   30,   31,   32,   33,   34,   34,   35,   36,   37,   38,   38,   39,   40,   41,   42,   42,   43,   44,   45,   46,   46,   47,   48,   49,   50,   53,   56,   59,   62,   65,   68,   71,   75,   78,   81,   84,   87,   90,   93,   96,   100,   100,   100,   100,   100,   100,   91,   83,   75,   66,   58,   50,   41,   33,   25,   17,   21,   26,   31,   35,   40,   45,   50,   54,   58,   62,   66,   70,   71,   73,   75,   77,   79,   80,   81,   83,   84,   86,   87,   88,   90,   91,   93,   94,   95,   97,   98,   100	};
 
+	//////////////////////////////////////////////////////////////////////////
+	///// initialization
 	int sizeOfKernel = 3; // fixed size for Ostromoukhov's method
-	std::vector< std::vector<double> > RegImage(src.rows, std::vector<double>(src.cols) );	
-	std::vector< std::vector<double> > ErrorKernel(sizeOfKernel, std::vector<double>(sizeOfKernel));
-	// initialization of ErrorKernel
-	for (int i=0; i<sizeOfKernel; i++){
-		for(int j=0; j<sizeOfKernel; j++){
-			ErrorKernel[i][j] = 0;
-		}
-	}
-	int HalfSize = (static_cast<int>(ErrorKernel.size()) - 1) / 2;
-
-	//copy Input image to RegImage
-	for (int i=0; i<src.rows; i++){
-		for(int j=0; j<src.cols; j++){
-			RegImage[i][j] = static_cast<double>(src.data[i* src.cols + j]);
-		}
-	}
+	Mat	errBuff1d	=	src1b.clone();
+	errBuff1d.convertTo(errBuff1d,CV_64FC1);
+	dst1b.create(src1b.size(),src1b.type());
+	Mat	errKernel1d(Size(sizeOfKernel,sizeOfKernel),CV_64FC1);
+	errKernel1d.setTo(0);
+	int HalfSize = (static_cast<int>(sizeOfKernel) - 1) / 2;
 
 	// get halftone image
-	srand( static_cast<uchar>(time(NULL)));
+	srand(0);	// for reproducibility
 
 	// processing (serpentine scan)
-	for(int i=0; i<dst.rows; i++){	
+	for(int i=0; i<dst1b.rows; i++){	
 		if(i%2==0){ // for even rows
-			for(int j=0; j<dst.cols; j++){
+			for(int j=0; j<dst1b.cols; j++){
 
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
 				}
 				double threshold = 128 + (rand() % 128)*(randomScale[grayscale]/100.0);
 
-				if(RegImage[i][j] >= threshold){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
+				if(errBuff1d.ptr<double>(i)[j] >= threshold){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
 				}else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
 				}
 
 				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
 
 				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = ZhouFang_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = ZhouFang_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = ZhouFang_EDcoefficient[grayscale][2];
+				errKernel1d.ptr<double>(1)[2] = ZhouFang_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = ZhouFang_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = ZhouFang_EDcoefficient[grayscale][2];
 
 				double sum = 0;
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][y + HalfSize];
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize];
 					}
 				}
 
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
 						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][y + HalfSize] / sum);
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[y + HalfSize] / sum);
 					}
 				}
 			}
-		}
-		else{  // for odd rows
-			for(int j=dst.cols-1; j>=0; j--){
 
-				int grayscale = static_cast<int>(src.data[i* src.cols + j]);
-				if(src.data[i* src.cols + j] >= 128){
-					grayscale = 255 - static_cast<int>(src.data[i* src.cols + j]);
+		}else{  // for odd rows
+			for(int j=dst1b.cols-1; j>=0; j--){
+
+				int grayscale = static_cast<int>(src1b.data[i* src1b.cols + j]);
+				if(src1b.data[i* src1b.cols + j] >= 128){
+					grayscale = 255 - static_cast<int>(src1b.data[i* src1b.cols + j]);
 				}
 				double threshold = 128 + (rand() % 128)*(randomScale[grayscale]/100.0);
 
-				if(RegImage[i][j] >= threshold){
-					dst.data[i*dst.cols + j] = static_cast< uchar >(255);
-				}
-				else{
-					dst.data[i*dst.cols + j] = static_cast< uchar >(0);
+				if(errBuff1d.ptr<double>(i)[j] >= threshold){
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(255);
+				}else{
+					dst1b.ptr<uchar>(i)[j] = static_cast< uchar >(0);
 				}
 
 				// error value
-				double error = RegImage[i][j] - static_cast< double >(dst.data[i*dst.cols + j]);
+				double error = errBuff1d.ptr<double>(i)[j] - static_cast< double >(dst1b.ptr<uchar>(i)[j]);
 
 				// assign coefficients of Error Kernel with corresponding grayscale
-				ErrorKernel[1][2] = ZhouFang_EDcoefficient[grayscale][0];
-				ErrorKernel[2][0] = ZhouFang_EDcoefficient[grayscale][1];
-				ErrorKernel[2][1] = ZhouFang_EDcoefficient[grayscale][2];
+				errKernel1d.ptr<double>(1)[2] = ZhouFang_EDcoefficient[grayscale][0];
+				errKernel1d.ptr<double>(2)[0] = ZhouFang_EDcoefficient[grayscale][1];
+				errKernel1d.ptr<double>(2)[1] = ZhouFang_EDcoefficient[grayscale][2];
 
 				double sum = 0;
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
-						sum += ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)];
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
+						sum += errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)];
 					}
 				}
 
 				for(int x=-HalfSize; x<=HalfSize; x++){
-					if(i+x<0 || i+x>=dst.rows)	continue;
+					if(i+x<0 || i+x>=dst1b.rows)	continue;
 					for(int y=-HalfSize; y<=HalfSize; y++){
-						if(j+y<0 || j+y>=dst.cols)	continue;
+						if(j+y<0 || j+y>=dst1b.cols)	continue;
 						if(x!=0 || y!=0)
-							RegImage[i+x][j+y] += (error * ErrorKernel[x + HalfSize][2*HalfSize - (y + HalfSize)] / sum);
+							errBuff1d.ptr<double>(i+x)[j+y] += (error * errKernel1d.ptr<double>(x + HalfSize)[2*HalfSize - (y + HalfSize)] / sum);
 					}
 				}
 			}
@@ -766,10 +746,9 @@ bool pixkit::halftoning::errordiffusion::ZhouFang2003(const cv::Mat &src, cv::Ma
 
 
 //////////////////////////////////////////////////////////////////////////
-// direct binary search
+// iterative
 //////////////////////////////////////////////////////////////////////////
-
-bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize){
+bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, cv::Mat &dst1b,double *coeData,int FilterSize,bool cppmode){
 
 	//////////////////////////////////////////////////////////////////////////
 	/// exceptions
@@ -821,28 +800,45 @@ bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, 
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	/// get autocorrelation	
-	int	exFS=FilterSize*2-1;
-	int	tempFS=FilterSize-1;
+	/// get autocorrelation. Notably, the process depends upon the cppmode, it means whether the 'coe' is cpp or p as defined in paper. 
+	int	exFS;
+	int	tempFS;
+	if(cppmode){
+		exFS=FilterSize;
+		tempFS=FilterSize/2;
+	}else{
+		exFS=FilterSize*2-1;
+		tempFS=FilterSize-1;
+	}
 	double	*	autocoeData	=	new	double		[exFS*exFS];
 	double	**	autocoe		=	new	double	*	[exFS];
-	for(int i=0;i<exFS;i++){
-		autocoe[i]=&autocoeData[i*exFS];
-		for(int j=0;j<exFS;j++){
-			autocoe[i][j]=0.;
+	if(cppmode){
+		for(int i=0;i<exFS;i++){
+			autocoe[i]=&autocoeData[i*exFS];
+			for(int j=0;j<exFS;j++){
+				autocoe[i][j]=coe[i][j];
+			}
 		}
-	}
-	for(int i=0;i<FilterSize;i++){
-		for(int j=0;j<FilterSize;j++){
-			for(int m=-tempFS;m<=tempFS;m++){
-				for(int n=-tempFS;n<=tempFS;n++){
-					if(i+m<FilterSize&&i+m>=0&&j+n<FilterSize&&j+n>=0){
-						autocoe[m+tempFS][n+tempFS]+=coe[i][j]*coe[i+m][j+n];
+	}else{
+		for(int i=0;i<exFS;i++){
+			autocoe[i]=&autocoeData[i*exFS];
+			for(int j=0;j<exFS;j++){
+				autocoe[i][j]=0.;
+			}
+		}
+		for(int i=0;i<FilterSize;i++){
+			for(int j=0;j<FilterSize;j++){
+				for(int m=-tempFS;m<=tempFS;m++){
+					for(int n=-tempFS;n<=tempFS;n++){
+						if(i+m<FilterSize&&i+m>=0&&j+n<FilterSize&&j+n>=0){
+							autocoe[m+tempFS][n+tempFS]+=coe[i][j]*coe[i+m][j+n];
+						}
 					}
 				}
 			}
 		}
 	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	/// load original image
@@ -855,8 +851,7 @@ bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, 
 		}
 	}
 	// get halftone image
-	srand((unsigned char)time(NULL));
-	//	srand(7);
+	srand(7);	// for reproducibility 
 	for(int i=0;i<m_Height;i++){
 		for(int j=0;j<m_Width;j++){
 			double	temp=((double)rand())/32767.;
@@ -1061,77 +1056,265 @@ bool pixkit::halftoning::iterative::LiebermanAllebach1997(const cv::Mat &src1b, 
 	return true;
 }
 
-//////////////////////////////////////////////////////////////////////////
-//	ordered dithering
-//////////////////////////////////////////////////////////////////////////
+bool pixkit::halftoning::iterative::dualmetricDBS2002(const cv::Mat &src1b, cv::Mat &dst1b){
 
-bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE odtype)
-{	
 	//////////////////////////////////////////////////////////////////////////
-	// exception
-	if(src.type()!=CV_8U){
-		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::Ulichney1987] accepts only grayscale image");
-		return false;
-	}
-	if(src.empty()){
-		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::Ulichney1987] image is empty");
-		return false;
+	/// exceptions
+	if(src1b.type()!=CV_8UC1){
+		assert(false);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	dst.create(src.size(), src.type());
-	const double classical_4[8][8] = { 0.567,	0.635,	0.608,	0.514,	0.424,	0.365,	0.392,	0.486, 	0.847,	0.878,	0.910,	0.698,	0.153,	0.122,	0.090,	0.302,	0.820,	0.969,	0.941,	0.667,	0.180,	0.031,	0.059,	0.333,	0.725,	0.788,	0.757,	0.545,	0.275,	0.212,	0.243,	0.455,	0.424,	0.365,	0.392,	0.486,	0.567,	0.635,	0.608,	0.514,	0.153,	0.122,	0.090,	0.302,	0.847,	0.878,	0.910,	0.698,	0.180,	0.031,	0.059,	0.333,	0.820,	0.969,	0.941,	0.667,	0.275,	0.212,	0.243,	0.455,	0.725,	0.788,	0.757,	0.545	};
-	const double bayer_5[8][8] = { 0.513,	0.272,	0.724,	0.483,	0.543,	0.302,	0.694,	0.453,	0.151,	0.755,	0.091,	0.966,	0.181,	0.758,	0.121,	0.936,	0.634,	0.392,	0.574,	0.332,	0.664,	0.423,	0.604,	0.362,	0.060,	0.875,	0.211,	0.815,	0.030,	0.906,	0.241,	0.845,	0.543,	0.302,	0.694,	0.453,	0.513,	0.272,	0.724,	0.483,	0.181,	0.758,	0.121,	0.936,	0.151,	0.755,	0.091,	0.966,	0.664,	0.423,	0.604,	0.362,	0.634,	0.392,	0.574,	0.332,	0.030,	0.906,	0.241,	0.845,	0.060,	0.875,	0.211,	0.815	};
-	std::string NameOfFilterFile;
-	const int sizeOfArray = 8;
+	///// get filter
+	vector<Mat>	cpp1d;
+	cpp1d.push_back(Mat());
+	cpp1d.push_back(Mat());
+	pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(cpp1d[0],43.2,38.7,0.0219,0.0598);
+	pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(cpp1d[1],19.1,42.7,0.0330,0.0569);
+	int FilterSize	=	cpp1d[0].rows;
+	int	exFS=FilterSize;
+	int	tempFS=FilterSize/2;
 
-	std::vector< std::vector<double> > DitherArray( sizeOfArray, std::vector<double>(sizeOfArray) );
+	//////////////////////////////////////////////////////////////////////////
+	///// get weight
+	Mat	weightmap1f(Size(2,256),CV_32FC1);
+	for(int i=0;i<256;i++){
+		float	gray	=	(float)i/255.;
+		// get weight
+		if(gray<=0.25){
+			weightmap1f.ptr<float>(i)[0]	=	std::sqrtf(1-((float)4.*gray-1.)*((float)4.*gray-1.));
+		}else if(gray>0.25&&gray<=0.75){
+			weightmap1f.ptr<float>(i)[0]	=	std::fabsf((float)4.*gray-2);
+		}else{
+			weightmap1f.ptr<float>(i)[0]	=	std::sqrtf(1-((float)4.*gray-3.)*((float)4.*gray-3.));
+		}
+		weightmap1f.ptr<float>(i)[1]	=	1.-weightmap1f.ptr<float>(i)[0];
+	}
 
-	switch (odtype)
-	{
-	case 0:		//classical-4
-		for (int i=0; i<sizeOfArray; i++){
-			for (int j=0; j<sizeOfArray; j++){
-				DitherArray[i][j] = bayer_5[i][j];
-			}
+	//////////////////////////////////////////////////////////////////////////
+	/// initialization
+	int	m_Height	=	src1b.rows;
+	int	m_Width		=	src1b.cols;
+	Mat	dst1f;
+	dst1f.create(src1b.size(),CV_32FC1);
+
+	//////////////////////////////////////////////////////////////////////////
+	// get halftone image
+	srand(0);
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			double	temp=((double)rand())/32767.;
+			dst1f.ptr<float>(i)[j]=temp<0.5?0.:255.;
 		}
-		break;
-	case 1:		//bayer-5
-		for (int i=0; i<sizeOfArray; i++){
-			for (int j=0; j<sizeOfArray; j++){
-				DitherArray[i][j] = classical_4[i][j];
-			}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	/// Change grayscale to absorb
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			dst1f.ptr<float>(i)[j]	=	1.-dst1f.ptr<float>(i)[j]/255.;			
 		}
-		break;
-	default:	//default condition : use dither array of classical-4
-		for (int i=0; i<sizeOfArray; i++){
-			for (int j=0; j<sizeOfArray; j++){
-				DitherArray[i][j] = bayer_5[i][j];
+	}
+	/// get error matrix
+	Mat	em1f(Size(m_Width,m_Height),CV_32FC1);
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			double	oriv			=	1.-((double)src1b.ptr<uchar>(i)[j])/255.;			
+			em1f.ptr<float>(i)[j]=dst1f.ptr<float>(i)[j]-oriv;
+		}
+	}
+	/// get cross correlation
+	vector<Mat>	c_ep1d;
+	c_ep1d.push_back(Mat(Size(m_Width,m_Height),CV_64FC1));
+	c_ep1d.push_back(Mat(Size(m_Width,m_Height),CV_64FC1));
+	c_ep1d[0].setTo(0);
+	c_ep1d[1].setTo(0);
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			for(int m=i-tempFS;m<=i+tempFS;m++){
+				for(int n=j-tempFS;n<=j+tempFS;n++){
+					if(m>=0&&m<m_Height&&n>=0&&n<m_Width){
+						c_ep1d[0].ptr<double>(i)[j]+=em1f.ptr<float>(m)[n]*cpp1d[0].ptr<double>(tempFS+m-i)[tempFS+n-j];
+						c_ep1d[1].ptr<double>(i)[j]+=em1f.ptr<float>(m)[n]*cpp1d[1].ptr<double>(tempFS+m-i)[tempFS+n-j];
+					}
+				}
 			}
 		}
 	}
 
-	//Normalization of Dither Array for gray scale threshold values
-	for(int i=0; i<sizeOfArray; i++){
-		for(int j=0; j<sizeOfArray; j++){
-			DitherArray[i][j] *= 255;
+	//////////////////////////////////////////////////////////////////////////
+	///// DBS process
+	int		BenefitPixelNumber;
+	double	delta_E[10],a0[10],a1[10];
+	while(1){
+		BenefitPixelNumber=0;
+		for(int i=0;i<m_Height;i++){	// entire image
+			for(int j=0;j<m_Width;j++){
+
+				//////////////////////////////////////////////////////////////////////////
+				///// get weight
+				int		currv	=	cvRound((float)dst1f.ptr<float>(i)[j]*255.);
+
+				// = = = = = trial part = = = = = //
+				// initialize psnr		0: original psnr, 1~8: Swap, 9: Toggle.
+				// 8 1 2
+				// 7 0 3
+				// 6 5 4	
+				for(int m=0;m<10;m++){
+					delta_E[m]=0.;
+					a0[m]=0.;
+					a1[m]=0.;
+				}
+				// change the delta error as per different replacement methods
+				for(int mode=1;mode<10;mode++){
+					int		m,n;
+					if(mode>=1&&mode<=8){
+						// set position
+						if(mode==1){
+							m=1;	n=0;
+						}else if(mode==2){
+							m=1;	n=1;
+						}else if(mode==3){
+							m=0;	n=1;
+						}else if(mode==4){
+							m=-1;	n=1;
+						}else if(mode==5){
+							m=-1;	n=0;
+						}else if(mode==6){
+							m=-1;	n=-1;
+						}else if(mode==7){
+							m=0;	n=-1;
+						}else if(mode==8){
+							m=1;	n=-1;
+						}
+						// get dE
+						if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){			
+							// get weight to neighbor
+							int	currv_nei	=	cvRound((float)dst1f.ptr<float>(i+m)[j+n]*255.);
+
+							// get error
+							if(dst1f.ptr<float>(i)[j]==1){
+								a0[mode]=-1;
+							}else{
+								a0[mode]=1;
+							}
+							if(dst1f.ptr<float>(i+m)[j+n]==1){
+								a1[mode]=-1;
+							}else{
+								a1[mode]=1;
+							}
+							if(dst1f.ptr<float>(i)[j]!=dst1f.ptr<float>(i+m)[j+n]){
+								for(int w_idx=0;w_idx<2;w_idx++){
+									delta_E[mode]+=(a0[mode]*a0[mode]	*	weightmap1f.ptr<float>(currv)[w_idx]*weightmap1f.ptr<float>(currv)[w_idx]	+	a1[mode]*a1[mode]	*	weightmap1f.ptr<float>(currv_nei)[w_idx]*weightmap1f.ptr<float>(currv_nei)[w_idx])	*	cpp1d[w_idx].ptr<double>(tempFS)[tempFS]	+
+										2.*	a0[mode]	*	weightmap1f.ptr<float>(currv)[w_idx]	*	a1[mode]	*weightmap1f.ptr<float>(currv_nei)[w_idx]	*	cpp1d[w_idx].ptr<double>(tempFS+m)[tempFS+n]	+
+										2.*	a0[mode]	*	weightmap1f.ptr<float>(currv)[w_idx]	*	c_ep1d[w_idx].ptr<double>(i)[j]	+
+										2.*	a1[mode]	*	weightmap1f.ptr<float>(currv_nei)[w_idx]	*	c_ep1d[w_idx].ptr<double>(i+m)[j+n];
+								}
+							}
+						}
+					}else if(mode==9){
+						if(dst1f.ptr<float>(i)[j]==1){
+							a0[mode]=-1;
+						}else{
+							a0[mode]=1;
+						}
+
+						for(int w_idx=0;w_idx<2;w_idx++){
+							delta_E[mode]	+=	(a0[mode]*a0[mode]	*	weightmap1f.ptr<float>(currv)[w_idx]*weightmap1f.ptr<float>(currv)[w_idx]	)	*	cpp1d[w_idx].ptr<double>(tempFS)[tempFS]	+
+								2.*	a0[mode]	*	weightmap1f.ptr<float>(currv)[w_idx]	*	c_ep1d[w_idx].ptr<double>(i)[j];
+						}
+
+					}
+				}
+				// get minimum delta error and its position
+				int		tempMinNumber	=0;
+				double	tempMindE		=delta_E[0];
+				for(int x=1;x<10;x++){
+					if(delta_E[x]<tempMindE){
+						tempMindE		=delta_E[x];
+						tempMinNumber	=x;
+					}
+				}
+
+				// = = = = = update part = = = = = //
+				if(tempMindE<0){	// error is reduce
+					// update hft image
+					dst1f.ptr<float>(i)[j]	=1.-dst1f.ptr<float>(i)[j];
+					if(tempMinNumber>=1&&tempMinNumber<=8){
+						// get position
+						int nm,nn;
+						if(tempMinNumber==1){
+							nm=1;	nn=0;
+						}else if(tempMinNumber==2){
+							nm=1;	nn=1;
+						}else if(tempMinNumber==3){
+							nm=0;	nn=1;
+						}else if(tempMinNumber==4){
+							nm=-1;	nn=1;
+						}else if(tempMinNumber==5){
+							nm=-1;	nn=0;
+						}else if(tempMinNumber==6){
+							nm=-1;	nn=-1;
+						}else if(tempMinNumber==7){
+							nm=0;	nn=-1;
+						}else if(tempMinNumber==8){
+							nm=1;	nn=-1;
+						}
+						// update hft image
+						dst1f.ptr<float>(i+nm)[j+nn]	=1.-dst1f.ptr<float>(i+nm)[j+nn];
+						// get weight to neighbor
+						int	currv_nei	=	cvRound((float)dst1f.ptr<float>(i+nm)[j+nn]*255.);
+
+						// update cross correlation
+						for(int m=-tempFS;m<=tempFS;m++){
+							for(int n=-tempFS;n<=tempFS;n++){
+								if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){
+									for(int w_idx=0;w_idx<2;w_idx++){
+										c_ep1d[w_idx].ptr<double>(i+m)[j+n]+=a0[tempMinNumber]*weightmap1f.ptr<float>(currv)[w_idx]*cpp1d[w_idx].ptr<double>(tempFS+m)[tempFS+n];
+									}
+								}
+								if(i+m+nm>=0&&i+m+nm<m_Height&&j+n+nn>=0&&j+n+nn<m_Width){
+									for(int w_idx=0;w_idx<2;w_idx++){
+										c_ep1d[w_idx].ptr<double>(i+m+nm)[j+n+nn]+=a1[tempMinNumber]*weightmap1f.ptr<float>(currv_nei)[w_idx]*cpp1d[w_idx].ptr<double>(tempFS+m)[tempFS+n];
+									}
+								}
+							}
+						}
+					}else if(tempMinNumber==9){
+						// update cross correlation
+						for(int m=-tempFS;m<=tempFS;m++){
+							for(int n=-tempFS;n<=tempFS;n++){
+								if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){
+									for(int w_idx=0;w_idx<2;w_idx++){
+										c_ep1d[w_idx].ptr<double>(i+m)[j+n]+=a0[tempMinNumber]*weightmap1f.ptr<float>(currv)[w_idx]*cpp1d[w_idx].ptr<double>(tempFS+m)[tempFS+n];
+									}
+								}
+							}
+						}
+					}
+					BenefitPixelNumber++;
+				}
+			}
+		}
+		//		cout	<<	BenefitPixelNumber	<<	endl;
+		if(BenefitPixelNumber==0){
+			break;
 		}
 	}
 
-	//Dither processing
-	for(int i=0; i<src.rows; i++){
-		for(int j=0; j<src.cols; j++){
-				if(src.data[(i)*src.cols + (j)] >= DitherArray[i%sizeOfArray][j%sizeOfArray])
-					dst.data[i*dst.cols+j] = 255;
-				else
-					dst.data[i*dst.cols+j] = 0;
+	//////////////////////////////////////////////////////////////////////////
+	/// Change absorb to grayscale
+	dst1b.create(src1b.size(),CV_8UC1);
+	for(int i=0;i<m_Height;i++){
+		for(int j=0;j<m_Width;j++){
+			dst1b.ptr<uchar>(i)[j]=(1.-dst1f.ptr<float>(i)[j])*255.;
 		}
 	}
+
 	return true;
 }
 
-bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, 
-	int GridForce, int Shake, int Debug){
+bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &src, cv::Mat &dst, int InitialCharge, int Iterations, int GridForce, int Shake, int Debug){
 
 	//////////////////////////////////////////////////////////////////////////
 	///// exceptions
@@ -1225,7 +1408,7 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 	if(Debug==1)
 		cv::imwrite("output.bmp", real_dst);
 	else if(Debug==2){
-		sprintf(out_file,".\\output\\0.bmp");
+		sprintf_s(out_file,".\\output\\0.bmp");
 		cv::imwrite(out_file, real_dst);
 	}
 
@@ -1289,16 +1472,16 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 				int Bilinear_x2=Bilinear_x1+1;
 				if(Bilinear_y1+1<src.rows&&Bilinear_x1+1<src.cols){
 					NewPosition_Y=forcefield_y[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
-					   +forcefield_y[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
-					   +forcefield_y[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
-					   +forcefield_y[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
+						+forcefield_y[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
+						+forcefield_y[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
+						+forcefield_y[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
 					NewPosition_X=forcefield_x[Bilinear_y1][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*((double)Bilinear_y2-Particle_Y[NowCharge])
-					   +forcefield_x[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
-					   +forcefield_x[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
-					   +forcefield_x[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
+						+forcefield_x[Bilinear_y1][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*((double)Bilinear_y2-Particle_Y[NowCharge])
+						+forcefield_x[Bilinear_y2][Bilinear_x1]*((double)Bilinear_x2-Particle_X[NowCharge])*(Particle_Y[NowCharge]-(double)Bilinear_y1)
+						+forcefield_x[Bilinear_y2][Bilinear_x2]*(Particle_X[NowCharge]-(double)Bilinear_x1)*(Particle_Y[NowCharge]-(double)Bilinear_y1);
 				}
 			}
-			
+
 			//Repulsion
 			for(int OtherCharge=0; OtherCharge<Particle; OtherCharge++){
 				if(NowCharge!=OtherCharge){
@@ -1315,8 +1498,8 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 			double real_y=Particle_Y[NowCharge]-(int)Particle_Y[NowCharge];
 			double real_x=Particle_X[NowCharge]-(int)Particle_X[NowCharge];
 			if(real_y==0&&real_x==0){
-					GridForce_Y=0;
-					GridForce_X=0;
+				GridForce_Y=0;
+				GridForce_X=0;
 			}
 			else{
 				if(real_y<0.5){
@@ -1349,7 +1532,7 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 				else
 					GridForce_X=3.5*real_x/(vector3*(1+pow(vector3,8)*10000));
 			}
-			
+
 			//resault (new position of particles)
 			if(GridForce==0){
 				Particle_Y[NowCharge]=Particle_Y[NowCharge]+0.1*NewPosition_Y;
@@ -1365,7 +1548,7 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 				Particle_Y[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
 				Particle_X[NowCharge]+=(log10((double)Iterations)/log10(2.0)-6)*exp(iterations/1000.0)/10;
 			}
-			
+
 			if(Particle_Y[NowCharge]<0)
 				Particle_Y[NowCharge]=0;
 			if(Particle_Y[NowCharge]>=src.rows)
@@ -1374,7 +1557,7 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 				Particle_X[NowCharge]=0;
 			if(Particle_X[NowCharge]>=src.cols)
 				Particle_X[NowCharge]=src.cols-1;
-			
+
 		}
 
 		//Output
@@ -1396,7 +1579,7 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 				out_X=src.cols-1;
 			image_tmp[out_Y][out_X]=0;
 		}
-		
+
 		for(int y=0; y<src.rows; y++)
 			for(int x=0; x<src.cols; x++)
 				real_dst.data[y*src.cols+x]=image_tmp[y][x];
@@ -1404,38 +1587,108 @@ bool pixkit::halftoning::iterative::ElectrostaticHalftoning2010(const cv::Mat &s
 		if(Debug==1)
 			cv::imwrite("output.bmp",real_dst);
 		else if(Debug==2){
-			sprintf(out_file,".\\output\\%d.bmp",iterations);
+			sprintf_s(out_file,".\\output\\%d.bmp",iterations);
 			cv::imwrite(out_file,real_dst);
 		}
 	}
-	
+
 	dst=real_dst.clone();
 
 	delete [] image_in;
 	delete [] image_tmp;
-	
+
 	return true;
 
 }
+
+//////////////////////////////////////////////////////////////////////////
+//	ordered dithering
+//////////////////////////////////////////////////////////////////////////
+
+bool pixkit::halftoning::ordereddithering::Ulichney1987(const cv::Mat &src, cv::Mat &dst, DitherArray_TYPE odtype)
+{	
+	//////////////////////////////////////////////////////////////////////////
+	// exception
+	if(src.type()!=CV_8U){
+		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::Ulichney1987] accepts only grayscale image");
+		return false;
+	}
+	if(src.empty()){
+		CV_Error(CV_HeaderIsNull,"[halftoning::ordereddithering::Ulichney1987] image is empty");
+		return false;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	dst.create(src.size(), src.type());
+	const double classical_4[8][8] = { 0.567,	0.635,	0.608,	0.514,	0.424,	0.365,	0.392,	0.486, 	0.847,	0.878,	0.910,	0.698,	0.153,	0.122,	0.090,	0.302,	0.820,	0.969,	0.941,	0.667,	0.180,	0.031,	0.059,	0.333,	0.725,	0.788,	0.757,	0.545,	0.275,	0.212,	0.243,	0.455,	0.424,	0.365,	0.392,	0.486,	0.567,	0.635,	0.608,	0.514,	0.153,	0.122,	0.090,	0.302,	0.847,	0.878,	0.910,	0.698,	0.180,	0.031,	0.059,	0.333,	0.820,	0.969,	0.941,	0.667,	0.275,	0.212,	0.243,	0.455,	0.725,	0.788,	0.757,	0.545	};
+	const double bayer_5[8][8] = { 0.513,	0.272,	0.724,	0.483,	0.543,	0.302,	0.694,	0.453,	0.151,	0.755,	0.091,	0.966,	0.181,	0.758,	0.121,	0.936,	0.634,	0.392,	0.574,	0.332,	0.664,	0.423,	0.604,	0.362,	0.060,	0.875,	0.211,	0.815,	0.030,	0.906,	0.241,	0.845,	0.543,	0.302,	0.694,	0.453,	0.513,	0.272,	0.724,	0.483,	0.181,	0.758,	0.121,	0.936,	0.151,	0.755,	0.091,	0.966,	0.664,	0.423,	0.604,	0.362,	0.634,	0.392,	0.574,	0.332,	0.030,	0.906,	0.241,	0.845,	0.060,	0.875,	0.211,	0.815	};
+	std::string NameOfFilterFile;
+	const int sizeOfArray = 8;
+
+	std::vector< std::vector<double> > DitherArray( sizeOfArray, std::vector<double>(sizeOfArray) );
+
+	switch (odtype)
+	{
+	case 0:		//classical-4
+		for (int i=0; i<sizeOfArray; i++){
+			for (int j=0; j<sizeOfArray; j++){
+				DitherArray[i][j] = bayer_5[i][j];
+			}
+		}
+		break;
+	case 1:		//bayer-5
+		for (int i=0; i<sizeOfArray; i++){
+			for (int j=0; j<sizeOfArray; j++){
+				DitherArray[i][j] = classical_4[i][j];
+			}
+		}
+		break;
+	default:	//default condition : use dither array of classical-4
+		for (int i=0; i<sizeOfArray; i++){
+			for (int j=0; j<sizeOfArray; j++){
+				DitherArray[i][j] = bayer_5[i][j];
+			}
+		}
+	}
+
+	//Normalization of Dither Array for gray scale threshold values
+	for(int i=0; i<sizeOfArray; i++){
+		for(int j=0; j<sizeOfArray; j++){
+			DitherArray[i][j] *= 255;
+		}
+	}
+
+	//Dither processing
+	for(int i=0; i<src.rows; i++){
+		for(int j=0; j<src.cols; j++){
+				if(src.data[(i)*src.cols + (j)] >= DitherArray[i%sizeOfArray][j%sizeOfArray])
+					dst.data[i*dst.cols+j] = 255;
+				else
+					dst.data[i*dst.cols+j] = 0;
+		}
+	}
+	return true;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 //	ordered dithering
 //////////////////////////////////////////////////////////////////////////
 
 // Hft_OD_KackerAllebach1998 processing
-bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src, cv::Mat &dst){
+bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src1b, cv::Mat &dst1b){
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
-	if(src.type()!=CV_8U){
+	if(src1b.type()!=CV_8U){
 		CV_Error(CV_BadNumChannels,"[halftoning::ordereddithering::KackerAllebach1998] accepts only grayscale image");
 	}
-	dst.create(src.size(),src.type());
+	dst1b.create(src1b.size(),src1b.type());
 
 	//////////////////////////////////////////////////////////////////////////
 	// initialization: set initial parameters
-	const int	sizeDitherArray=32;
-	const int	nDitherArray=4;
-
+	const int	sizeDitherArray=32;	// defined in their Section 4. 
+	const int	nDitherArray=4;		// 4 is defined for their experiments. This value should >=3 for easing checkerboard pattern and periodicity as described in Section 2.3.
 	const int	DAs[4][32][32]={
 	{ {172,40,126,240,213,72,49,171,94,207,69,153,251,17,96,166,222,106,47,158,224,14,138,239,36,192,168,99,116,200,37,237}, {84,23,193,56,12,140,226,146,126,242,25,53,194,118,186,58,24,253,203,92,60,114,194,55,153,82,228,11,216,253,83,74}, {232,147,101,166,86,203,189,64,8,179,107,81,139,1,237,146,133,75,7,128,191,244,97,211,71,23,129,144,43,150,6,124}, {210,114,248,1,113,31,255,104,41,220,199,150,226,41,206,102,33,177,239,169,27,42,123,3,159,248,197,52,95,182,164,220}, {76,16,217,186,120,230,21,77,212,115,16,30,171,123,86,163,197,95,215,80,107,149,183,223,110,177,65,205,236,24,108,61}, {150,53,93,206,43,131,180,162,151,133,191,93,58,215,46,225,45,119,16,161,17,252,64,46,137,31,16,120,155,134,34,201}, {195,29,160,68,144,58,236,96,1,51,240,176,232,143,73,136,173,64,129,196,228,175,91,207,234,102,169,87,56,225,243,79}, {127,247,175,225,107,12,170,200,68,250,38,83,112,10,184,28,248,208,2,34,53,142,109,10,77,190,255,210,4,172,100,146}, {7,98,78,39,189,243,85,30,139,120,123,21,158,211,99,122,162,113,185,75,98,238,20,181,127,25,143,71,111,47,187,11}, {219,166,118,23,133,69,222,108,239,183,207,224,72,199,37,63,85,223,57,152,213,165,52,221,154,45,200,162,92,216,251,130}, {63,141,229,195,55,154,100,44,165,10,148,49,171,112,254,235,18,105,243,0,201,122,66,249,116,62,227,15,135,32,67,193}, {185,48,75,255,176,214,18,184,81,59,97,29,132,2,161,147,138,177,10,152,29,83,141,4,96,39,239,105,180,233,157,22},{12,159,111,88,1,116,66,203,128,231,197,215,247,91,79,50,187,115,92,215,230,48,176,194,216,188,122,78,54,147,106,86}, {128,240,210,30,234,168,143,250,160,17,105,154,179,66,204,33,240,71,39,182,131,106,245,34,73,148,167,253,7,202,42,242}, {198,38,101,150,130,46,93,23,35,57,136,85,0,124,136,221,102,249,148,70,81,15,204,88,125,60,28,208,69,119,176,217}, {85,167,20,57,252,190,221,109,188,201,245,45,192,226,9,172,24,156,4,212,164,27,154,170,241,13,223,130,97,231,18,60},
 	  {108,218,181,117,158,11,79,153,233,2,73,168,209,54,145,117,59,86,193,127,235,56,98,220,112,48,180,157,36,188,163,135}, {6,61,246,89,204,137,38,97,174,144,28,114,94,103,184,71,241,225,36,125,50,252,188,40,137,194,91,249,107,3,83,205}, {229,139,70,43,27,186,241,68,122,222,46,135,236,19,161,222,26,134,76,195,105,141,80,6,67,238,22,143,50,216,241,28}, {175,95,167,126,214,102,229,17,53,254,181,208,62,37,199,126,47,149,173,14,228,21,213,198,146,121,206,55,174,117,152,89}, {51,13,202,148,59,80,180,157,192,76,9,152,78,244,5,174,212,95,63,237,117,159,60,178,103,43,76,32,224,64,191,140}, {161,119,238,20,253,45,113,141,32,110,127,202,170,140,115,82,34,251,183,6,94,0,132,245,14,231,182,156,131,40,18,247}, {65,211,36,198,219,134,3,223,246,163,88,40,25,90,252,52,160,108,137,218,153,202,111,35,165,124,217,92,255,168,73,110}, {192,82,106,90,155,72,209,61,19,234,55,226,211,132,190,171,233,19,42,54,166,88,206,72,51,196,82,26,103,235,205,48}, {236,7,142,243,52,121,169,99,187,145,104,173,65,13,69,8,100,204,124,227,210,26,191,237,140,3,151,67,9,186,84,156}, {44,131,200,27,185,232,11,203,90,129,31,196,118,136,238,145,218,30,91,67,104,12,121,169,98,250,198,213,164,138,33,218}, {74,177,214,84,160,39,112,249,49,5,214,158,24,184,80,244,58,157,175,235,142,81,62,38,228,14,115,41,232,59,20,118}, {227,114,19,254,101,68,135,149,179,70,242,87,56,201,37,120,0,207,113,189,49,182,248,156,87,29,178,78,144,94,250,174}, {151,32,96,189,5,208,230,22,164,99,190,47,147,224,178,163,103,75,21,133,4,221,199,134,109,165,242,129,2,209,196,74}, {178,61,145,125,233,57,195,79,220,119,254,15,110,93,50,66,230,193,41,90,212,101,22,54,205,70,219,104,51,151,111,35}, {77,247,219,44,173,89,109,8,35,138,42,170,209,244,128,5,217,139,245,167,63,149,123,179,44,8,187,26,172,246,15,227}, {197,9,100,162,25,130,246,155,185,65,231,121,74,33,183,155,84,13,116,181,31,229,77,251,142,89,234,125,62,159,87,132} },
@@ -1448,34 +1701,40 @@ bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src
 	};
 
 	// = = = = = processing = = = = = //
+	// define map_m (to save the index of tiled dither array)
+	int	height_map_m	=	cvCeil(((float)src1b.rows)/((float)sizeDitherArray));
+	int	width_map_m		=	cvCeil(((float)src1b.cols)/((float)sizeDitherArray));
+	Mat	map_m1b(Size(width_map_m+1,height_map_m+1),CV_8UC1);
+	map_m1b.setTo(255);	// 255 denotes nothing
 	// get entire dither array
 	srand(3);
-	bool	doflag;
-	int		lable_formerDA=-1;
-	int		label_randomselectDA;
-	for(int i=0; i<src.rows; i+=sizeDitherArray){
-		for(int j=0; j<src.cols; j+=sizeDitherArray){
+	bool	doneflag;
+	for(int i=0; i<src1b.rows; i+=sizeDitherArray){
+		for(int j=0; j<src1b.cols; j+=sizeDitherArray){
 
-			doflag=false;
-			while(doflag != true){	// 不可與之前的DA label相同
+			uchar	&current_DA_index	=	map_m1b.ptr<uchar>(i/sizeDitherArray+1)[j/sizeDitherArray+1];	// current position is (+1,+1) rather than (0,0)
+			uchar	left_DA_index		=	map_m1b.ptr<uchar>(i/sizeDitherArray+1)[j/sizeDitherArray];
+			uchar	upper_DA_index		=	map_m1b.ptr<uchar>(i/sizeDitherArray)[j/sizeDitherArray+1];
+
+			doneflag=false;	// check whether the process is done
+			while(doneflag != true){	// 不可與之前的DA label相同
 
 				// get DA's label
-				label_randomselectDA = rand() % nDitherArray;	// 0 to 3
+				current_DA_index = rand() % nDitherArray;	// 0 to 3
 
 				// copy DA to entireDA
-				if(label_randomselectDA != lable_formerDA){	// then do halftoning
+				if((current_DA_index != left_DA_index) && (current_DA_index != upper_DA_index)){	// then do halftoning
 
-					doflag = true;
-					lable_formerDA = label_randomselectDA;
+					doneflag = true;
 
 					// halftoning
 					for(int m=0; m<sizeDitherArray; m++){ 
 						for(int n=0; n<sizeDitherArray; n++){
-							if(i+m>=0 && i+m<src.rows && j+n>=0 && j+n<src.cols){
-								if(src.data[(i+m)*dst.cols + (j+n)] < DAs[label_randomselectDA][m][n]){
-									dst.data[(i+m)*dst.cols + (j+n)] = 0;
+							if(i+m>=0 && i+m<src1b.rows && j+n>=0 && j+n<src1b.cols){
+								if(src1b.ptr<uchar>(i+m)[j+n] < DAs[current_DA_index][m][n]){
+									dst1b.ptr<uchar>(i+m)[j+n] = 0;
 								}else{
-									dst.data[(i+m)*dst.cols + (j+n)] = 255;
+									dst1b.ptr<uchar>(i+m)[j+n] = 255;
 								}
 							}else{
 								// do nothing
@@ -1483,7 +1742,7 @@ bool pixkit::halftoning::ordereddithering::KackerAllebach1998(const cv::Mat &src
 						}
 					}
 				}else{
-					doflag=false;
+					doneflag=false;
 				}
 			}
 		}
@@ -1818,23 +2077,13 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 	}
 
 	// = = = = = processing = = = = = //
-	std::vector<std::vector<int>>	ProcOrder(src.rows,std::vector<int>(src.cols,0));
-	std::vector<std::vector<double>>	tdst(src.rows,std::vector<double>(src.cols,0));
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			tdst[i][j]	=	src.data[i*src.cols+j];
-		}
-	}
-	// 取得處理順序
-	for(int i=0;i<src.rows;i+=ClassMatrixSize){
-		for(int j=0;j<src.cols;j+=ClassMatrixSize){
-			for(int m=0;m<ClassMatrixSize;m++){
-				for(int n=0;n<ClassMatrixSize;n++){
-					if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){
-						ProcOrder[i+m][j+n]=CM[m][n];
-					}
-				}
-			}
+	cv::Mat	tdst1d	=	src.clone();
+	tdst1d.convertTo(tdst1d,CV_64FC1);
+	// get point list
+	std::vector<cv::Point>	pointList(ClassMatrixSize*ClassMatrixSize);
+	for(int m=0;m<ClassMatrixSize;m++){
+		for(int n=0;n<ClassMatrixSize;n++){
+			pointList[CM[m][n]]	=	cv::Point(n,m);
 		}
 	}
 	// 進行dot_diffusion
@@ -1842,36 +2091,34 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 	int		OSCL=DiffusionMaskSize/2;
 	int		number=0;
 	while(number!=ClassMatrixSize*ClassMatrixSize){
-		for(int i=0;i<src.rows;i++){
-			for(int j=0;j<src.cols;j++){
-				if(ProcOrder[i][j]==number){
-					// 取得error
-					double	error;
-					if(tdst[i][j]<(float)(nColors-1.)/2.){
-						error=tdst[i][j];
-						tdst[i][j]=0.;
-					}else{
-						error=tdst[i][j]-(nColors-1.);
-						tdst[i][j]=(nColors-1.);
-					}
-					// 取得分母
-					double	fm=0.;
-					for(int m=-OSCW;m<=OSCW;m++){
-						for(int n=-OSCL;n<=OSCL;n++){
-							if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
-								if(ProcOrder[i+m][j+n]>number){		// 可以擴散的區域
-									fm+=DW[m+OSCW][n+OSCL];
-								}
+		for(int i=pointList[number].y;i<src.rows;i+=ClassMatrixSize){
+			for(int j=pointList[number].x;j<src.cols;j+=ClassMatrixSize){
+				// 取得error
+				double	error;
+				if(tdst1d.ptr<double>(i)[j]<(float)(nColors-1.)/2.){
+					error=tdst1d.ptr<double>(i)[j];
+					tdst1d.ptr<double>(i)[j]=0.;
+				}else{
+					error=tdst1d.ptr<double>(i)[j]-(nColors-1.);
+					tdst1d.ptr<double>(i)[j]=(nColors-1.);
+				}
+				// 取得分母
+				double	fm=0.;
+				for(int m=-OSCW;m<=OSCW;m++){
+					for(int n=-OSCL;n<=OSCL;n++){
+						if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
+							if(CM[(i+m)%ClassMatrixSize][(j+n)%ClassMatrixSize]>number){		// 可以擴散的區域
+								fm+=DW[m+OSCW][n+OSCL];
 							}
 						}
 					}
-					// 進行擴散
-					for(int m=-OSCW;m<=OSCW;m++){
-						for(int n=-OSCL;n<=OSCL;n++){
-							if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
-								if(ProcOrder[i+m][j+n]>number){		// 可以擴散的區域								
-									tdst[i+m][j+n]+=error*DW[m+OSCW][n+OSCL]/fm;
-								}
+				}
+				// 進行擴散
+				for(int m=-OSCW;m<=OSCW;m++){
+					for(int n=-OSCL;n<=OSCL;n++){
+						if(i+m>=0&&i+m<src.rows&&j+n>=0&&j+n<src.cols){	// 在影像範圍內
+							if(CM[(i+m)%ClassMatrixSize][(j+n)%ClassMatrixSize]>number){		// 可以擴散的區域								
+								tdst1d.ptr<double>(i+m)[j+n]+=error*DW[m+OSCW][n+OSCL]/fm;
 							}
 						}
 					}
@@ -1881,15 +2128,16 @@ bool pixkit::halftoning::dotdiffusion::GuoLiu2009(const cv::Mat &src, cv::Mat &d
 		number++;
 	}
 
-
 	//////////////////////////////////////////////////////////////////////////
-	dst.create(src.size(),src.type());
+	dst	=	tdst1d;
+	dst.convertTo(dst,src.type());
+#if defined(_DEBUG)
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			dst.data[i*dst.cols+j]	=	static_cast<uchar>(tdst[i][j]+0.5);
-			assert(dst.data[i*dst.cols+j]==0||dst.data[i*dst.cols+j]==(nColors-1));
+			CV_Assert(dst.ptr<uchar>(i)[j]==0||dst.ptr<uchar>(i)[j]==(nColors-1));
 		}
 	}
+#endif
 
 	return true;
 }
@@ -2048,5 +2296,38 @@ bool pixkit::halftoning::dotdiffusion::LippensPhilips2007(const cv::Mat &src, cv
 		}
 		number++;
 	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////
+//	ungrouped
+//////////////////////////////////////////////////////////////////////////
+bool pixkit::halftoning::ungrouped::generateTwoComponentGaussianModel(cv::Mat &dst1d,float k1,float k2,float sd1,float sd2){
+
+	const	float	R	=	9.5;
+	const	float	D	=	300;
+	const	float	S	=	R*D;
+	const	float	pi	=	3.141592653589793;
+	const	float	fm	=	180.*180./((pi*D)*(pi*D));
+	const	int		size=	21;
+	const	int		h_size=	size/2;
+
+	//////////////////////////////////////////////////////////////////////////
+	///// get cpp
+	dst1d.create(Size(size,size),CV_64FC1);
+	for(int m=-h_size;m<=h_size;m++){
+		for(int n=-h_size;n<=h_size;n++){
+			float	x		=	(180.*(float)m)/(pi*S);
+			float	y		=	(180.*(float)n)/(pi*S);
+			float	chh		=	k1*std::expf(-(x*x+y*y)/(2.*sd1*sd1))	+	
+								k2*std::expf(-(x*x+y*y)/(2.*sd2*sd2));
+			dst1d.ptr<double>(m+h_size)[n+h_size]	=	fm*chh;
+		}
+	}
+	// normalize
+	dst1d	=	dst1d/sum(dst1d)[0];
+	float	sumv	=	std::fabsf(sum(dst1d)[0]-1.);
+	CV_DbgAssert(std::fabsf(sum(dst1d)[0]-1.)<0.000001);
+
 	return true;
 }

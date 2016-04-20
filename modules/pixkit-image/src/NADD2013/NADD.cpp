@@ -461,6 +461,8 @@ pixkit::halftoning::dotdiffusion::CNADDCT::CNADDCT(){
 	m_ctData=NULL;
 	m_cm=NULL;
 	m_cmData=NULL;
+	pointList.resize(0);
+	imgSize_pointList	=	cv::Size(0,0);
 
 	m_cmData	=	new int	[m_CM_size*m_CM_size];
 	m_cm		=	new int *[m_CM_size];
@@ -686,6 +688,14 @@ bool pixkit::halftoning::dotdiffusion::CNADDCT::load(char name[]){
 /************************************************************************/
 /* NADD2013                                                             */
 /************************************************************************/
+void getPointList1(const cv::Size imgSize, int *cct, std::vector<std::vector<cv::Point>> &point_list,const int cm_elememt_size){
+	point_list.resize(cm_elememt_size);
+	for(int i=0;i<imgSize.height;i++){
+		for(int j=0;j<imgSize.width;j++){			
+			point_list[cct[i*imgSize.width+j]].push_back(cv::Point(j,i));
+		}
+	}
+}
 bool pixkit::halftoning::dotdiffusion::NADD2013(cv::Mat &src,cv::Mat &dst,pixkit::halftoning::dotdiffusion::CNADDCT &cct){
 
 	//////////////////////////////////////////////////////////////////////////
@@ -733,47 +743,56 @@ bool pixkit::halftoning::dotdiffusion::NADD2013(cv::Mat &src,cv::Mat &dst,pixkit
 	int		CM_Size=8;	// size of class matrix
 	int		DW_Size=3;	// size of diffused matrix
 
+	// get pointlist, it stores the point locations of each processing order
+	if(cct.pointList.size()==0){
+		cct.imgSize_pointList	=	src.size();	// stores the size of pointList
+		getPointList1(src.size(),orderData,cct.pointList,CM_Size*CM_Size);
+	}else if(src.size()==cct.imgSize_pointList){
+		// do nothing
+	}else{
+		cct.imgSize_pointList	=	src.size();	// assign a new size for pointList
+		getPointList1(src.size(),orderData,cct.pointList,CM_Size*CM_Size);
+	}	
+
 	// perform dot diffusion
-	int	number=0;
 	int	hDW_Size=DW_Size/2;
-	while(number!=CM_Size*CM_Size){
-		for(int i=0;i<m_Height;i++){
-			for(int j=0;j<m_Width;j++){		
-				if(order[i][j]==number){
-					// get error
-					double	error;
-					if(temp_dst[i][j]<128){
-						error=temp_dst[i][j];
-						temp_dst[i][j]=0.;
-					}else{
-						error=temp_dst[i][j]-255.;
-						temp_dst[i][j]=255.;
-					}
-					// get fm
-					double	fm=0.;					
-					for(int m=-hDW_Size;m<=hDW_Size;m++){
-						for(int n=-hDW_Size;n<=hDW_Size;n++){
-							if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){	// in the image region
-								if(order[i+m][j+n]>number){	// diffusable region
-									fm+=DW[(m+hDW_Size)*DW_Size+(n+hDW_Size)];
-								}
-							}
+	for(int k=0;k<CM_Size*CM_Size;k++){ // proc order
+		for(int p=0;p<cct.pointList[k].size();p++){
+			// get i and j;
+			int i=cct.pointList[k][p].y;
+			int j=cct.pointList[k][p].x;
+
+			// get error
+			double	error;
+			if(temp_dst[i][j]<128){
+				error=temp_dst[i][j];
+				temp_dst[i][j]=0.;
+			}else{
+				error=temp_dst[i][j]-255.;
+				temp_dst[i][j]=255.;
+			}
+			// get fm
+			double	fm=0.;					
+			for(int m=-hDW_Size;m<=hDW_Size;m++){
+				for(int n=-hDW_Size;n<=hDW_Size;n++){
+					if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){	// in the image region
+						if(order[i+m][j+n]>k){	// diffusable region
+							fm+=DW[(m+hDW_Size)*DW_Size+(n+hDW_Size)];
 						}
 					}
-					// diffuse
-					for(int m=-hDW_Size;m<=hDW_Size;m++){
-						for(int n=-hDW_Size;n<=hDW_Size;n++){
-							if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){	// in the image region
-								if(order[i+m][j+n]>number){	// diffusable region						
-									temp_dst[i+m][j+n]+=error*DW[(m+hDW_Size)*DW_Size+(n+hDW_Size)]/fm;
-								}
-							}
+				}
+			}
+			// diffuse
+			for(int m=-hDW_Size;m<=hDW_Size;m++){
+				for(int n=-hDW_Size;n<=hDW_Size;n++){
+					if(i+m>=0&&i+m<m_Height&&j+n>=0&&j+n<m_Width){	// in the image region
+						if(order[i+m][j+n]>k){	// diffusable region						
+							temp_dst[i+m][j+n]+=error*DW[(m+hDW_Size)*DW_Size+(n+hDW_Size)]/fm;
 						}
 					}
 				}
 			}
 		}
-		number++;
 	}
 
 	// copy from temp_dst to dst

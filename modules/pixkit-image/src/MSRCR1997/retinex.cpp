@@ -441,8 +441,8 @@ bool pixkit::enhancement::local::MSRCR1997(const cv::Mat &src,cv::Mat &dst,int N
 	}   
 	nWidth = orig->width;   
 	nHeight = orig->height;   
-	step = orig->widthStep/sizeof( unsigned char );   
-	out = cvCreateImage( cvSize(nWidth,nHeight), IPL_DEPTH_8U, 3 );  
+	step = orig->widthStep/sizeof( unsigned char );
+	dst=cv::Mat::zeros(nHeight,nWidth,CV_8UC3);
 	sImage = new unsigned char[nHeight*nWidth*3];  
 	dImage = new unsigned char[nHeight*nWidth*3];   
 
@@ -460,18 +460,13 @@ bool pixkit::enhancement::local::MSRCR1997(const cv::Mat &src,cv::Mat &dst,int N
 
 	MSRCR_Main( dImage, nWidth, nHeight, orig->nChannels);
 
-	for ( y = 0; y < nHeight; y++ ){   
-		for ( x = 0; x < nWidth; x++ ){   
-			out->imageData[y*step+x*3] = dImage[(y*nWidth+x)*3];   
-			out->imageData[y*step+x*3+1] = dImage[(y*nWidth+x)*3+1];   
-			out->imageData[y*step+x*3+2] = dImage[(y*nWidth+x)*3+2];   
-		}   
+	for ( y = 0; y < nHeight*nWidth*orig->nChannels; y=y+orig->nChannels){   
+		dst.data[y]=dImage[y];
+		dst.data[y+1]=dImage[y+1];
+		dst.data[y+2]=dImage[y+2];
 	}
 
-	cv::Mat mat(out, 0);
-	dst=mat.clone();
-
-	cvReleaseImage( &out );   
+	 
 	delete [] sImage;
 	delete [] dImage;   
 	return true;
