@@ -294,18 +294,19 @@ bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B
 		cv::warpAffine(t_OP,t_ob,map_matrix,cv::Size(src.cols, src.rows));
 		cv::warpAffine(t_CL,t_cb,map_matrix,cv::Size(src.cols, src.rows));
 
-		for(int i=0;i<src.rows;i++)
+		for(int i=0;i<src.rows;i++){
 			for(int j=0;j<src.cols;j++){
 				Ob[k][i][j] = t_ob.data[i*t_ob.cols+j];
 				Cb[k][i][j] = t_cb.data[i*t_cb.cols+j];
 			}
+		}
 	}
 
 	//RMP計算Top-hat增強
 	std::vector <std::vector<float>> WTH(src.rows,std::vector<float> (src.cols,0));
 	std::vector <std::vector<float>> BTH(src.rows,std::vector<float> (src.cols,0));
 
-	for(int i=0;i<src.rows;i++)
+	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
 
 			WTH[i][j] = Ob[0][i][j];
@@ -339,55 +340,59 @@ bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B
 			if(BTH[i][j] < 0)
 				BTH[i][j] = 0.0;
 		}
+	}
 
-		//直方圖等化
-		std::vector<float> WTH_hist(nColors,0);
-		std::vector<float> BTH_hist(nColors,0);
+	//直方圖等化
+	std::vector<float> WTH_hist(nColors,0);
+	std::vector<float> BTH_hist(nColors,0);
 
-		for(int i=0;i<src.rows;i++)
-			for(int j=0;j<src.cols;j++){
-				WTH_hist[(int)(WTH[i][j]+0.5)]++;
-				BTH_hist[(int)(BTH[i][j]+0.5)]++;
-			}
-			//計算CDF
-			for(int k=1;k<nColors;k++){
-				WTH_hist[k] += WTH_hist[k-1];
-				BTH_hist[k] += BTH_hist[k-1];
-			}
-			//正歸化CDF
-			for(int k=0;k<nColors;k++){
-				WTH_hist[k] /= (src.rows*src.cols);
-				BTH_hist[k] /= (src.rows*src.cols);
-			}
+	for(int i=0;i<src.rows;i++){
+		for(int j=0;j<src.cols;j++){
+			WTH_hist[(int)(WTH[i][j]+0.5)]++;
+			BTH_hist[(int)(BTH[i][j]+0.5)]++;
+		}
+	}
+	//計算CDF
+	for(int k=1;k<nColors;k++){
+		WTH_hist[k] += WTH_hist[k-1];
+		BTH_hist[k] += BTH_hist[k-1];
+	}
+	//正歸化CDF
+	for(int k=0;k<nColors;k++){
+		WTH_hist[k] /= (src.rows*src.cols);
+		BTH_hist[k] /= (src.rows*src.cols);
+	}
 
-			for(int i=0;i<src.rows;i++)
-				for(int j=0;j<src.cols;j++){
-					WTH[i][j] = (WTH_hist[(int)WTH[i][j]]-WTH_hist[0])/(WTH_hist[nColors-1]-WTH_hist[0])*(nColors-1); 
-					BTH[i][j] = (BTH_hist[(int)BTH[i][j]]-BTH_hist[0])/(BTH_hist[nColors-1]-BTH_hist[0])*(nColors-1); 
-				}
+	for(int i=0;i<src.rows;i++){
+		for(int j=0;j<src.cols;j++){
+			WTH[i][j] = (WTH_hist[(int)WTH[i][j]]-WTH_hist[0])/(WTH_hist[nColors-1]-WTH_hist[0])*(nColors-1); 
+			BTH[i][j] = (BTH_hist[(int)BTH[i][j]]-BTH_hist[0])/(BTH_hist[nColors-1]-BTH_hist[0])*(nColors-1); 
+		}
+	}
 
-				//--------------------------------------------------------
-				cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
-				cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
+	//--------------------------------------------------------
+	cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
+	cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
 
-				for(int i=0;i<src.rows;i++)
-					for(int j=0;j<src.cols;j++){
-						float temp = src.data[i*src.cols+j]+WTH[i][j] - BTH[i][j];
+	for(int i=0;i<src.rows;i++){
+		for(int j=0;j<src.cols;j++){
+			float temp = src.data[i*src.cols+j]+WTH[i][j] - BTH[i][j];
 
-						if(temp >= nColors-1)
-							temp = nColors - 1;
-						if(temp < 0)
-							temp = 0;
+			if(temp >= nColors-1)
+				temp = nColors - 1;
+			if(temp < 0)
+				temp = 0;
 
-						dst.data[i*dst.cols+j] = temp;
+			dst.data[i*dst.cols+j] = temp;
 
 
-						t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
-						t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
+			t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
+			t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
 
-					}
+		}
+	}
 
-					return true;
+	return true;
 }
 bool pixkit::enhancement::local::LiWangGeng2011(const cv::Mat & ori,cv::Mat &ret){
 
