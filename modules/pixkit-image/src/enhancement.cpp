@@ -1063,10 +1063,23 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 
 	//////////////////////////////////////////////////////////////////////////
 	// initialization
-	const	short	nColors	=	256;	// �v�����C���ƶq.
+	const	short	nColors	=	256;
 	// transformation
 	cv::Size	blockSize	=	cv::Size(src.cols/B.width,src.rows/B.height);
 	cv::Size	stepsize	=	cv::Size(src.cols/S.width,src.rows/S.height);
+	// correction for block size and step size
+	if(blockSize.height<=0){
+		blockSize.height = 1;
+	}
+	if(blockSize.width<=0){
+		blockSize.width = 1;
+	}
+	if(stepsize.height<=0){
+		stepsize.height = 1;
+	}
+	if(stepsize.width<=0){
+		stepsize.width = 1;
+	}
 
 	//////////////////////////////////////////////////////////////////////////
 	// exception
@@ -1083,7 +1096,7 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 	//////////////////////////////////////////////////////////////////////////
 	std::vector<std::vector<float>>	tdst(src.rows,std::vector<float>(src.cols,0));
 	std::vector<std::vector<short>>	accu_count(src.rows,std::vector<short>(src.cols,0));	// the add number of each pixel
-	// process (S3P5-Steps 3 and 4)
+	// do HE for each non-overlapped sub-blocks; process (S3P5-Steps 3 and 4)
 	for(int i=0;i<src.rows;i+=stepsize.height){
 		for(int j=0;j<src.cols;j+=stepsize.width){
 			
@@ -1136,7 +1149,7 @@ bool pixkit::enhancement::local::KimKimHwang2001(const cv::Mat &src,cv::Mat &dst
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// BERF (blocking effect reduction filter)
+	// S3P6, BERF (blocking effect reduction filter)
 	// for vertical
 	for(int i=stepsize.height;i<src.rows;i+=stepsize.height){
 		for(int j=0;j<src.cols;j++){
