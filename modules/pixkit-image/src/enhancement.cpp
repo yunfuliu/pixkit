@@ -270,7 +270,7 @@ bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Si
 
 		return true;
 }
-bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B, int N){
+bool pixkit::enhancement::local::Kimori2013(const cv::Mat &src,cv::Mat &dst,const cv::Size B, const int N){
 	std::vector <std::vector<std::vector<float>>> Ob( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
 	std::vector <std::vector<std::vector<float>>> Cb( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
 
@@ -279,115 +279,100 @@ bool pixkit::enhancement::local::Kimori2013(cv::Mat &src,cv::Mat &dst,cv::Size B
 	dst = cvCreateMat(src.rows,src.cols,src.type());
 
 	//計算各個旋轉影像
+	cv::Mat t_src; 
+	Mat	t_OP,t_CL;
+	cv::Mat buff1; // could be map_matrix or element
 	for(int k=0;k<N;k++){
-		cv::Mat t_src,t_OP,t_CL,t_ob,t_cb; 
+		
 		double degree = -180.0*k/N; // rotate degree
 
-		cv::Mat map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);
-		cv::warpAffine(src,t_src,map_matrix,cv::Size(src.cols, src.rows));
+		buff1 = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);	// get map
+		cv::warpAffine(src,t_src,buff1,cv::Size(src.cols, src.rows));
 
-		cv::Mat element = getStructuringElement(cv::MORPH_RECT,B);
-		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,element);
-		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,element);
+		buff1 = getStructuringElement(cv::MORPH_RECT,B);	// get element
+		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,buff1);
+		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,buff1);
 
-		map_matrix = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);
-		cv::warpAffine(t_OP,t_ob,map_matrix,cv::Size(src.cols, src.rows));
-		cv::warpAffine(t_CL,t_cb,map_matrix,cv::Size(src.cols, src.rows));
+		buff1 = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);	// get map
+		cv::warpAffine(t_OP,t_OP,buff1,cv::Size(src.cols, src.rows));
+		cv::warpAffine(t_CL,t_CL,buff1,cv::Size(src.cols, src.rows));
 
 		for(int i=0;i<src.rows;i++){
 			for(int j=0;j<src.cols;j++){
-				Ob[k][i][j] = t_ob.data[i*t_ob.cols+j];
-				Cb[k][i][j] = t_cb.data[i*t_cb.cols+j];
+				Ob[k][i][j] = t_OP.ptr<uchar>(i)[j];
+				Cb[k][i][j] = t_CL.ptr<uchar>(i)[j];
 			}
 		}
 	}
+	t_src.release();
+	t_OP.release();
+	t_CL.release();
+	buff1.release();
+
 
 	//RMP計算Top-hat增強
-	std::vector <std::vector<float>> WTH(src.rows,std::vector<float> (src.cols,0));
-	std::vector <std::vector<float>> BTH(src.rows,std::vector<float> (src.cols,0));
+	Mat	WTH(src.size(),CV_32FC1);
+	Mat	BTH(src.size(),CV_32FC1);
 
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
 
-			WTH[i][j] = Ob[0][i][j];
-			BTH[i][j] = Cb[0][i][j];
+			WTH.ptr<float>(i)[j] = Ob[0][i][j];
+			BTH.ptr<float>(i)[j] = Cb[0][i][j];
 
 
 			for(int k=1;k<N;k++){
 
-				if(Ob[k][i][j] > WTH[i][j]){
-					WTH[i][j] = Ob[k][i][j];
+				if(Ob[k][i][j] > WTH.ptr<float>(i)[j]){
+					WTH.ptr<float>(i)[j] = Ob[k][i][j];
 				}
 
-				if(Cb[k][i][j] > BTH[i][j]){
-					BTH[i][j] = Cb[k][i][j];
+				if(Cb[k][i][j] > BTH.ptr<float>(i)[j]){
+					BTH.ptr<float>(i)[j] = Cb[k][i][j];
 				}
 			}
 
 
-			WTH[i][j] = src.data[i*src.cols+j] - WTH[i][j];
-			BTH[i][j] = BTH[i][j] -  src.data[i*src.cols+j];
+			WTH.ptr<float>(i)[j] = src.ptr<uchar>(i)[j] - WTH.ptr<float>(i)[j];
+			BTH.ptr<float>(i)[j] = BTH.ptr<float>(i)[j] -  src.ptr<uchar>(i)[j];
 
-			if(WTH[i][j] > nColors-1)
-				WTH[i][j] = (float)(nColors-1);
+			if(WTH.ptr<float>(i)[j] > nColors-1)
+				WTH.ptr<float>(i)[j] = (float)(nColors-1);
 
-			if(BTH[i][j] > nColors-1)
-				BTH[i][j] = (float)(nColors-1);
+			if(BTH.ptr<float>(i)[j] > nColors-1)
+				BTH.ptr<float>(i)[j] = (float)(nColors-1);
 
-			if(WTH[i][j] < 0)
-				WTH[i][j] = 0.0;
+			if(WTH.ptr<float>(i)[j] < 0)
+				WTH.ptr<float>(i)[j] = 0.0;
 
-			if(BTH[i][j] < 0)
-				BTH[i][j] = 0.0;
+			if(BTH.ptr<float>(i)[j] < 0)
+				BTH.ptr<float>(i)[j] = 0.0;
 		}
 	}
 
-	//直方圖等化
-	std::vector<float> WTH_hist(nColors,0);
-	std::vector<float> BTH_hist(nColors,0);
-
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			WTH_hist[(int)(WTH[i][j]+0.5)]++;
-			BTH_hist[(int)(BTH[i][j]+0.5)]++;
-		}
-	}
-	//計算CDF
-	for(int k=1;k<nColors;k++){
-		WTH_hist[k] += WTH_hist[k-1];
-		BTH_hist[k] += BTH_hist[k-1];
-	}
-	//正歸化CDF
-	for(int k=0;k<nColors;k++){
-		WTH_hist[k] /= (src.rows*src.cols);
-		BTH_hist[k] /= (src.rows*src.cols);
-	}
-
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			WTH[i][j] = (WTH_hist[(int)WTH[i][j]]-WTH_hist[0])/(WTH_hist[nColors-1]-WTH_hist[0])*(nColors-1); 
-			BTH[i][j] = (BTH_hist[(int)BTH[i][j]]-BTH_hist[0])/(BTH_hist[nColors-1]-BTH_hist[0])*(nColors-1); 
-		}
-	}
-
+	//////////////////////////////////////////////////////////////////////////
+	///// histogram equalization
+	WTH.convertTo(WTH,CV_8UC1);
+	equalizeHist(WTH,WTH);
+	BTH.convertTo(BTH,CV_8UC1);
+	equalizeHist(BTH,BTH);
+	
 	//--------------------------------------------------------
-	cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
-	cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
-
+// 	cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
+// 	cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-			float temp = src.data[i*src.cols+j]+WTH[i][j] - BTH[i][j];
+			float temp = src.ptr<uchar>(i)[j]+WTH.ptr<uchar>(i)[j] - BTH.ptr<uchar>(i)[j];
 
 			if(temp >= nColors-1)
 				temp = nColors - 1;
 			if(temp < 0)
 				temp = 0;
 
-			dst.data[i*dst.cols+j] = temp;
+			dst.ptr<uchar>(i)[j] = temp;
 
-
-			t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
-			t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
+// 			t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
+// 			t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
 
 		}
 	}
