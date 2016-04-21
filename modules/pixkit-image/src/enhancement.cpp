@@ -351,15 +351,16 @@ bool pixkit::enhancement::local::Kimori2013(const cv::Mat &src,cv::Mat &dst,cons
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	///// histogram equalization
+	// histogram equalization
 	WTH.convertTo(WTH,CV_8UC1);
 	equalizeHist(WTH,WTH);
 	BTH.convertTo(BTH,CV_8UC1);
 	equalizeHist(BTH,BTH);
-	
+	// linear contrast stretching
+	cv::normalize(WTH,WTH,0,255,NORM_MINMAX, CV_8UC1);
+	cv::normalize(BTH,BTH,0,255,NORM_MINMAX, CV_8UC1);
+
 	//--------------------------------------------------------
-// 	cv::Mat t_Ob = cvCreateMat(src.rows,src.cols,src.type()); 
-// 	cv::Mat t_Cb = cvCreateMat(src.rows,src.cols,src.type()); 
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
 			float temp = src.ptr<uchar>(i)[j]+WTH.ptr<uchar>(i)[j] - BTH.ptr<uchar>(i)[j];
@@ -370,9 +371,6 @@ bool pixkit::enhancement::local::Kimori2013(const cv::Mat &src,cv::Mat &dst,cons
 				temp = 0;
 
 			dst.ptr<uchar>(i)[j] = temp;
-
-// 			t_Ob.data[i*t_Ob.cols+j] = WTH[i][j];
-// 			t_Cb.data[i*t_Cb.cols+j] = BTH[i][j];
 
 		}
 	}
