@@ -271,84 +271,71 @@ bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Si
 		return true;
 }
 bool pixkit::enhancement::local::Kimori2013(const cv::Mat &src,cv::Mat &dst,const cv::Size B, const int N){
-	std::vector <std::vector<std::vector<float>>> Ob( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
-	std::vector <std::vector<std::vector<float>>> Cb( (int)N,std::vector<std::vector<float>> (src.rows,std::vector<float> (src.cols,0)) );
-
-	int h = B.height, w = B.width;
-	const int nColors = 256;
-	dst = cvCreateMat(src.rows,src.cols,src.type());
-
+	
 	//計算各個旋轉影像
 	cv::Mat t_src; 
 	Mat	t_OP,t_CL;
 	cv::Mat buff1; // could be map_matrix or element
+
+	Mat	src1f;
+	src.convertTo(src1f, CV_32FC1);
+
+
+	//////////////////////////////////////////////////////////////////////////
+	vector<Mat>	Ob, Cb;
 	for(int k=0;k<N;k++){
 		
-		double degree = -180.0*k/N; // rotate degree
+		// get degree
+		float degree = -180.0*(float)k/(float)N; // rotate degree
 
+		// warpAffine
 		buff1 = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);	// get map
 		cv::warpAffine(src,t_src,buff1,cv::Size(src.cols, src.rows));
 
-		buff1 = getStructuringElement(cv::MORPH_RECT,B);	// get element
+		// opening and closing
+		buff1 = getStructuringElement(cv::MORPH_ELLIPSE,B);	// get disc-shaped structuring element
 		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,buff1);
 		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,buff1);
 
+		// warpAffine
 		buff1 = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);	// get map
 		cv::warpAffine(t_OP,t_OP,buff1,cv::Size(src.cols, src.rows));
 		cv::warpAffine(t_CL,t_CL,buff1,cv::Size(src.cols, src.rows));
-
-		for(int i=0;i<src.rows;i++){
-			for(int j=0;j<src.cols;j++){
-				Ob[k][i][j] = t_OP.ptr<uchar>(i)[j];
-				Cb[k][i][j] = t_CL.ptr<uchar>(i)[j];
-			}
-		}
+		
+		// to Ob and Cb
+		t_OP.convertTo(t_OP,CV_32FC1);
+		Ob.push_back(t_OP);
+		t_CL.convertTo(t_CL,CV_32FC1);
+		Cb.push_back(t_CL);
 	}
 	t_src.release();
 	t_OP.release();
 	t_CL.release();
 	buff1.release();
 
-
-	//RMP計算Top-hat增強
+	//////////////////////////////////////////////////////////////////////////
+	///// RMP計算Top-hat增強
 	Mat	WTH(src.size(),CV_32FC1);
 	Mat	BTH(src.size(),CV_32FC1);
-
+	// find maximum over z axis
+	WTH	=	Ob[0];
+	BTH	=	Cb[0];
 	for(int i=0;i<src.rows;i++){
 		for(int j=0;j<src.cols;j++){
-
-			WTH.ptr<float>(i)[j] = Ob[0][i][j];
-			BTH.ptr<float>(i)[j] = Cb[0][i][j];
-
-
 			for(int k=1;k<N;k++){
-
-				if(Ob[k][i][j] > WTH.ptr<float>(i)[j]){
-					WTH.ptr<float>(i)[j] = Ob[k][i][j];
+				if(Ob[k].ptr<float>(i)[j] > WTH.ptr<float>(i)[j]){
+					WTH.ptr<float>(i)[j] = Ob[k].ptr<float>(i)[j];
 				}
-
-				if(Cb[k][i][j] > BTH.ptr<float>(i)[j]){
-					BTH.ptr<float>(i)[j] = Cb[k][i][j];
+				if(Cb[k].ptr<float>(i)[j] > BTH.ptr<float>(i)[j]){
+					BTH.ptr<float>(i)[j] = Cb[k].ptr<float>(i)[j];
 				}
 			}
-
-
-			WTH.ptr<float>(i)[j] = src.ptr<uchar>(i)[j] - WTH.ptr<float>(i)[j];
-			BTH.ptr<float>(i)[j] = BTH.ptr<float>(i)[j] -  src.ptr<uchar>(i)[j];
-
-			if(WTH.ptr<float>(i)[j] > nColors-1)
-				WTH.ptr<float>(i)[j] = (float)(nColors-1);
-
-			if(BTH.ptr<float>(i)[j] > nColors-1)
-				BTH.ptr<float>(i)[j] = (float)(nColors-1);
-
-			if(WTH.ptr<float>(i)[j] < 0)
-				WTH.ptr<float>(i)[j] = 0.0;
-
-			if(BTH.ptr<float>(i)[j] < 0)
-				BTH.ptr<float>(i)[j] = 0.0;
 		}
 	}
+	// get WTH and BTH
+	WTH	=	src1f	-	WTH;
+	BTH	=	BTH		-	src1f;
+	
 
 	//////////////////////////////////////////////////////////////////////////
 	// histogram equalization
@@ -357,23 +344,14 @@ bool pixkit::enhancement::local::Kimori2013(const cv::Mat &src,cv::Mat &dst,cons
 	BTH.convertTo(BTH,CV_8UC1);
 	equalizeHist(BTH,BTH);
 	// linear contrast stretching
-	cv::normalize(WTH,WTH,0,255,NORM_MINMAX, CV_8UC1);
-	cv::normalize(BTH,BTH,0,255,NORM_MINMAX, CV_8UC1);
+	cv::normalize(WTH,WTH,0,255,NORM_MINMAX, CV_32FC1);
+	cv::normalize(BTH,BTH,0,255,NORM_MINMAX, CV_32FC1);
 
-	//--------------------------------------------------------
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			float temp = src.ptr<uchar>(i)[j]+WTH.ptr<uchar>(i)[j] - BTH.ptr<uchar>(i)[j];
 
-			if(temp >= nColors-1)
-				temp = nColors - 1;
-			if(temp < 0)
-				temp = 0;
-
-			dst.ptr<uchar>(i)[j] = temp;
-
-		}
-	}
+	//////////////////////////////////////////////////////////////////////////
+	///// to dst image
+	dst	=	src1f	+	WTH	-	BTH;
+	dst.convertTo(dst,CV_8UC1);
 
 	return true;
 }
