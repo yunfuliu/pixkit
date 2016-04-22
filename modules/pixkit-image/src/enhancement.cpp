@@ -271,86 +271,71 @@ bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Si
 		return true;
 }
 bool pixkit::enhancement::local::Kimori2013(const cv::Mat &src,cv::Mat &dst,const cv::Size B, const int N){
-	
-	//計算各個旋轉影像
-	cv::Mat t_src; 
-	Mat	t_OP,t_CL;
-	cv::Mat buff1; // could be map_matrix or element
-
-	Mat	src1f;
-	src.convertTo(src1f, CV_32FC1);
-
 
 	//////////////////////////////////////////////////////////////////////////
-	vector<Mat>	Ob, Cb;
+	///// get WTH and BTH
+	//
+	Mat	src1f;
+	src.convertTo(src1f, CV_32FC1);
+	//
+	Mat	WTH1f(src1f.size(),src1f.type()), BTH1f(src1f.size(),src1f.type());
+	WTH1f.setTo(0); BTH1f.setTo(0);
+	//
+	cv::Mat t_src1f; 
+	Mat	t_OP1f,t_CL1f; // for open and close operations
+	cv::Mat buff1; // could be map_matrix or element
+	// process
 	for(int k=0;k<N;k++){
 		
 		// get degree
 		float degree = -180.0*(float)k/(float)N; // rotate degree
 
 		// warpAffine
-		buff1 = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),degree,1.0);	// get map
-		cv::warpAffine(src,t_src,buff1,cv::Size(src.cols, src.rows));
+		buff1 = getRotationMatrix2D(cv::Point2f(src1f.cols/2, src1f.rows/2),degree,1.0);	// get map
+		cv::warpAffine(src1f,t_src1f,buff1,cv::Size(src1f.cols, src1f.rows));
 
 		// opening and closing
 		buff1 = getStructuringElement(cv::MORPH_ELLIPSE,B);	// get disc-shaped structuring element
-		cv::morphologyEx(t_src,t_OP,cv::MORPH_OPEN,buff1);
-		cv::morphologyEx(t_src,t_CL,cv::MORPH_CLOSE,buff1);
+		cv::morphologyEx(t_src1f,t_OP1f,cv::MORPH_OPEN,buff1);
+		cv::morphologyEx(t_src1f,t_CL1f,cv::MORPH_CLOSE,buff1);
 
 		// warpAffine
-		buff1 = getRotationMatrix2D(cv::Point2f(src.cols/2, src.rows/2),-degree,1.0);	// get map
-		cv::warpAffine(t_OP,t_OP,buff1,cv::Size(src.cols, src.rows));
-		cv::warpAffine(t_CL,t_CL,buff1,cv::Size(src.cols, src.rows));
+		buff1 = getRotationMatrix2D(cv::Point2f(src1f.cols/2, src1f.rows/2),-degree,1.0);	// get map
+		cv::warpAffine(t_OP1f,t_OP1f,buff1,cv::Size(src1f.cols, src1f.rows));
+		cv::warpAffine(t_CL1f,t_CL1f,buff1,cv::Size(src1f.cols, src1f.rows));
 		
-		// to Ob and Cb
-		t_OP.convertTo(t_OP,CV_32FC1);
-		Ob.push_back(t_OP);
-		t_CL.convertTo(t_CL,CV_32FC1);
-		Cb.push_back(t_CL);
-	}
-	t_src.release();
-	t_OP.release();
-	t_CL.release();
-	buff1.release();
-
-	//////////////////////////////////////////////////////////////////////////
-	///// RMP計算Top-hat增強
-	Mat	WTH(src.size(),CV_32FC1);
-	Mat	BTH(src.size(),CV_32FC1);
-	// find maximum over z axis
-	WTH	=	Ob[0];
-	BTH	=	Cb[0];
-	for(int i=0;i<src.rows;i++){
-		for(int j=0;j<src.cols;j++){
-			for(int k=1;k<N;k++){
-				if(Ob[k].ptr<float>(i)[j] > WTH.ptr<float>(i)[j]){
-					WTH.ptr<float>(i)[j] = Ob[k].ptr<float>(i)[j];
+		// get WTH and BTH over z axis
+		for(int i=0;i<src1f.rows;i++){
+			for(int j=0;j<src1f.cols;j++){
+				if(t_OP1f.ptr<float>(i)[j] > WTH1f.ptr<float>(i)[j]){
+					WTH1f.ptr<float>(i)[j] = t_OP1f.ptr<float>(i)[j];
 				}
-				if(Cb[k].ptr<float>(i)[j] > BTH.ptr<float>(i)[j]){
-					BTH.ptr<float>(i)[j] = Cb[k].ptr<float>(i)[j];
+				if(t_CL1f.ptr<float>(i)[j] > BTH1f.ptr<float>(i)[j]){
+					BTH1f.ptr<float>(i)[j] = t_CL1f.ptr<float>(i)[j];
 				}
 			}
 		}
 	}
-	// get WTH and BTH
-	WTH	=	src1f	-	WTH;
-	BTH	=	BTH		-	src1f;
-	
+
+	//////////////////////////////////////////////////////////////////////////
+	///// get WTH and BTH
+	WTH1f	=	src1f	-	WTH1f;
+	BTH1f	=	BTH1f	-	src1f;
 
 	//////////////////////////////////////////////////////////////////////////
 	// histogram equalization
-	WTH.convertTo(WTH,CV_8UC1);
-	equalizeHist(WTH,WTH);
-	BTH.convertTo(BTH,CV_8UC1);
-	equalizeHist(BTH,BTH);
+	WTH1f.convertTo(WTH1f,CV_8UC1);
+	equalizeHist(WTH1f,WTH1f);
+	BTH1f.convertTo(BTH1f,CV_8UC1);
+	equalizeHist(BTH1f,BTH1f);
 	// linear contrast stretching
-	cv::normalize(WTH,WTH,0,255,NORM_MINMAX, CV_32FC1);
-	cv::normalize(BTH,BTH,0,255,NORM_MINMAX, CV_32FC1);
+	cv::normalize(WTH1f,WTH1f,0,255,NORM_MINMAX, src1f.type());
+	cv::normalize(BTH1f,BTH1f,0,255,NORM_MINMAX, src1f.type());
 
 
 	//////////////////////////////////////////////////////////////////////////
 	///// to dst image
-	dst	=	src1f	+	WTH	-	BTH;
+	dst	=	src1f	+	WTH1f	-	BTH1f;
 	dst.convertTo(dst,CV_8UC1);
 
 	return true;
