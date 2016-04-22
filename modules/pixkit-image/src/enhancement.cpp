@@ -151,124 +151,134 @@ bool pixkit::enhancement::local::LCE_BSESCS2014(const cv::Mat &src,cv::Mat &dst,
 	return true;
 }
 bool pixkit::enhancement::local::Lal2014(const cv::Mat &src,cv::Mat &dst, cv::Size title, float L,float K1 ,float K2 ){
-	///////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////
+	///// exceptions
 	if(src.type()!=CV_8UC1){
-		return false;
+		CV_Assert(false);
 	}
-
 	if(L>1 || L<=0){
-		return false;
+		CV_Assert(false);
 	}
-
 	if(title.height > (src.rows/4) || title.width > (src.cols/4)){
-		return false;
+		CV_Assert(false);
+	}
+	if(K2>1 || K2<0){
+		CV_Assert(false);
 	}
 
-	if(K2>1 || K2<0){
-		return false;
-	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	const int nColors = 256;
 	int x = src.cols/title.width, y = src.rows/title.height;
 
-	dst = cvCreateMat(src.rows,src.cols,src.type());
-	cv::Mat temp = cvCreateMat(src.rows,src.cols,src.type());
-	std::vector<std::vector<float>> hist(title.height*title.width,std::vector<float> (nColors,0)); //�x�s�C��title���ಾ�禡
+	dst.create(src.size(),src.type());
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//�p��Sigmoid�ഫ
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	for(int i=0;i<temp.rows;i++){
-		for(int j=0;j<temp.cols;j++){
-			float t = (double)src.data[i*src.cols+j]/(nColors-1);
-			float o = t + K1*t/(1.0-exp(K1*(K2+t)));
+	///// Sigmoid
+	Mat	src1f;
+	src.convertTo(src1f,CV_32FC1);
+	Mat	t_mat	=	src1f / (nColors-1);
+	Mat	o_mat;
+	cv::exp(K1*(K2+t_mat),o_mat);
+	o_mat	=	t_mat + K1*t_mat / (1.0-o_mat);
+	cv::Mat temp	=	o_mat	*	(nColors-1);
+	temp.convertTo(temp,CV_8UC1);
 
-			temp.data[i*temp.cols+j] = static_cast<uchar>(o*(nColors-1));
-		}
-	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//�p���C��title���ಾ�禡
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	for(int m = 0;m<title.height;m++)
-		for(int n = 0;n<title.width;n++)
-		{
-			int i,j,i1=(m+1)*y,j1=(n+1)*x;
+	vector<Mat>	hist;
+	for(int i=0;i<nColors;i++){
+		hist.push_back(Mat(title,CV_32FC1));	// *********************************************************************************
+		hist[i].setTo(0);
+	}
+	for(int m = 0;m<title.height;m++){
+		for(int n = 0;n<title.width;n++){
+			int i,j,
+				i1=(m+1)*y,
+				j1=(n+1)*x;
 
-			if( (m+1) == title.height )
+			if( (m+1) == title.height ){
 				i1 = src.rows;
-			if((n+1) == title.width )
+			}
+			if((n+1) == title.width ){
 				j1 = src.cols;
+			}
 
 			int Count = 0;
-			for(i=m*y;i<i1;i++)
-				for(j=n*x;j<j1;j++)
-				{
-					hist[m*title.width+n][(int)temp.data[i*temp.cols+j]]++;
+			for(i=m*y;i<i1;i++){
+				for(j=n*x;j<j1;j++){
+					hist[(int)temp.ptr<uchar>(i)[j]].ptr<float>(m)[n]++;
 					Count++;
 				}
+			}
 
-				int limt = (int) (Count*L + 0.5);  //�p���ݭn����������
+			int limt = (int) (Count*L + 0.5);  //�p���ݭn����������
 
-				float over_limit = 0;
-				for(int k=0;k<256;k++)
-				{
-
-					if(hist[m*title.width+n][k] > limt)
-					{
-						over_limit += (hist[m*title.width+n][k]-limt);
-						hist[m*title.width+n][k] = limt;
-					}
+			float over_limit = 0;
+			for(int k=0;k<256;k++){
+				if(hist[k].ptr<float>(m)[n] > limt){
+					over_limit += (hist[k].ptr<float>(m)[n]-limt);
+					hist[k].ptr<float>(m)[n] = limt;
 				}
+			}
+			over_limit /= nColors;
 
-				over_limit /= nColors;
+			for(int k=0;k<256;k++){
+				hist[k].ptr<float>(m)[n] += over_limit;
+				hist[k].ptr<float>(m)[n] = (hist[k].ptr<float>(m)[n]/Count)*(nColors-1);
+			}
 
-				for(int k=0;k<256;k++)
-				{
-					hist[m*title.width+n][k] += over_limit;
-					hist[m*title.width+n][k] = (hist[m*title.width+n][k]/Count)*(nColors-1);
-				}
-
-				for(int k=1;k<256;k++)
-					hist[m*title.width+n][k] += hist[m*title.width+n][k-1];
-		}
-		//////////////////////////////////////////////////////////////////////////
-		//�p�����X
-		///////////////////////////////////////////////////////////////////////
-		int a1=0,a2=x/2,b1=0,b2=y/2;  //a����x�b���V.b����y�b���V
-		for(int i=0;i<src.rows;i++)
-		{
-			a2 = x/2 , a1 = 0;
-			for(int j=0;j<src.cols;j++)
-			{
-				if(j>a2)
-				{
-					a1=a2;
-					a2+=x;
-
-					if(a2/x == title.width)
-						a2 = src.cols-1;
-				}
-				if(i>b2)
-				{
-					b1 = b2;
-					b2 += y;
-					if(b2/y == title.height)
-						b2 = src.rows-1;
-				}
-
-				int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
-				if(p2 >= title.width)
-					p2 = title.width-1;
-				if(q2 >= title.height)
-					q2 = title.height-1;
-
-				float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
-				int v = (int)src.data[i*src.cols+j];
-
-				dst.data[i*dst.cols+j] = (unsigned char) (b*(a*hist[q1*title.width+p1][v] + (1-a)*hist[q1*title.width+p2][v]) + (1-b)*(a*hist[q2*title.width+p1][v] + (1-a)*hist[q2*title.width+p2][v]));
+			for(int k=1;k<256;k++){
+				hist[k].ptr<float>(m)[n] += hist[k-1].ptr<float>(m)[n];
 			}
 		}
+	}
 
-		return true;
+
+
+
+
+
+
+	//////////////////////////////////////////////////////////////////////////
+	//�p�����X
+	///////////////////////////////////////////////////////////////////////
+	int a1=0,a2=x/2,b1=0,b2=y/2;  //a����x�b���V.b����y�b���V
+	for(int i=0;i<src.rows;i++){
+		a2 = x/2 , a1 = 0;
+		for(int j=0;j<src.cols;j++){
+			if(j>a2){
+				a1=a2;
+				a2+=x;
+
+				if(a2/x == title.width){
+					a2 = src.cols-1;
+				}
+			}
+			if(i>b2){
+				b1 = b2;
+				b2 += y;
+				if(b2/y == title.height){
+					b2 = src.rows-1;
+				}
+			}
+
+			int p1=a1/x,p2=a2/x,q1=b1/y,q2=b2/y;
+			if(p2 >= title.width){
+				p2 = title.width-1;
+			}
+			if(q2 >= title.height){
+				q2 = title.height-1;
+			}
+
+			float a=(float)(a2-j)/(a2-a1), b=(float)(b2-i)/(b2-b1);
+			int v = (int)src.ptr<uchar>(i)[j];
+
+			dst.ptr<uchar>(i)[j] = (unsigned char) (b*(a*hist[v].ptr<float>(q1)[p1] + (1-a)*hist[v].ptr<float>(q1)[p2]) + (1-b)*(a*hist[v].ptr<float>(q2)[p1] + (1-a)*hist[v].ptr<float>(q2)[p2]));
+		}
+	}
+
+	return true;
 }
 bool pixkit::enhancement::local::Kimori2013(const cv::Mat &src,cv::Mat &dst,const cv::Size B, const int N){
 
